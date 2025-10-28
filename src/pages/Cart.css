@@ -1,0 +1,125 @@
+/* Cart.css */
+
+.container {
+  margin: auto;
+  font-family: Arial, sans-serif;
+}
+
+.subcontainer {
+  margin: auto;
+  padding: 0 300px;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  padding-left: 5%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  text-align: left;
+  padding: 10px;
+  padding-left: 20px;
+  border-bottom: 2px solid #ccc;
+  font-weight: bold;
+}
+
+.tr {
+  border-bottom: 1px solid #eee;
+}
+
+.td {
+  padding: 16px;
+  vertical-align: middle;
+}
+
+.tdcheckbox {
+  vertical-align: middle;
+}
+
+.productRow {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.checkbox {
+  margin-right: 10px;
+}
+
+.image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+}
+
+.quantityControl {
+  display: flex;
+  align-items: center;
+}
+
+.qtyBtn {
+  padding: 4px 10px;
+  margin: 0 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.qtyValue {
+  min-width: 20px;
+  text-align: center;
+}
+
+.footer {
+  margin-top: 30px;
+  padding-right: 10%;
+  text-align: right;
+}
+
+.total {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.checkout {
+  background-color: #e11d48;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.continue-shopping {
+  background-color: rgb(238, 176, 6);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.continue-shopping:hover {
+  background-color: rgb(250, 188, 16);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.continue-shopping:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
