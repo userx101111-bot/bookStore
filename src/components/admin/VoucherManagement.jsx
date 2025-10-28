@@ -28,6 +28,9 @@ export default function VoucherManagement() {
   });
   const [editing, setEditing] = useState(null);
 
+  // ============================================================
+  // ✅ Load vouchers and products
+  // ============================================================
   useEffect(() => {
     if (user?.token) {
       fetchVouchers();
@@ -35,21 +38,37 @@ export default function VoucherManagement() {
     }
   }, [user]);
 
+  // ✅ Fixed version with safe error handling
   const fetchVouchers = async () => {
-    const res = await fetchWithAuth(`${API_URL}/api/vouchers`, {}, user.token);
-    setVouchers(await res.json());
+    try {
+      const res = await fetchWithAuth(`${API_URL}/api/vouchers`, {}, user.token);
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data)) throw new Error("Invalid voucher data");
+      setVouchers(data);
+    } catch (err) {
+      console.error("❌ Fetch vouchers failed:", err);
+      setVouchers([]); // prevents t.map error
+    }
   };
 
   const fetchProducts = async () => {
-    const res = await fetchWithAuth(
-      `${API_URL}/api/admin/products/base`,
-      {},
-      user.token
-    );
-    const data = await res.json();
-    setProducts(Array.isArray(data) ? data : []);
+    try {
+      const res = await fetchWithAuth(
+        `${API_URL}/api/admin/products/base`,
+        {},
+        user.token
+      );
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("❌ Fetch products failed:", err);
+      setProducts([]);
+    }
   };
 
+  // ============================================================
+  // ✅ CRUD handlers
+  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     const url = editing
@@ -70,6 +89,9 @@ export default function VoucherManagement() {
     if (res.ok) {
       await fetchVouchers();
       resetForm();
+      alert(editing ? "✅ Voucher updated!" : "✅ Voucher created!");
+    } else {
+      alert("❌ Failed to save voucher.");
     }
   };
 
@@ -122,6 +144,9 @@ export default function VoucherManagement() {
       v.applicable_products.some((ap) => ap._id === productId)
     );
 
+  // ============================================================
+  // ✅ Render
+  // ============================================================
   return (
     <div className="admin-container">
       <h2>{editing ? "Edit Voucher" : "Create Voucher"}</h2>
@@ -217,9 +242,7 @@ export default function VoucherManagement() {
           <input
             type="checkbox"
             checked={form.is_active}
-            onChange={(e) =>
-              setForm({ ...form, is_active: e.target.checked })
-            }
+            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
           />{" "}
           Active
         </label>
