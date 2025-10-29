@@ -1,29 +1,34 @@
-// src/components/admin/FeaturedManagement.jsx
 import React, { useEffect, useState } from "react";
 import { useUser } from "../../contexts/UserContext";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
-import "../AdminDashboard.css";
+import "./FeaturedManagement.css";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://bookstore-yl7q.onrender.com";
 
-/**
- * Simple featured management UI:
- * - Lists admin products
- * - Allows toggling isPromotion / isNewArrival / isPopular
- * - Saves each product individually (quick) or "Save All" to bulk update
- *
- * Note: Uses admin endpoints already implemented (PUT /api/admin/products/:id)
- */
-
 const FeaturedManagement = () => {
   const { user } = useUser();
   const [products, setProducts] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+
+  // Modal state
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [modalProduct, setModalProduct] = useState(null);
+  const [selectedVoucher, setSelectedVoucher] = useState("");
+  const [selectedVariants, setSelectedVariants] = useState([]);
 
   useEffect(() => {
-    if (user?.token) fetchProducts();
+    if (user?.token) {
+      fetchProducts();
+      fetchVouchers();
+    }
     // eslint-disable-next-line
   }, [user]);
 
@@ -33,136 +38,283 @@ const FeaturedManagement = () => {
       const res = await fetchWithAuth(`${API_URL}/api/admin/products`, {}, user.token);
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
+      setFilteredProducts(Array.isArray(data) ? data : []);
+      const uniqueCategories = Array.from(new Set(data.map((p) => p.category).filter(Boolean)));
+      setCategories(uniqueCategories);
     } catch (err) {
       console.error("❌ Fetch products failed:", err);
-      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleFlag = (index, flag) => {
-    setProducts((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], [flag]: !copy[index][flag] };
-      return copy;
-    });
+  const fetchVouchers = async () => {
+    try {
+      const res = await fetchWithAuth(`${API_URL}/api/vouchers`, {}, user.token);
+      const data = await res.json();
+      setVouchers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("❌ Fetch vouchers failed:", err);
+    }
   };
 
-  const saveProduct = async (prod) => {
+  const toggleFlag = async (index, flag) => {
+    const product = filteredProducts[index];
+    const updatedProducts = [...filteredProducts];
+    updatedProducts[index] = { ...product, [flag]: !product[flag] };
+    setFilteredProducts(updatedProducts);
+
+    // 🧩 If setting promo ON for a product that has no voucher -> open modal
+    if (flag === "isPromotion" && !product.isPromotion) {
+      setModalProduct(product);
+      setShowVoucherModal(true);
+    }
+  };
+
+  const handleApplyVoucher = async () => {
     try {
+      if (!selectedVoucher || selectedVariants.length === 0) {
+        alert("Please select a voucher and at least one variant.");
+        return;
+      }
+
       setSaving(true);
-      // Build FormData similar to ProductManagement to send minimal fields and variants
-      const data = new FormData();
-      // send only flags and minimal fields
-      data.append("isPromotion", prod.isPromotion ? "true" : "false");
-      data.append("isNewArrival", prod.isNewArrival ? "true" : "false");
-      data.append("isPopular", prod.isPopular ? "true" : "false");
-      // Also append essential fields to avoid overwriting with undefined
-      data.append("name", prod.name || "");
-      data.append("slug", prod.slug || "");
-      data.append("status", prod.status || "Active");
-      // send variants as JSON string (send existing variants to avoid being overwritten)
-      data.append("variants", JSON.stringify(prod.variants || []));
+      const payload = {
+        productIds: [],
+        variantLinks: selectedVariants.map((variantId) => ({
+          product: modalProduct._id,
+          variant_id: variantId,
+        })),
+      };
 
       const res = await fetchWithAuth(
-        `${API_URL}/api/admin/products/${prod._id}`,
-        { method: "PUT", body: data },
+        `${API_URL}/api/vouchers/${selectedVoucher}/link`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
         user.token
       );
-      if (!res.ok) throw new Error("Failed to save product");
-      const updated = await res.json();
-      return updated;
-    } catch (err) {
-      console.error("❌ Save product failed:", err);
-      throw err;
-    } finally {
-      setSaving(false);
-    }
-  };
 
-  const handleSaveAll = async () => {
-    try {
-      setSaving(true);
-      for (const p of products) {
-        await saveProduct(p);
-      }
-      alert("✅ All featured flags saved!");
+      if (!res.ok) throw new Error("Failed to link voucher");
+
+      alert("✅ Voucher successfully applied!");
+      setShowVoucherModal(false);
+      setModalProduct(null);
+      setSelectedVoucher("");
+      setSelectedVariants([]);
       fetchProducts();
     } catch (err) {
-      alert("Error saving some products. Check console.");
+      console.error("❌ Apply voucher failed:", err);
+      alert("Error applying voucher. See console.");
     } finally {
       setSaving(false);
     }
   };
 
+  const handleVariantSelect = (variantId) => {
+    setSelectedVariants((prev) =>
+      prev.includes(variantId)
+        ? prev.filter((id) => id !== variantId)
+        : [...prev, variantId]
+    );
+  };
+
+  const handleSearchAndFilter = () => {
+    let result = [...products];
+    const q = searchQuery.toLowerCase();
+    if (searchQuery.trim() !== "")
+      result = result.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(q) ||
+          p.slug?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q)
+      );
+    if (selectedCategory) result = result.filter((p) => p.category === selectedCategory);
+    if (selectedSubcategory) result = result.filter((p) => p.subcategory === selectedSubcategory);
+    setFilteredProducts(result);
+  };
+
+  useEffect(() => {
+    handleSearchAndFilter();
+  }, [searchQuery, selectedCategory, selectedSubcategory]);
+
   if (loading) return <div className="loading">Loading products...</div>;
+
+  const subcategories = selectedCategory
+    ? Array.from(
+        new Set(
+          products
+            .filter((p) => p.category === selectedCategory)
+            .map((p) => p.subcategory)
+            .filter(Boolean)
+        )
+      )
+    : [];
 
   return (
     <div className="admin-container">
       <h2>Featured Products Management</h2>
-      <p>Toggle which products appear in Promotions / New Arrivals / Popular.</p>
+      <p>Manage Promotions, New Arrivals, and Popular items.</p>
 
+      {/* ===================== FILTER BAR ===================== */}
+      <div className="filter-bar">
+        <input
+          type="text"
+          placeholder="🔍 Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="filter-search"
+        />
+        <select
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setSelectedSubcategory("");
+          }}
+          className="filter-select"
+        >
+          <option value="">All Categories</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+        <select
+          value={selectedSubcategory}
+          onChange={(e) => setSelectedSubcategory(e.target.value)}
+          className="filter-select"
+          disabled={!selectedCategory}
+        >
+          <option value="">
+            {selectedCategory ? "All Subcategories" : "Select Category First"}
+          </option>
+          {subcategories.map((sub) => (
+            <option key={sub} value={sub}>
+              {sub}
+            </option>
+          ))}
+        </select>
+        <button
+          className="btn-reset"
+          onClick={() => {
+            setSearchQuery("");
+            setSelectedCategory("");
+            setSelectedSubcategory("");
+          }}
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* ===================== PRODUCT LIST ===================== */}
       <div className="featured-list">
-        {products.map((p, i) => (
-          <div key={p._id} className="featured-row">
-            <div className="featured-left">
-              <strong>{p.name}</strong>
-              <div className="muted">{p.category} • {p.slug}</div>
+        {filteredProducts.length === 0 ? (
+          <div className="no-results">No matching products.</div>
+        ) : (
+          filteredProducts.map((p, i) => (
+            <div key={p._id} className="featured-row">
+              <div className="featured-left">
+                <strong>{p.name}</strong>
+                <div className="muted">
+                  {p.category} {p.subcategory && `→ ${p.subcategory}`} • {p.slug}
+                </div>
+              </div>
+              <div className="featured-flags">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!p.isPromotion}
+                    onChange={() => toggleFlag(i, "isPromotion")}
+                  />{" "}
+                  Promo
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!p.isNewArrival}
+                    onChange={() => toggleFlag(i, "isNewArrival")}
+                  />{" "}
+                  New
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!p.isPopular}
+                    onChange={() => toggleFlag(i, "isPopular")}
+                  />{" "}
+                  Popular
+                </label>
+              </div>
             </div>
-            <div className="featured-flags">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={!!p.isPromotion}
-                  onChange={() => toggleFlag(i, "isPromotion")}
-                />{" "}
-                Promo
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={!!p.isNewArrival}
-                  onChange={() => toggleFlag(i, "isNewArrival")}
-                />{" "}
-                New
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={!!p.isPopular}
-                  onChange={() => toggleFlag(i, "isPopular")}
-                />{" "}
-                Popular
-              </label>
+          ))
+        )}
+      </div>
+
+      {/* ===================== VOUCHER MODAL ===================== */}
+      {showVoucherModal && modalProduct && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Apply Voucher for: {modalProduct.name}</h3>
+
+            <label>🎟️ Select Voucher</label>
+            <select
+              value={selectedVoucher}
+              onChange={(e) => setSelectedVoucher(e.target.value)}
+            >
+              <option value="">-- Select Voucher --</option>
+              {vouchers.map((v) => (
+                <option key={v._id} value={v._id}>
+                  {v.name} ({v.discount_type === "percentage"
+                    ? `${v.discount_value}%`
+                    : `₱${v.discount_value}`})
+                </option>
+              ))}
+            </select>
+
+            <h4>📚 Select Product Variants</h4>
+            <div className="variant-list">
+              {modalProduct.variants?.length > 0 ? (
+                modalProduct.variants.map((v) => (
+                  <label key={v._id} className="variant-item">
+                    <input
+                      type="checkbox"
+                      checked={selectedVariants.includes(v._id)}
+                      onChange={() => handleVariantSelect(v._id)}
+                    />
+                    {v.format} – ₱{v.price}
+                  </label>
+                ))
+              ) : (
+                <p>No variants available.</p>
+              )}
+            </div>
+
+            <div className="modal-actions">
               <button
-                className="btn-save-small"
-                onClick={async () => {
-                  try {
-                    await saveProduct(p);
-                    alert("✅ Saved");
-                    fetchProducts();
-                  } catch {
-                    alert("Failed to save");
-                  }
-                }}
+                className="btn-submit"
+                onClick={handleApplyVoucher}
                 disabled={saving}
               >
-                Save
+                {saving ? "Applying..." : "Apply Voucher"}
+              </button>
+              <button
+                className="btn-cancel"
+                onClick={() => {
+                  setShowVoucherModal(false);
+                  setModalProduct(null);
+                  setSelectedVoucher("");
+                  setSelectedVariants([]);
+                }}
+              >
+                Cancel
               </button>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div style={{ marginTop: 16 }}>
-        <button className="btn-submit" onClick={handleSaveAll} disabled={saving}>
-          Save All
-        </button>
-        <button className="btn-cancel" style={{ marginLeft: 8 }} onClick={fetchProducts}>
-          Reload
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

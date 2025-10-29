@@ -10,7 +10,23 @@ const cloudinary = require("cloudinary").v2;
 const connectDB = require("./config/db");
 const User = require("./models/User");
 const { protect, admin } = require("./middleware/authMiddleware");
+const Voucher = require("./models/Voucher");
 
+// 🧹 Clean up legacy indexes that block voucher creation
+(async () => {
+  try {
+    const indexes = await Voucher.collection.getIndexes({ full: true });
+    const hasCodeIndex = indexes.find(i => i.name === "code_1");
+    if (hasCodeIndex) {
+      await Voucher.collection.dropIndex("code_1");
+      console.log("✅ Removed legacy unique index: code_1");
+    }
+  } catch (err) {
+    if (!String(err.message).includes("index not found")) {
+      console.error("⚠️ Failed to drop code_1 index:", err.message);
+    }
+  }
+})();
 // ============================================================
 // 🔧 Load Environment Variables & Connect DB
 // ============================================================

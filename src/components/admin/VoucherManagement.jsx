@@ -119,45 +119,51 @@ const VoucherManagement = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const method = editingVoucher ? "PUT" : "POST";
-      const url = editingVoucher
-        ? `${API_URL}/api/vouchers/${editingVoucher._id}`
-        : `${API_URL}/api/vouchers`;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const method = editingVoucher ? "PUT" : "POST";
+    const url = editingVoucher
+      ? `${API_URL}/api/vouchers/${editingVoucher._id}`
+      : `${API_URL}/api/vouchers`;
 
-      const body = {
-        name: formData.name,
-        type: formData.type,
-        description: formData.description,
-        discount_type: formData.discount_type,
-        discount_value: Number(formData.discount_value),
-        max_discount: formData.max_discount ? Number(formData.max_discount) : null,
-        min_spend: Number(formData.min_spend) || 0,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        is_active: formData.is_active,
-        applicable_products: formData.productIds,
-        applicable_variants: formData.variantLinks,
-      };
+    const body = {
+      name: formData.name,
+      type: formData.type,
+      description: formData.description,
+      discount_type: formData.discount_type,
+      discount_value: Number(formData.discount_value || 0),
+      max_discount: Number(formData.max_discount || 0),
+      min_spend: Number(formData.min_spend || 0),
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      is_active: formData.is_active,
+      applicable_products: formData.productIds,
+      applicable_variants: formData.variantLinks,
+    };
 
-      const res = await fetchWithAuth(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }, user.token);
+    console.log("🧾 Voucher payload being sent:", body);
 
-      if (!res.ok) throw new Error("Failed to save voucher");
+    const res = await fetchWithAuth(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }, user.token);
 
-      await fetchVouchers();
-      resetForm();
-      alert("✅ Voucher saved successfully!");
-    } catch (err) {
-      console.error("❌ Save failed:", err);
-      alert("Error saving voucher.");
-    }
-  };
+    const responseText = await res.text();
+    console.log("📩 Voucher save response:", res.status, responseText);
+
+    if (!res.ok) throw new Error(`Failed to save voucher: ${res.status} ${responseText}`);
+
+    await fetchVouchers();
+    resetForm();
+    alert("✅ Voucher saved successfully!");
+  } catch (err) {
+    console.error("❌ Save failed:", err);
+    alert(`Error saving voucher: ${err.message}`);
+  }
+};
+
 
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
