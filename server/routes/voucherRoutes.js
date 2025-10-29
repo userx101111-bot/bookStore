@@ -144,7 +144,7 @@ router.post("/:id/link", protect, admin, async (req, res) => {
 });
 
 // ----------------------------------
-// PUBLIC: Get active vouchers for product or variant
+// ✅ FIXED: PUBLIC — Get active vouchers for product or variant
 // GET /product/:productId/:variantId?
 // ----------------------------------
 router.get("/product/:productId/:variantId?", async (req, res) => {
@@ -152,37 +152,57 @@ router.get("/product/:productId/:variantId?", async (req, res) => {
     const now = new Date();
     const { productId, variantId } = req.params;
 
-    // Build base query for active vouchers within date range
     const baseQuery = {
       is_active: true,
       start_date: { $lte: now },
       end_date: { $gte: now },
     };
 
-    // Build OR conditions
-    const orConditions = [];
+    const orConditions = [
+      // Match vouchers for this product
+      { applicable_products: productId },
+      // Also match any voucher that applies to this product’s variants
+      { "applicable_variants.product": productId },
+    ];
 
-    // product-level matches
-    orConditions.push({ applicable_products: productId });
+    // 🧩 Helper to validate proper MongoDB ObjectId
+    const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
 
-    // variant-level matches (only add if variantId provided)
     if (variantId) {
-      orConditions.push({
-        applicable_variants: { $elemMatch: { product: productId, variant_id: variantId } },
-      });
-    } else {
-      // if variantId not specified, include any voucher that links to the product via variants
-      orConditions.push({ "applicable_variants.product": productId });
+      if (isValidObjectId(variantId)) {
+        // ✅ Variant ID looks valid, safe to match it
+        orConditions.push({
+          applicable_variants: {
+            $elemMatch: { product: productId, variant_id: variantId },
+          },
+        });
+      } else {
+        // 🚫 Invalid variant ID format (e.g., "parentId-variantId")
+        // Extract the last 24-char piece safely
+        const parts = variantId.split("-");
+        const lastPart = parts[parts.length - 1];
+        if (isValidObjectId(lastPart)) {
+          orConditions.push({
+            applicable_variants: {
+              $elemMatch: { product: productId, variant_id: lastPart },
+            },
+          });
+        } else {
+          console.warn(`⚠️ Ignoring invalid variantId: ${variantId}`);
+        }
+      }
     }
 
     const query = { ...baseQuery, $or: orConditions };
+    const vouchers = await Voucher.find(query).lean();
 
-    const vouchers = await Voucher.find(query);
-    res.json(vouchers);
+    res.json(vouchers || []);
   } catch (err) {
     console.error("❌ Error fetching applicable vouchers:", err);
     res.status(500).json({ message: "Failed to fetch applicable vouchers" });
   }
 });
+
+
 
 module.exports = router;
