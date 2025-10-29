@@ -271,5 +271,20 @@ router.get("/orders", protect, admin, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch orders" });
   }
 });
+// ============================================================
+// 🥇 REMOVE PRODUCT FROM NEW ARRIVALS
+// ============================================================
+router.patch("/products/:id/remove-new", protect, admin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    await product.removeFromNewArrivals();
+    res.json({ message: "✅ Product removed from New Arrivals", product });
+  } catch (error) {
+    console.error("❌ Error removing new arrival:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 module.exports = router;

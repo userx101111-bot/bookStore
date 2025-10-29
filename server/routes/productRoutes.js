@@ -151,6 +151,7 @@ router.get("/category/:slug", async (req, res) => {
   }
 });
 
+
 /**
  * GET /api/products/:id
  * Fetch single product by Mongo ID or slug
@@ -201,5 +202,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
+
 
 module.exports = router;

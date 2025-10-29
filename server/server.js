@@ -33,21 +33,24 @@ const allowedOrigins = [
   "https://bookstore-yl7q.onrender.com", // optional for API testing
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      console.warn(`🚫 Blocked by CORS: ${origin}`);
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    console.warn(`🚫 Blocked by CORS: ${origin}`);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+};
 
-app.options("*", cors());
+// ✅ Apply global CORS policy everywhere
+app.use(cors(corsOptions));
+
+// ✅ Handle preflight (OPTIONS) requests using same rules
+app.options("*", cors(corsOptions));
+
 
 // ============================================================
 // 🖼️ Cloudinary Configuration

@@ -7,8 +7,13 @@ import { useUser } from "../../contexts/UserContext";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
 import "../AdminDashboard.css";
 
+console.log(process.env.NEXT_PUBLIC_API_URL);
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://bookstore-yl7q.onrender.com";
+
+  
+
 
 const ProductManagement = () => {
   const { user } = useUser();
@@ -70,6 +75,23 @@ const ProductManagement = () => {
     }
   };
 
+  const handleRemoveNew = async (id) => {
+  if (!window.confirm("Remove this product from New Arrivals?")) return;
+  try {
+    const res = await fetchWithAuth(
+      `${API_URL}/api/admin/products/${id}/remove-new`,
+      { method: "PATCH" },
+      user.token
+    );
+    if (!res.ok) throw new Error("Failed to remove from new arrivals");
+    alert("✅ Product removed from New Arrivals");
+    fetchProducts();
+  } catch (err) {
+    console.error("❌ Remove new failed:", err);
+    alert("Failed to update product.");
+  }
+  };
+
   const generateSlug = (name, volumeNumber) => {
     const base = name
       ?.toLowerCase()
@@ -100,6 +122,7 @@ const ProductManagement = () => {
       return next;
     });
   };
+
 
 
   const selectedCategory = categories.find((cat) => cat.slug === formData.category);
@@ -603,20 +626,20 @@ const ProductManagement = () => {
                     {p.isNewArrival && <span className="badge blue">New</span>}
                     {p.isPopular && <span className="badge yellow">Popular</span>}
                   </td>
-                  <td className="actions">
+                <td className="actions">
+                  <button className="btn-edit" onClick={() => handleEdit(p)}>Edit</button>
+                  <button className="btn-delete" onClick={() => handleDelete(p._id)}>Delete</button>
+                  {p.isNewArrival && (
                     <button
-                      className="btn-edit"
-                      onClick={() => handleEdit(p)}
+                      className="btn-remove-new"
+                      onClick={() => handleRemoveNew(p._id)}
+                      style={{ background: "#555", color: "#fff", marginLeft: "6px" }}
                     >
-                      Edit
+                      Remove New
                     </button>
-                    <button
-                      className="btn-delete"
-                      onClick={() => handleDelete(p._id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+                  )}
+                </td>
+
                 </tr>
               ))}
             </tbody>
