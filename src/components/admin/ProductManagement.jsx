@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUser } from "../../contexts/UserContext";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
-import "../AdminDashboard.css";
+import "./ProductManagement.css";
 
 console.log(process.env.NEXT_PUBLIC_API_URL);
 
@@ -62,9 +62,7 @@ const ProductManagement = () => {
 const fetchVouchersForProducts = async (productList) => {
   try {
     const map = {};
-    const res = await fetch(`${API_URL}/api/vouchers`, {
-      headers: { Authorization: `Bearer ${user?.token}` },
-    });
+    const res = await fetchWithAuth(`${API_URL}/api/vouchers`, {}, user.token);
     const allVouchers = await res.json();
 
     // normalize product ids as strings for easier comparison
@@ -750,125 +748,166 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
 {openPromos[p._id] &&
   productVouchers[p._id] &&
   productVouchers[p._id].length > 0 && (
-    <tr className="voucher-row">
-      <td colSpan="7">
-        <div
-          className="voucher-list"
-          style={{
-            background: "#fafafa",
-            borderRadius: "8px",
-            padding: "10px 15px",
-            marginTop: "4px",
-            animation: "slideDown 0.3s ease",
-          }}
-        >
-          <strong>Linked Vouchers:</strong>
-          <ul>
-            {productVouchers[p._id].map((v) => (
-              <li key={v._id} style={{ marginBottom: "1rem" }}>
-                🎟️ <b>{v.name}</b>{" "}
-                —{" "}
-                {v.discount_type === "percentage"
-                  ? `${v.discount_value}%`
-                  : `₱${v.discount_value}`}{" "}
-                ({v.start_date?.slice(0, 10)} → {v.end_date?.slice(0, 10)})
-
-{/* ✅ VARIANT-LEVEL LINKS */}
-{(v.applicable_variants || []).some(
-  (av) => String(av?.product?._id ?? av?.product) === String(p._id)
-) && (
-  <ul
-    style={{
-      marginLeft: "1.5rem",
-      marginTop: "0.4rem",
-      color: "#444",
-    }}
-  >
-    {(v.applicable_variants || [])
-      .filter(
-        (av) => String(av?.product?._id ?? av?.product) === String(p._id)
-      )
-      .map((av) => {
-        // Find the matching variant within the product
-        const variant = (p.variants || []).find(
-          (vv) => String(vv._id) === String(av.variant_id)
-        );
-
-        // Fallback labels to ensure display even if lookup fails
-        const variantLabel =
-          variant?.format ||
-          av?.format ||
-          `Variant ${String(av.variant_id).slice(0, 6)}`;
-        const variantStock = variant?.countInStock ?? "N/A";
-
-        return (
-          <li
-            key={String(av.variant_id)}
+    <>
+      {/* ✅ Render promo details in a full-width block BELOW the main row */}
+      <tr>
+        <td colSpan="7" style={{ padding: 0, border: "none" }}>
+          <div
+            className="voucher-list"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "4px",
-              padding: "4px 6px",
-              background: "#f9f9f9",
-              borderRadius: "5px",
+              background: "#fafafa",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              margin: "8px 0 16px 0",
+              border: "1px solid #ddd",
+              display: "block",
             }}
           >
-            <span>
-              ↳ Variant: <b>{variantLabel}</b> — Stock: {variantStock}
-            </span>
+            <strong>Linked Vouchers:</strong>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {productVouchers[p._id].map((v) => (
+                <li key={v._id} style={{ marginBottom: "1rem" }}>
+                  🎟️ <b>{v.name}</b>{" "}
+                  —{" "}
+                  {v.discount_type === "percentage"
+                    ? `${v.discount_value}%`
+                    : `₱${v.discount_value}`}{" "}
+                  ({v.start_date?.slice(0, 10)} → {v.end_date?.slice(0, 10)})
 
-            {/* ✅ Remove Variant Button */}
-            <button
-              className="hover-action-btn"
-              style={{
-                background: "#007bff",
-                color: "#fff",
-                borderRadius: "5px",
-                padding: "3px 8px",
-                fontSize: "0.75rem",
-                marginLeft: "0.5rem",
-              }}
-              onClick={() => handleRemoveVoucher(p._id, av.variant_id)}
-            >
-              Remove Variant
-            </button>
-          </li>
-        );
-      })}
-  </ul>
-)}
+                  {/* 🧩 Debug Step */}
+                  {console.log(
+                    "Voucher applicable_variants for product:",
+                    p.name,
+                    v.applicable_variants
+                  )}
 
-                {/* ✅ FALLBACK: PRODUCT-LEVEL LINK ONLY */}
-                {(!v.applicable_variants ||
-                  v.applicable_variants.length === 0 ||
-                  !v.applicable_variants.some(
-                    (av) =>
-                      av.product === p._id || av.product?._id === p._id
-                  )) && (
-                  <div style={{ marginTop: "8px" }}>
-                    <button
-                      className="hover-action-btn"
+                  {/* ✅ VARIANT-LEVEL LINKS */}
+                  {(v.applicable_variants || []).length > 0 && (
+                    <div
                       style={{
-                        background: "#e74c3c",
-                        color: "#fff",
-                        borderRadius: "5px",
-                        padding: "4px 10px",
-                        fontSize: "0.8rem",
+                        marginLeft: "1.5rem",
+                        marginTop: "0.4rem",
+                        color: "#444",
+                        border: "1px solid #ccc",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        background: "#fdfdfd",
+                        display: "block",
                       }}
-                      onClick={() => handleRemoveVoucher(p._id)}
                     >
-                      Remove Voucher (All Variants)
-                    </button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </td>
-    </tr>
+                      <ul
+                        style={{
+                          listStyle: "none",
+                          padding: 0,
+                          margin: 0,
+                          display: "block",
+                        }}
+                      >
+                        {(v.applicable_variants || [])
+                          .filter((av) => {
+                            const productId = String(
+                              av?.product?._id ?? av?.product
+                            );
+                            const currentId = String(p._id);
+                            return (
+                              productId === currentId ||
+                              productId.includes(currentId) ||
+                              currentId.includes(productId)
+                            );
+                          })
+                          .map((av) => {
+                            console.log(
+                              "🔍 Matching variant check for",
+                              p.name,
+                              "p._id:",
+                              p._id,
+                              "av.product:",
+                              av.product?._id ?? av.product
+                            );
+
+                            const variant = (p.variants || []).find(
+                              (vv) =>
+                                String(vv._id) === String(av.variant_id)
+                            );
+
+                            const variantLabel =
+                              variant?.format ||
+                              av?.format ||
+                              `Variant ${String(av.variant_id).slice(0, 6)}`;
+                            const variantStock =
+                              variant?.countInStock ?? "N/A";
+
+                            return (
+<li
+  key={String(av.variant_id)}
+  style={{
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px", // small space between text and button
+    marginBottom: "6px",
+    padding: "6px 8px",
+    background: "#eef5ff",
+    borderRadius: "5px",
+    border: "1px solid #bbb",
+  }}
+>
+  <span>
+    ↳ Variant: <b>{variantLabel}</b> — Stock: {variantStock}
+  </span>
+  <button
+    className="hover-action-btn"
+    style={{
+      background: "#007bff",
+      color: "#fff",
+      borderRadius: "5px",
+      padding: "4px 10px",
+      fontSize: "0.75rem",
+      cursor: "pointer",
+    }}
+    onClick={() => handleRemoveVoucher(p._id, av.variant_id)}
+  >
+    Remove Variant
+  </button>
+</li>
+                            );
+                          })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* ✅ FALLBACK: PRODUCT-LEVEL LINK ONLY */}
+                  {(!v.applicable_variants ||
+                    v.applicable_variants.length === 0 ||
+                    !v.applicable_variants.some(
+                      (av) =>
+                        av.product === p._id || av.product?._id === p._id
+                    )) && (
+                    <div style={{ marginTop: "8px" }}>
+                      <button
+                        className="hover-action-btn"
+                        style={{
+                          background: "#e74c3c",
+                          color: "#fff",
+                          borderRadius: "5px",
+                          padding: "5px 12px",
+                          fontSize: "0.8rem",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleRemoveVoucher(p._id)}
+                      >
+                        Remove Voucher (All Variants)
+                      </button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </td>
+      </tr>
+    </>
   )}
+
 
     </React.Fragment>
   ))}

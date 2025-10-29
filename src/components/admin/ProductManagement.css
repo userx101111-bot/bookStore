@@ -1,0 +1,494 @@
+/* ============================================
+   🎨 PRODUCT MANAGEMENT STYLES
+   ============================================ */
+
+/* Main Container */
+.admin-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* =======================
+   🧾 Product Form Styles
+   ======================= */
+.product-form-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.product-form-container h2 {
+  margin-bottom: 20px;
+  color: #2c3e50;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.product-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.form-group input[type="file"] {
+  padding: 8px 0;
+}
+
+.form-group textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.form-buttons {
+  grid-column: span 2;
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-submit,
+.btn-cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.btn-submit {
+  background-color: #fa7878;
+  color: white;
+}
+
+.btn-submit:hover {
+  background-color: #e86464;
+}
+
+.btn-cancel {
+  background-color: #eee;
+  border: 1px solid #ccc;
+}
+
+.btn-cancel:hover {
+  background-color: #ddd;
+}
+
+/* Floating label input fields */
+.floating-label {
+  position: relative;
+  margin-bottom: 1.2rem;
+}
+
+.floating-label input {
+  width: 100%;
+  padding: 8px;
+}
+
+.floating-label label {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  color: #888;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.floating-label input:focus + label,
+.floating-label label.filled {
+  top: -12px;
+  left: 5px;
+  font-size: 0.8rem;
+  color: #333;
+  background: white;
+  padding: 0 4px;
+}
+
+/* ==========================
+   📸 Album Image Previews
+   ========================== */
+.album-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.album-item {
+  position: relative;
+  display: inline-block;
+}
+
+.album-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: rgba(255, 0, 0, 0.7);
+  border: none;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* ==========================
+   💎 Product Variants
+   ========================== */
+.variants-section {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 15px;
+  background: #fdfdfd;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* ✅ Fix overly wide "Remove Variant" button */
+.variant-row {
+  position: relative;
+  align-items: flex-start;
+}
+
+.variant-row:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.variant-row input[type="text"],
+.variant-row input[type="number"],
+.variant-row select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.variant-row label {
+  font-weight: 600;
+  margin-top: 8px;
+  width: 100%;
+  color: #444;
+}
+
+.variant-row img {
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+/* Compact button aligned to top-right */
+.variant-row .btn-delete {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 10px !important;
+  font-size: 0.8rem !important;
+  border-radius: 5px !important;
+  background-color: #ff4d4d !important;
+  color: #fff !important;
+  width: auto !important;
+  min-width: auto !important;
+  max-width: fit-content !important;
+  box-shadow: 0 2px 5px rgba(255, 77, 77, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.variant-row .btn-delete:hover {
+  background-color: #d93636 !important;
+  transform: scale(1.05);
+}
+
+/* Add Variant Button */
+.variants-section .btn-submit {
+  align-self: flex-start;
+  margin-top: 10px;
+  background-color: #fa7878;
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.variants-section .btn-submit:hover {
+  background-color: #e86464;
+}
+
+/* ==========================
+   🧩 Featured Labels
+   ========================== */
+.featured-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.featured-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 7px;
+  margin-top: -20px;
+  z-index: 10;
+}
+
+.featured-label {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  cursor: default;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.featured-label.promo {
+  background-color: #8a2be2;
+}
+
+.featured-label.new {
+  background-color: #3498db;
+}
+
+.featured-label.popular {
+  background-color: #f39c12;
+}
+
+.featured-wrapper:hover .featured-label {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover Action Button */
+.hover-action-btn {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease-in-out;
+  transform: translateY(6px);
+}
+
+.hover-action-btn::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+.featured-wrapper:hover .hover-action-btn,
+.hover-action-btn:hover {
+  opacity: 0.9;
+  pointer-events: auto;
+  transform: scale(1.05);
+}
+
+.hover-action-btn:hover {
+  background-color: #e74c3c;
+}
+
+/* ==========================
+   📋 Product List Table
+   ========================== */
+.products-list-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.products-list-container h2 {
+  margin-bottom: 20px;
+  color: #2c3e50;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.products-list-container table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.products-list-container th,
+.products-list-container td {
+  padding: 14px 18px;
+  vertical-align: middle;
+}
+
+.products-list-container th {
+  background-color: #f7f7f7;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.products-list-container td {
+  background-color: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  font-size: 15px;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* Hover effect */
+.products-list-container tbody tr:hover td {
+  background-color: #fafafa;
+  transition: background-color 0.2s ease;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.btn-edit {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-edit:hover {
+  background-color: #2980b9;
+}
+
+.btn-delete {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #c0392b;
+}
+
+.no-products {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-style: italic;
+}
+
+/* ==========================
+   🎟️ Voucher Row Animation
+   ========================== */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.voucher-list {
+  animation: slideDown 0.25s ease-in-out;
+  background: #fafafa;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid #eaeaea;
+  padding: 0.75rem 1rem;
+}
+
+.voucher-list .hover-action-btn {
+  background: #007bff;
+  color: #fff;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.voucher-list .hover-action-btn:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .product-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-buttons {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+  }
+}

@@ -5,9 +5,11 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("cloudinary").v2;
 const Product = require("../models/Product");
+const Voucher = require("../models/Voucher"); 
 const User = require("../models/User");
 const Order = require("../models/Order");
 const { protect, admin } = require("../middleware/authMiddleware");
+
 
 // CLOUDINARY CONFIG
 cloudinary.config({
