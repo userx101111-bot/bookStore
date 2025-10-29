@@ -86,11 +86,18 @@ export default function VoucherManagement() {
       user.token
     );
 
-    if (res.ok) {
-      await fetchVouchers();
-      resetForm();
-      alert(editing ? "✅ Voucher updated!" : "✅ Voucher created!");
-    } else {
+// After successful create/update in VoucherManagement.jsx
+if (res.ok) {
+  await fetchVouchers();
+
+  // ✅ Trigger backend promo flag update automatically
+  await fetch(`${API_URL}/api/admin/products`, {
+    headers: { Authorization: `Bearer ${user.token}` },
+  });
+
+  resetForm();
+  alert(editing ? "✅ Voucher updated!" : "✅ Voucher created!");
+} else {
       alert("❌ Failed to save voucher.");
     }
   };

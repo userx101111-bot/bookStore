@@ -10,6 +10,15 @@ router.post("/", protect, admin, async (req, res) => {
   try {
     const voucher = new Voucher(req.body);
     await voucher.save();
+
+    // Automatically flag products linked to this voucher
+    if (voucher.applicable_products?.length) {
+      await Product.updateMany(
+        { _id: { $in: voucher.applicable_products } },
+        { $set: { isPromotion: true } }
+      );
+    }
+
     res.status(201).json(voucher);
   } catch (err) {
     res.status(500).json({ message: "Failed to create voucher", error: err.message });
@@ -19,12 +28,34 @@ router.post("/", protect, admin, async (req, res) => {
 // ✅ UPDATE
 router.put("/:id", protect, admin, async (req, res) => {
   try {
-    const updated = await Voucher.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Voucher.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+
+    // Sync promo flags dynamically
+    if (updated) {
+      const allVouchers = await Voucher.find({}).select("applicable_products");
+      const allLinkedProductIds = new Set(
+        allVouchers.flatMap((v) => v.applicable_products.map((p) => p.toString()))
+      );
+
+      await Product.updateMany(
+        { _id: { $in: Array.from(allLinkedProductIds) } },
+        { $set: { isPromotion: true } }
+      );
+
+      await Product.updateMany(
+        { _id: { $nin: Array.from(allLinkedProductIds) } },
+        { $set: { isPromotion: false } }
+      );
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: "Failed to update voucher", error: err.message });
   }
 });
+
 
 // ✅ DELETE
 router.delete("/:id", protect, admin, async (req, res) => {
@@ -52,10 +83,34 @@ router.post("/:id/link-products", protect, admin, async (req, res) => {
     const { productIds } = req.body;
     const voucher = await Voucher.findById(req.params.id);
     if (!voucher) return res.status(404).json({ message: "Voucher not found" });
+
+    // ✅ 1. Update voucher linkage
     voucher.applicable_products = productIds;
     await voucher.save();
-    res.json(voucher);
+
+    // ✅ 2. Set isPromotion=true for all linked products
+    await Product.updateMany(
+      { _id: { $in: productIds } },
+      { $set: { isPromotion: true } }
+    );
+
+    // ✅ 3. Check for any products no longer linked by ANY voucher, remove promo
+    const allVouchers = await Voucher.find({}).select("applicable_products");
+    const allLinkedProductIds = new Set(
+      allVouchers.flatMap((v) => v.applicable_products.map((p) => p.toString()))
+    );
+
+    await Product.updateMany(
+      { _id: { $nin: Array.from(allLinkedProductIds) } },
+      { $set: { isPromotion: false } }
+    );
+
+    res.json({
+      message: "✅ Voucher linked and products updated successfully",
+      voucher,
+    });
   } catch (err) {
+    console.error("❌ Error linking products:", err);
     res.status(500).json({ message: "Failed to link products" });
   }
 });

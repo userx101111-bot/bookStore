@@ -162,94 +162,104 @@ const Homepage = () => {
     return { bg, text };
   };
 
-  // ============================================================
-  // 🧱 Product Card (with Variants)
-  // ============================================================
-  const VariantCard = ({ product }) => {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [hovered, setHovered] = useState(false);
-    const [fading, setFading] = useState(false);
-    const intervalRef = useRef(null);
-    const variants = product.variants || [];
-    const hasVariants = variants.length > 1;
-    const currentImage =
-      variants[activeIndex]?.mainImage ||
-      product.mainImage ||
-      "/assets/placeholder-image.png";
+// ============================================================
+// 🧱 Product Card (with Variants + New Badge)
+// ============================================================
+const VariantCard = ({ product }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [fading, setFading] = useState(false);
+  const intervalRef = useRef(null);
+  const variants = product.variants || [];
+  const hasVariants = variants.length > 1;
 
-    useEffect(() => {
-      if (!hasVariants || hovered) return;
-      intervalRef.current = setInterval(() => {
-        setFading(true);
-        setTimeout(() => {
-          setActiveIndex((prev) => (prev + 1) % variants.length);
-          setFading(false);
-        }, 200);
-      }, 2000);
-      return () => clearInterval(intervalRef.current);
-    }, [variants, hovered, hasVariants]);
+  const currentImage =
+    variants[activeIndex]?.mainImage ||
+    product.mainImage ||
+    "/assets/placeholder-image.png";
 
-    const handleMouseEnter = () => setHovered(true);
-    const handleMouseLeave = () => setHovered(false);
-    const handleVariantHover = (idx) => {
-      setActiveIndex(idx);
-      setHovered(true);
-    };
-    const handleVariantClick = (v) =>
-      navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
-    const handleCardClick = () => {
-      const v = variants[activeIndex] || variants[0];
-      navigate(`/product/${product.slug}/${v.format?.toLowerCase() || "standard"}`);
-    };
+  useEffect(() => {
+    if (!hasVariants || hovered) return;
+    intervalRef.current = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setActiveIndex((prev) => (prev + 1) % variants.length);
+        setFading(false);
+      }, 200);
+    }, 2000);
+    return () => clearInterval(intervalRef.current);
+  }, [variants, hovered, hasVariants]);
 
-    return (
-      <div
-        className="product-card variant-card"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={handleCardClick}
-      >
-        <div className="product-image-wrap">
-          <img
-            src={currentImage}
-            alt={product.name}
-            className={fading ? "fade" : ""}
-            onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
-          />
-          {hasVariants && (
-            <span className="variant-count">{variants.length} Variants</span>
-          )}
-        </div>
-        <p className="product-name">{product.name}</p>
-        <p className="price">
-          ₱
-          {variants[activeIndex]?.price?.toFixed(2) ||
-            product.price?.toFixed(2) ||
-            "N/A"}
-        </p>
+  const handleMouseEnter = () => setHovered(true);
+  const handleMouseLeave = () => setHovered(false);
+  const handleVariantHover = (idx) => {
+    setActiveIndex(idx);
+    setHovered(true);
+  };
+  const handleVariantClick = (v) =>
+    navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
+  const handleCardClick = () => {
+    const v = variants[activeIndex] || variants[0];
+    navigate(`/product/${product.slug}/${v.format?.toLowerCase() || "standard"}`);
+  };
 
-        {variants.length > 0 && (
-          <div
-            className={`variant-buttons ${
-              variants.length === 1 ? "single-variant" : ""
-            }`}
-          >
-            {variants.map((v, idx) => (
-              <button
-                key={v._id}
-                className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
-                onMouseEnter={() => handleVariantHover(idx)}
-                onClick={() => handleVariantClick(v)}
-                disabled={variants.length === 1}
-              >
-                {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
-              </button>
-            ))}
-          </div>
+  // ✅ Check if product is a New Arrival
+  const isNewArrival = product.isNewArrival || product.isCurrentlyNew;
+
+  return (
+    <div
+      className="product-card variant-card"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleCardClick}
+    >
+      <div className="product-image-wrap">
+        <img
+          src={currentImage}
+          alt={product.name}
+          className={fading ? "fade" : ""}
+          onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
+        />
+
+        {/* ✅ Add the NEW badge here */}
+        {isNewArrival && <span className="badge-new">NEW</span>}
+
+        {hasVariants && (
+          <span className="variant-count">{variants.length} Variants</span>
         )}
       </div>
-    );
-  };
+
+      <p className="product-name">{product.name}</p>
+      <p className="price">
+        ₱
+        {variants[activeIndex]?.price?.toFixed(2) ||
+          product.price?.toFixed(2) ||
+          "N/A"}
+      </p>
+
+      {variants.length > 0 && (
+        <div
+          className={`variant-buttons ${
+            variants.length === 1 ? "single-variant" : ""
+          }`}
+        >
+          {variants.map((v, idx) => (
+            <button
+              key={v._id}
+              className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
+              onMouseEnter={() => handleVariantHover(idx)}
+              onClick={() => handleVariantClick(v)}
+              disabled={variants.length === 1}
+            >
+              {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
   // ============================================================
   // 🧭 Product Section Component (Category-based)
