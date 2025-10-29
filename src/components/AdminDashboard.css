@@ -1419,97 +1419,90 @@
 }
 
 /* ============================
-   🎯 Final Enhancements for Product Management
+   💎 FEATURED LABELS WITH TOP-HOVER ACTION BUTTON
    ============================ */
 
-/* Ensure images display nicely in form */
-.variant-row img {
-  display: block;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.featured-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
-.variant-row img:hover {
-  transform: scale(1.03);
+
+.featured-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Label styles */
+.featured-label {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  cursor: default;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.featured-label.promo {
+  background-color: #8a2be2;
+}
+.featured-label.new {
+  background-color: #3498db;
+}
+.featured-label.popular {
+  background-color: #f39c12;
+}
+
+/* Label hover glow */
+.featured-wrapper:hover .featured-label {
+  transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* Album item enhancements */
-.album-item {
-  position: relative;
-  display: inline-block;
-}
-.album-item .album-thumb {
-  width: 90px;
-  height: 90px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 2px solid #f0f0f0;
-  transition: border-color 0.2s ease, transform 0.2s ease;
-}
-.album-item .album-thumb:hover {
-  border-color: #fa7878;
-  transform: scale(1.05);
-}
-.album-item .remove-btn {
+/* Hidden hover button */
+.hover-action-btn {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  background-color: rgba(255, 0, 0, 0.85);
+  bottom: 100%;
+  transform: translateY(10px);
+  background-color: #333;
   color: white;
   border: none;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  font-size: 14px;
-  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
   cursor: pointer;
-  line-height: 20px;
-  transition: background 0.2s ease;
-}
-.album-item .remove-btn:hover {
-  background-color: red;
-}
-
-/* Better button styling inside variant rows */
-.variant-row .btn-delete,
-.variant-row .btn-submit {
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  z-index: 5;
 }
 
-.variant-row .btn-delete:hover,
-.variant-row .btn-submit:hover {
-  transform: translateY(-1px);
+/* Tooltip arrow pointing down */
+.hover-action-btn::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
 }
 
-/* Improve variant row spacing for smaller screens */
-@media (max-width: 768px) {
-  .variant-row {
-    flex-direction: column;
-    gap: 12px;
-  }
+/* Hover behavior — show button */
+.featured-wrapper:hover .hover-action-btn,
+.hover-action-btn:hover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-5px);
+}
 
-  .variant-row img {
-    width: 100%;
-    max-width: 250px;
-  }
-
-  .album-item .album-thumb {
-    width: 75px;
-    height: 75px;
-  }
-
-  .album-item .remove-btn {
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
-  }
-
-  .variants-section .btn-submit {
-    width: 100%;
-    text-align: center;
-  }
+/* Button hover state */
+.hover-action-btn:hover {
+  background-color: #e74c3c;
+  transform: translateY(-7px);
 }

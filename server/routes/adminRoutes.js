@@ -286,5 +286,41 @@ router.patch("/products/:id/remove-new", protect, admin, async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+// ============================================================
+// 🧹 REMOVE PRODUCT FROM ALL VOUCHERS
+// ============================================================
+const Voucher = require("../models/Voucher");
+
+router.patch("/products/:id/remove-voucher", protect, admin, async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    // ✅ 1. Remove this product from all vouchers
+    const result = await Voucher.updateMany(
+      { applicable_products: productId },
+      { $pull: { applicable_products: productId } }
+    );
+
+    // ✅ 2. Unset isPromotion on product
+    await Product.findByIdAndUpdate(productId, { isPromotion: false });
+
+    // ✅ 3. Clean up: if product no longer in any voucher, leave it off
+    const linkedVouchers = await Voucher.find({ applicable_products: productId });
+    if (linkedVouchers.length === 0) {
+      await Product.findByIdAndUpdate(productId, { isPromotion: false });
+    }
+
+    res.json({
+      message: "✅ Product unlinked from all vouchers",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("❌ Error removing product voucher:", error);
+    res.status(500).json({
+      message: "Failed to unlink vouchers",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

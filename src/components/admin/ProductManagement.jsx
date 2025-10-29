@@ -91,6 +91,26 @@ const ProductManagement = () => {
     alert("Failed to update product.");
   }
   };
+  const handleRemoveVoucher = async (id) => {
+  if (!window.confirm("Remove all vouchers linked to this product?")) return;
+
+  try {
+    const res = await fetchWithAuth(
+      `${API_URL}/api/admin/products/${id}/remove-voucher`,
+      { method: "PATCH" },
+      user.token
+    );
+
+    if (!res.ok) throw new Error("Failed to remove voucher links");
+
+    alert("✅ All vouchers removed from this product");
+    fetchProducts(); // Refresh table to show updated promo status
+  } catch (err) {
+    console.error("❌ Remove voucher failed:", err);
+    alert("Failed to unlink product from vouchers.");
+  }
+};
+
 
   const generateSlug = (name, volumeNumber) => {
     const base = name
@@ -621,23 +641,41 @@ const ProductManagement = () => {
                     )}
                   </td>
                   <td>{p.status}</td>
-                  <td>
-                    {p.isPromotion && <span className="badge red">Promo</span>}
-                    {p.isNewArrival && <span className="badge blue">New</span>}
-                    {p.isPopular && <span className="badge yellow">Popular</span>}
-                  </td>
+<td>
+  <div className="featured-labels">
+    {p.isPromotion && (
+      <div className="featured-wrapper">
+        <div className="featured-label promo">Promo</div>
+        <button
+          className="hover-action-btn"
+          onClick={() => handleRemoveVoucher(p._id)}
+        >
+          Remove Voucher
+        </button>
+      </div>
+    )}
+    {p.isNewArrival && (
+      <div className="featured-wrapper">
+        <div className="featured-label new">New</div>
+        <button
+          className="hover-action-btn"
+          onClick={() => handleRemoveNew(p._id)}
+        >
+          Remove New
+        </button>
+      </div>
+    )}
+    {p.isPopular && (
+      <div className="featured-wrapper">
+        <div className="featured-label popular">Popular</div>
+      </div>
+    )}
+  </div>
+</td>
+
                 <td className="actions">
                   <button className="btn-edit" onClick={() => handleEdit(p)}>Edit</button>
                   <button className="btn-delete" onClick={() => handleDelete(p._id)}>Delete</button>
-                  {p.isNewArrival && (
-                    <button
-                      className="btn-remove-new"
-                      onClick={() => handleRemoveNew(p._id)}
-                      style={{ background: "#555", color: "#fff", marginLeft: "6px" }}
-                    >
-                      Remove New
-                    </button>
-                  )}
                 </td>
 
                 </tr>
