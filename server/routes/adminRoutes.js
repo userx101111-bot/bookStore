@@ -289,38 +289,53 @@ router.patch("/products/:id/remove-new", protect, admin, async (req, res) => {
 // ============================================================
 // 🧹 REMOVE PRODUCT FROM ALL VOUCHERS
 // ============================================================
-const Voucher = require("../models/Voucher");
-
 router.patch("/products/:id/remove-voucher", protect, admin, async (req, res) => {
   try {
     const productId = req.params.id;
 
-    // ✅ 1. Remove this product from all vouchers
+    // ✅ 1. Remove product and variant references from all vouchers
     const result = await Voucher.updateMany(
-      { applicable_products: productId },
-      { $pull: { applicable_products: productId } }
+      {
+        $or: [
+          { applicable_products: productId },
+          { "applicable_variants.product": productId },
+        ],
+      },
+      {
+        $pull: {
+          applicable_products: productId,
+          applicable_variants: { product: productId },
+        },
+      }
     );
 
-    // ✅ 2. Unset isPromotion on product
+    // ✅ 2. Remove isPromotion flag
     await Product.findByIdAndUpdate(productId, { isPromotion: false });
 
-    // ✅ 3. Clean up: if product no longer in any voucher, leave it off
-    const linkedVouchers = await Voucher.find({ applicable_products: productId });
-    if (linkedVouchers.length === 0) {
+    // ✅ 3. Cleanup — check if any remain linked
+    const stillLinked = await Voucher.find({
+      $or: [
+        { applicable_products: productId },
+        { "applicable_variants.product": productId },
+      ],
+    });
+
+    if (stillLinked.length === 0) {
       await Product.findByIdAndUpdate(productId, { isPromotion: false });
     }
 
     res.json({
-      message: "✅ Product unlinked from all vouchers",
+      message: "✅ Product and variants unlinked from vouchers",
       modifiedCount: result.modifiedCount,
     });
   } catch (error) {
-    console.error("❌ Error removing product voucher:", error);
+    console.error("❌ Error unlinking product/variants from vouchers:", error);
     res.status(500).json({
       message: "Failed to unlink vouchers",
       error: error.message,
     });
   }
 });
+
 
 module.exports = router;

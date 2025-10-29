@@ -1,20 +1,24 @@
-// server/routes/voucherRoutes.js
 const express = require("express");
 const router = express.Router();
 const Voucher = require("../models/Voucher");
 const Product = require("../models/Product");
 const { protect, admin } = require("../middleware/authMiddleware");
 
-// ✅ CREATE
+// CREATE
 router.post("/", protect, admin, async (req, res) => {
   try {
     const voucher = new Voucher(req.body);
     await voucher.save();
 
-    // Automatically flag products linked to this voucher
-    if (voucher.applicable_products?.length) {
+    // ✅ Automatically mark products/variants with active vouchers
+    const affectedProductIds = [
+      ...(voucher.applicable_products || []),
+      ...(voucher.applicable_variants || []).map((v) => v.product),
+    ];
+
+    if (affectedProductIds.length > 0) {
       await Product.updateMany(
-        { _id: { $in: voucher.applicable_products } },
+        { _id: { $in: affectedProductIds } },
         { $set: { isPromotion: true } }
       );
     }
@@ -25,25 +29,22 @@ router.post("/", protect, admin, async (req, res) => {
   }
 });
 
-// ✅ UPDATE
+// UPDATE
 router.put("/:id", protect, admin, async (req, res) => {
   try {
-    const updated = await Voucher.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const updated = await Voucher.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
-    // Sync promo flags dynamically
     if (updated) {
-      const allVouchers = await Voucher.find({}).select("applicable_products");
-      const allLinkedProductIds = new Set(
-        allVouchers.flatMap((v) => v.applicable_products.map((p) => p.toString()))
-      );
+      const allVouchers = await Voucher.find({}, "applicable_products applicable_variants");
+      const allLinkedProductIds = new Set([
+        ...allVouchers.flatMap((v) => v.applicable_products.map((p) => p.toString())),
+        ...allVouchers.flatMap((v) => v.applicable_variants.map((a) => a.product.toString())),
+      ]);
 
       await Product.updateMany(
         { _id: { $in: Array.from(allLinkedProductIds) } },
         { $set: { isPromotion: true } }
       );
-
       await Product.updateMany(
         { _id: { $nin: Array.from(allLinkedProductIds) } },
         { $set: { isPromotion: false } }
@@ -56,8 +57,7 @@ router.put("/:id", protect, admin, async (req, res) => {
   }
 });
 
-
-// ✅ DELETE
+// DELETE
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
     await Voucher.findByIdAndDelete(req.params.id);
@@ -67,65 +67,65 @@ router.delete("/:id", protect, admin, async (req, res) => {
   }
 });
 
-// ✅ GET ALL
+// GET ALL
 router.get("/", protect, admin, async (req, res) => {
   try {
-    const vouchers = await Voucher.find().populate("applicable_products", "name category");
+    const vouchers = await Voucher.find()
+      .populate("applicable_products", "name category")
+      .populate("applicable_variants.product", "name category variants");
     res.json(vouchers);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch vouchers" });
   }
 });
 
-// ✅ LINK PRODUCTS
-router.post("/:id/link-products", protect, admin, async (req, res) => {
+// ✅ LINK PRODUCTS or VARIANTS
+router.post("/:id/link", protect, admin, async (req, res) => {
   try {
-    const { productIds } = req.body;
+    const { productIds = [], variantLinks = [] } = req.body;
     const voucher = await Voucher.findById(req.params.id);
     if (!voucher) return res.status(404).json({ message: "Voucher not found" });
 
-    // ✅ 1. Update voucher linkage
     voucher.applicable_products = productIds;
+    voucher.applicable_variants = variantLinks;
     await voucher.save();
 
-    // ✅ 2. Set isPromotion=true for all linked products
-    await Product.updateMany(
-      { _id: { $in: productIds } },
-      { $set: { isPromotion: true } }
-    );
+    // Apply promo flags
+    const allAffectedIds = [
+      ...productIds,
+      ...variantLinks.map((v) => v.product),
+    ];
+    await Product.updateMany({ _id: { $in: allAffectedIds } }, { $set: { isPromotion: true } });
 
-    // ✅ 3. Check for any products no longer linked by ANY voucher, remove promo
-    const allVouchers = await Voucher.find({}).select("applicable_products");
-    const allLinkedProductIds = new Set(
-      allVouchers.flatMap((v) => v.applicable_products.map((p) => p.toString()))
-    );
+    const allVouchers = await Voucher.find({}, "applicable_products applicable_variants");
+    const allLinkedIds = new Set([
+      ...allVouchers.flatMap((v) => v.applicable_products.map((p) => p.toString())),
+      ...allVouchers.flatMap((v) => v.applicable_variants.map((a) => a.product.toString())),
+    ]);
+    await Product.updateMany({ _id: { $nin: Array.from(allLinkedIds) } }, { $set: { isPromotion: false } });
 
-    await Product.updateMany(
-      { _id: { $nin: Array.from(allLinkedProductIds) } },
-      { $set: { isPromotion: false } }
-    );
-
-    res.json({
-      message: "✅ Voucher linked and products updated successfully",
-      voucher,
-    });
+    res.json({ message: "✅ Voucher linked successfully", voucher });
   } catch (err) {
-    console.error("❌ Error linking products:", err);
-    res.status(500).json({ message: "Failed to link products" });
+    console.error("❌ Link error:", err);
+    res.status(500).json({ message: "Failed to link voucher", error: err.message });
   }
 });
 
-// ✅ PUBLIC: Get all active vouchers available for given product
-router.get("/product/:productId", async (req, res) => {
+// ✅ PUBLIC: Get active vouchers for product or variant
+router.get("/product/:productId/:variantId?", async (req, res) => {
   try {
     const now = new Date();
-    const vouchers = await Voucher.find({
+    const { productId, variantId } = req.params;
+    const query = {
       is_active: true,
       start_date: { $lte: now },
       end_date: { $gte: now },
-      applicable_products: req.params.productId,
-    });
-
+      $or: [
+        { applicable_products: productId },
+        { applicable_variants: { $elemMatch: { product: productId, variant_id: variantId } } },
+      ],
+    };
+    const vouchers = await Voucher.find(query);
     res.json(vouchers);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch applicable vouchers" });

@@ -12,14 +12,12 @@ console.log(process.env.NEXT_PUBLIC_API_URL);
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://bookstore-yl7q.onrender.com";
 
-  
-
-
 const ProductManagement = () => {
   const { user } = useUser();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [productVouchers, setProductVouchers] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -43,6 +41,7 @@ const ProductManagement = () => {
     isPopular: false,
   });
 
+  // ✅ Simplified useEffect
   useEffect(() => {
     if (user?.token) {
       fetchProducts();
@@ -51,12 +50,45 @@ const ProductManagement = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // ✅ Fetch vouchers linked to each product (moved outside useEffect)
+  const fetchVouchersForProducts = async (productList) => {
+    try {
+      const map = {};
+      const res = await fetch(`${API_URL}/api/vouchers`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
+      const allVouchers = await res.json();
+
+      for (const p of productList) {
+        const linked = allVouchers.filter(
+          (v) =>
+            v.applicable_products?.some(
+              (ap) => ap === p._id || ap._id === p._id
+            ) ||
+            v.applicable_variants?.some(
+              (av) => av.product === p._id || av.product?._id === p._id
+            )
+        );
+        map[p._id] = linked;
+      }
+
+      setProductVouchers(map);
+    } catch (err) {
+      console.error("❌ Error fetching vouchers for products:", err);
+    }
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await fetchWithAuth(`${API_URL}/api/admin/products`, {}, user.token);
+      const res = await fetchWithAuth(
+        `${API_URL}/api/admin/products`,
+        {},
+        user.token
+      );
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) fetchVouchersForProducts(data);
     } catch (err) {
       console.error("❌ Fetch products failed:", err);
       setProducts([]);
@@ -76,41 +108,41 @@ const ProductManagement = () => {
   };
 
   const handleRemoveNew = async (id) => {
-  if (!window.confirm("Remove this product from New Arrivals?")) return;
-  try {
-    const res = await fetchWithAuth(
-      `${API_URL}/api/admin/products/${id}/remove-new`,
-      { method: "PATCH" },
-      user.token
-    );
-    if (!res.ok) throw new Error("Failed to remove from new arrivals");
-    alert("✅ Product removed from New Arrivals");
-    fetchProducts();
-  } catch (err) {
-    console.error("❌ Remove new failed:", err);
-    alert("Failed to update product.");
-  }
+    if (!window.confirm("Remove this product from New Arrivals?")) return;
+    try {
+      const res = await fetchWithAuth(
+        `${API_URL}/api/admin/products/${id}/remove-new`,
+        { method: "PATCH" },
+        user.token
+      );
+      if (!res.ok) throw new Error("Failed to remove from new arrivals");
+      alert("✅ Product removed from New Arrivals");
+      fetchProducts();
+    } catch (err) {
+      console.error("❌ Remove new failed:", err);
+      alert("Failed to update product.");
+    }
   };
+
   const handleRemoveVoucher = async (id) => {
-  if (!window.confirm("Remove all vouchers linked to this product?")) return;
+    if (!window.confirm("Remove all vouchers linked to this product?")) return;
 
-  try {
-    const res = await fetchWithAuth(
-      `${API_URL}/api/admin/products/${id}/remove-voucher`,
-      { method: "PATCH" },
-      user.token
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_URL}/api/admin/products/${id}/remove-voucher`,
+        { method: "PATCH" },
+        user.token
+      );
 
-    if (!res.ok) throw new Error("Failed to remove voucher links");
+      if (!res.ok) throw new Error("Failed to remove voucher links");
 
-    alert("✅ All vouchers removed from this product");
-    fetchProducts(); // Refresh table to show updated promo status
-  } catch (err) {
-    console.error("❌ Remove voucher failed:", err);
-    alert("Failed to unlink product from vouchers.");
-  }
-};
-
+      alert("✅ All vouchers removed from this product");
+      fetchProducts(); // Refresh table to show updated promo status
+    } catch (err) {
+      console.error("❌ Remove voucher failed:", err);
+      alert("Failed to unlink product from vouchers.");
+    }
+  };
 
   const generateSlug = (name, volumeNumber) => {
     const base = name
@@ -143,9 +175,9 @@ const ProductManagement = () => {
     });
   };
 
-
-
-  const selectedCategory = categories.find((cat) => cat.slug === formData.category);
+  const selectedCategory = categories.find(
+    (cat) => cat.slug === formData.category
+  );
   const subcategories = selectedCategory?.subcategories || [];
 
   const addVariant = useCallback(() => {
@@ -205,7 +237,10 @@ const ProductManagement = () => {
         file,
         preview: URL.createObjectURL(file),
       }));
-      updated[index].albumImages = [...(updated[index].albumImages || []), ...newImages];
+      updated[index].albumImages = [
+        ...(updated[index].albumImages || []),
+        ...newImages,
+      ];
       return { ...prev, variants: updated };
     });
   }, []);
@@ -403,23 +438,21 @@ const ProductManagement = () => {
             </select>
           </div>
 
-          {/* ✅ Subcategory Dropdown — always visible, even if category not yet selected */}
+          {/* ✅ Subcategory Dropdown */}
           <div className="form-group">
             <label>Subcategory</label>
             <select
               name="subcategory"
               value={formData.subcategory}
               onChange={handleInputChange}
-              disabled={!formData.category} // 🔒 disables if no category yet
+              disabled={!formData.category}
             >
-              {/* Default option */}
               <option value="">
                 {formData.category
                   ? "Select Subcategory"
                   : "Select a Category First"}
               </option>
 
-              {/* Populate only if category chosen */}
               {formData.category &&
                 selectedCategory &&
                 selectedCategory.subcategories?.map((sub) => (
@@ -429,7 +462,6 @@ const ProductManagement = () => {
                 ))}
             </select>
           </div>
-
 
           {/* Status */}
           <div className="form-group">
@@ -515,7 +547,9 @@ const ProductManagement = () => {
                 <div key={idx} className="variant-row">
                   <select
                     value={v.format}
-                    onChange={(e) => updateVariant(idx, "format", e.target.value)}
+                    onChange={(e) =>
+                      updateVariant(idx, "format", e.target.value)
+                    }
                   >
                     <option value="Paperback">Paperback</option>
                     <option value="Hardcover">Hardcover</option>
@@ -544,7 +578,9 @@ const ProductManagement = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => handleVariantMainImage(idx, e.target.files[0])}
+                    onChange={(e) =>
+                      handleVariantMainImage(idx, e.target.files[0])
+                    }
                   />
                   {v.mainPreview && (
                     <img
@@ -562,12 +598,18 @@ const ProductManagement = () => {
                     type="file"
                     multiple
                     accept="image/*"
-                    onChange={(e) => handleVariantAlbumImages(idx, e.target.files)}
+                    onChange={(e) =>
+                      handleVariantAlbumImages(idx, e.target.files)
+                    }
                   />
                   <div className="album-preview">
                     {v.albumImages.map((img, i) => (
                       <div key={i} className="album-item">
-                        <img src={img.preview} alt="Album" className="album-thumb" />
+                        <img
+                          src={img.preview}
+                          alt="Album"
+                          className="album-thumb"
+                        />
                         <button
                           type="button"
                           className="remove-btn"
@@ -626,59 +668,127 @@ const ProductManagement = () => {
             </thead>
             <tbody>
               {products.map((p) => (
-                <tr key={p._id}>
-                  <td>{p.name}</td>
-                  <td>{p.category}</td>
-                  <td>
-                    {p.variants
-                      ?.map((v) => `${v.format}: ₱${v.price}`)
-                      .join(" | ")}
-                  </td>
-                  <td>
-                    {p.variants?.reduce(
-                      (sum, v) => sum + (v.countInStock || 0),
-                      0
+                <React.Fragment key={p._id}>
+                  <tr>
+                    <td>{p.name}</td>
+                    <td>{p.category}</td>
+                    <td>
+                      {p.variants
+                        ?.map((v) => `${v.format}: ₱${v.price}`)
+                        .join(" | ")}
+                    </td>
+                    <td>
+                      {p.variants?.reduce(
+                        (sum, v) => sum + (v.countInStock || 0),
+                        0
+                      )}
+                    </td>
+                    <td>{p.status}</td>
+                    <td>
+                      <div className="featured-labels">
+                        {p.isPromotion && (
+                          <div className="featured-wrapper">
+                            <div className="featured-label promo">Promo</div>
+                            <button
+                              className="hover-action-btn"
+                              onClick={() => handleRemoveVoucher(p._id)}
+                            >
+                              Remove Voucher
+                            </button>
+                          </div>
+                        )}
+                        {p.isNewArrival && (
+                          <div className="featured-wrapper">
+                            <div className="featured-label new">New</div>
+                            <button
+                              className="hover-action-btn"
+                              onClick={() => handleRemoveNew(p._id)}
+                            >
+                              Remove New
+                            </button>
+                          </div>
+                        )}
+                        {p.isPopular && (
+                          <div className="featured-wrapper">
+                            <div className="featured-label popular">
+                              Popular
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="actions">
+                      <button
+                        className="btn-edit"
+                        onClick={() => handleEdit(p)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn-delete"
+                        onClick={() => handleDelete(p._id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* 🧾 Voucher Viewer Row */}
+                  {productVouchers[p._id] &&
+                    productVouchers[p._id].length > 0 && (
+                      <tr className="voucher-row">
+                        <td colSpan="7">
+                          <div className="voucher-list">
+                            <strong>Linked Vouchers:</strong>
+                            <ul>
+                              {productVouchers[p._id].map((v) => (
+                                <li key={v._id}>
+                                  🎟️ <b>{v.name}</b> —{" "}
+                                  {v.discount_type === "percentage"
+                                    ? `${v.discount_value}%`
+                                    : `₱${v.discount_value}`}{" "}
+                                  ({v.start_date?.slice(0, 10)} →{" "}
+                                  {v.end_date?.slice(0, 10)})
+                                  {v.applicable_variants?.some(
+                                    (av) =>
+                                      av.product === p._id ||
+                                      av.product?._id === p._id
+                                  ) && (
+                                    <ul
+                                      style={{
+                                        marginLeft: "1rem",
+                                        color: "#555",
+                                      }}
+                                    >
+                                      {v.applicable_variants
+                                        .filter(
+                                          (av) =>
+                                            av.product === p._id ||
+                                            av.product?._id === p._id
+                                        )
+                                        .map((av) => {
+                                          const variant = p.variants.find(
+                                            (vv) =>
+                                              vv._id === av.variant_id
+                                          );
+                                          return (
+                                            <li key={av.variant_id}>
+                                              ↳ Variant:{" "}
+                                              {variant?.format || "Unknown"}
+                                            </li>
+                                          );
+                                        })}
+                                    </ul>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td>{p.status}</td>
-<td>
-  <div className="featured-labels">
-    {p.isPromotion && (
-      <div className="featured-wrapper">
-        <div className="featured-label promo">Promo</div>
-        <button
-          className="hover-action-btn"
-          onClick={() => handleRemoveVoucher(p._id)}
-        >
-          Remove Voucher
-        </button>
-      </div>
-    )}
-    {p.isNewArrival && (
-      <div className="featured-wrapper">
-        <div className="featured-label new">New</div>
-        <button
-          className="hover-action-btn"
-          onClick={() => handleRemoveNew(p._id)}
-        >
-          Remove New
-        </button>
-      </div>
-    )}
-    {p.isPopular && (
-      <div className="featured-wrapper">
-        <div className="featured-label popular">Popular</div>
-      </div>
-    )}
-  </div>
-</td>
-
-                <td className="actions">
-                  <button className="btn-edit" onClick={() => handleEdit(p)}>Edit</button>
-                  <button className="btn-delete" onClick={() => handleDelete(p._id)}>Delete</button>
-                </td>
-
-                </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
