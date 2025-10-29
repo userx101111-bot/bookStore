@@ -163,13 +163,12 @@ const Homepage = () => {
   };
 
 // ============================================================
-// 🧱 Product Card (with Variants + New & Promo Badges)
+// 🧱 Product Card (with Variants + New Badge)
 // ============================================================
 const VariantCard = ({ product }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [fading, setFading] = useState(false);
-  const [hasPromo, setHasPromo] = useState(false);
   const intervalRef = useRef(null);
   const variants = product.variants || [];
   const hasVariants = variants.length > 1;
@@ -178,25 +177,6 @@ const VariantCard = ({ product }) => {
     variants[activeIndex]?.mainImage ||
     product.mainImage ||
     "/assets/placeholder-image.png";
-
-  // ✅ Fetch promo status (voucher-linked)
-  useEffect(() => {
-    const fetchVoucherStatus = async () => {
-      try {
-        const variantId = variants[activeIndex]?._id;
-        const res = await fetch(
-          `${API_URL}/api/vouchers/product/${product._id}/${variantId || ""}`
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setHasPromo(data && data.length > 0);
-        }
-      } catch (err) {
-        console.error("❌ Error checking voucher:", err);
-      }
-    };
-    fetchVoucherStatus();
-  }, [product._id, variants, activeIndex]);
 
   useEffect(() => {
     if (!hasVariants || hovered) return;
@@ -223,6 +203,7 @@ const VariantCard = ({ product }) => {
     navigate(`/product/${product.slug}/${v.format?.toLowerCase() || "standard"}`);
   };
 
+  // ✅ Check if product is a New Arrival
   const isNewArrival = product.isNewArrival || product.isCurrentlyNew;
 
   return (
@@ -240,27 +221,8 @@ const VariantCard = ({ product }) => {
           onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
         />
 
-        {/* ✅ Show badges (NEW, PROMO, or both) */}
-        <div className="badge-container">
-          {isNewArrival && (
-            <span
-              className="badge-new"
-              aria-label="New Arrival"
-              title="New Arrival"
-            >
-              NEW
-            </span>
-          )}
-          {hasPromo && (
-            <span
-              className="badge-promo"
-              aria-label="Promo Product"
-              title="Promo Product"
-            >
-              PROMO
-            </span>
-          )}
-        </div>
+        {/* ✅ Add the NEW badge here */}
+        {isNewArrival && <span className="badge-new">NEW</span>}
 
         {hasVariants && (
           <span className="variant-count">{variants.length} Variants</span>
@@ -297,7 +259,6 @@ const VariantCard = ({ product }) => {
     </div>
   );
 };
-
 
 
   // ============================================================

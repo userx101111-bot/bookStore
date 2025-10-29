@@ -148,55 +148,31 @@ router.post("/:id/link", protect, admin, async (req, res) => {
 // GET /product/:productId/:variantId?
 // ----------------------------------
 router.get("/product/:productId/:variantId?", async (req, res) => {
-  const mongoose = require("mongoose");
-
   try {
     const now = new Date();
-    let { productId, variantId } = req.params;
+    const { productId, variantId } = req.params;
 
-    // 🧠 Handle combined IDs (e.g., "prodId-varId")
-    if (productId && productId.includes("-")) {
-      const parts = productId.split("-");
-      productId = parts[0];
-      if (!variantId && parts[1]) variantId = parts[1];
-    }
-
-    // 🧠 Validate ObjectIds safely
-    const validProductId = mongoose.isValidObjectId(productId)
-      ? productId
-      : null;
-    const validVariantId =
-      variantId && mongoose.isValidObjectId(variantId) ? variantId : null;
-
-    if (!validProductId && !validVariantId) {
-      return res.status(400).json({
-        message: "Invalid product or variant ID format",
-      });
-    }
-
-    // Base query (active, in date range)
+    // Build base query for active vouchers within date range
     const baseQuery = {
       is_active: true,
       start_date: { $lte: now },
       end_date: { $gte: now },
     };
 
+    // Build OR conditions
     const orConditions = [];
 
-    // ✅ Product-level vouchers
-    if (validProductId) {
-      orConditions.push({ applicable_products: validProductId });
-      // Include vouchers tied via variant.product as well
-      orConditions.push({ "applicable_variants.product": validProductId });
-    }
+    // product-level matches
+    orConditions.push({ applicable_products: productId });
 
-    // ✅ Variant-level vouchers
-    if (validVariantId) {
+    // variant-level matches (only add if variantId provided)
+    if (variantId) {
       orConditions.push({
-        applicable_variants: {
-          $elemMatch: { variant_id: validVariantId },
-        },
+        applicable_variants: { $elemMatch: { product: productId, variant_id: variantId } },
       });
+    } else {
+      // if variantId not specified, include any voucher that links to the product via variants
+      orConditions.push({ "applicable_variants.product": productId });
     }
 
     const query = { ...baseQuery, $or: orConditions };
@@ -205,9 +181,7 @@ router.get("/product/:productId/:variantId?", async (req, res) => {
     res.json(vouchers);
   } catch (err) {
     console.error("❌ Error fetching applicable vouchers:", err);
-    res
-      .status(500)
-      .json({ message: "Failed to fetch applicable vouchers", error: err.message });
+    res.status(500).json({ message: "Failed to fetch applicable vouchers" });
   }
 });
 
