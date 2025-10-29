@@ -1419,7 +1419,7 @@
 }
 
 /* ============================
-   💎 FEATURED LABELS WITH TOP-HOVER ACTION BUTTON
+   💎 FEATURED LABELS — HOVER-SAFE VERSION
    ============================ */
 
 .featured-labels {
@@ -1433,9 +1433,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-top: 7px; /* extend hover zone upward */
+  margin-top: -20px; /* keep layout compact visually */
 }
 
-/* Label styles */
+/* Label style */
 .featured-label {
   padding: 6px 14px;
   border-radius: 6px;
@@ -1444,6 +1446,7 @@
   color: white;
   cursor: default;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
+  z-index: 2;
 }
 
 .featured-label.promo {
@@ -1456,17 +1459,16 @@
   background-color: #f39c12;
 }
 
-/* Label hover glow */
+/* Hover glow */
 .featured-wrapper:hover .featured-label {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* Hidden hover button */
+/* The popup button */
 .hover-action-btn {
   position: absolute;
-  bottom: 100%;
-  transform: translateY(10px);
+  bottom: calc(100% - 4px); /* snugly above label */
   background-color: #333;
   color: white;
   border: none;
@@ -1476,12 +1478,13 @@
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.25s ease;
   white-space: nowrap;
-  z-index: 5;
+  z-index: 1;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: translateY(6px);
 }
 
-/* Tooltip arrow pointing down */
+/* Tooltip arrow */
 .hover-action-btn::after {
   content: "";
   position: absolute;
@@ -1493,16 +1496,26 @@
   border-color: #333 transparent transparent transparent;
 }
 
-/* Hover behavior — show button */
+/* 👇 Smooth and safe hover behavior */
 .featured-wrapper:hover .hover-action-btn,
 .hover-action-btn:hover {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(-5px);
+  transform: translateY(0);
 }
 
-/* Button hover state */
+/* Button hover color */
 .hover-action-btn:hover {
   background-color: #e74c3c;
-  transform: translateY(-7px);
+  transform: translateY(-2px);
+}
+
+/* 🧠 Trick: keep hover zone stable even if mouse moves slightly out */
+.featured-wrapper::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 150%; /* extend hover area upward */
+  background: transparent;
 }
