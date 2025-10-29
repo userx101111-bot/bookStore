@@ -1425,7 +1425,7 @@
 .featured-labels {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 30px;
 }
 
 .featured-wrapper {
@@ -1435,6 +1435,7 @@
   align-items: center;
   padding-top: 7px; /* extend hover zone upward */
   margin-top: -20px; /* keep layout compact visually */
+  z-index: 10;
 }
 
 /* Label style */
@@ -1468,7 +1469,7 @@
 /* The popup button */
 .hover-action-btn {
   position: absolute;
-  bottom: calc(100% - 4px); /* snugly above label */
+  bottom: calc(100% - 4px);
   background-color: #333;
   color: white;
   border: none;
@@ -1479,8 +1480,8 @@
   opacity: 0;
   pointer-events: none;
   white-space: nowrap;
-  z-index: 1;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 9999; /* ✅ Bring to top layer */
+  transition: all 0.25s ease-in-out;
   transform: translateY(6px);
 }
 
@@ -1499,9 +1500,9 @@
 /* 👇 Smooth and safe hover behavior */
 .featured-wrapper:hover .hover-action-btn,
 .hover-action-btn:hover {
-  opacity: 1;
+  opacity: 0.9;
   pointer-events: auto;
-  transform: translateY(0);
+  transform: scale(1.05);
 }
 
 /* Button hover color */
@@ -1536,4 +1537,43 @@
 
 .voucher-list li {
   margin-bottom: 0.25rem;
+}
+/* ============================
+   🎞️ Voucher Row Animation
+   ============================ */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.voucher-row td {
+  border-top: none !important;
+}
+
+.voucher-list {
+  animation: slideDown 0.25s ease-in-out;
+  background: #fafafa;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Make variant voucher buttons smoother */
+.voucher-list .hover-action-btn {
+  background: #007bff;
+  color: #fff;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.voucher-list .hover-action-btn:hover {
+  background: #0056b3;
+  transform: scale(1.05);
 }

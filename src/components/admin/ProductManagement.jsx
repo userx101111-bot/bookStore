@@ -20,7 +20,14 @@ const ProductManagement = () => {
   const [productVouchers, setProductVouchers] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
-
+  const [openPromos, setOpenPromos] = useState({});
+    // ✅ Toggle visibility for promo details per product
+    const togglePromo = (productId) => {
+      setOpenPromos((prev) => ({
+        ...prev,
+        [productId]: !prev[productId],
+      }));
+    };
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -51,32 +58,44 @@ const ProductManagement = () => {
   }, [user]);
 
   // ✅ Fetch vouchers linked to each product (moved outside useEffect)
-  const fetchVouchersForProducts = async (productList) => {
-    try {
-      const map = {};
-      const res = await fetch(`${API_URL}/api/vouchers`, {
-        headers: { Authorization: `Bearer ${user?.token}` },
+// ✅ Fetch vouchers linked to each product (moved outside useEffect)
+const fetchVouchersForProducts = async (productList) => {
+  try {
+    const map = {};
+    const res = await fetch(`${API_URL}/api/vouchers`, {
+      headers: { Authorization: `Bearer ${user?.token}` },
+    });
+    const allVouchers = await res.json();
+
+    // normalize product ids as strings for easier comparison
+    for (const p of productList) {
+      const pIdStr = String(p._id);
+
+      const linked = (allVouchers || []).filter((v) => {
+        // product-level matches (array elements could be ObjectId, string or populated doc)
+        const productMatch =
+          (v.applicable_products || []).some(
+            (ap) => String(ap?._id ?? ap) === pIdStr
+          );
+
+        // variant-level matches (each applicable_variants item has { product, variant_id })
+        const variantMatch =
+          (v.applicable_variants || []).some(
+            (av) => String(av?.product?._id ?? av?.product) === pIdStr
+          );
+
+        return productMatch || variantMatch;
       });
-      const allVouchers = await res.json();
 
-      for (const p of productList) {
-        const linked = allVouchers.filter(
-          (v) =>
-            v.applicable_products?.some(
-              (ap) => ap === p._id || ap._id === p._id
-            ) ||
-            v.applicable_variants?.some(
-              (av) => av.product === p._id || av.product?._id === p._id
-            )
-        );
-        map[p._id] = linked;
-      }
-
-      setProductVouchers(map);
-    } catch (err) {
-      console.error("❌ Error fetching vouchers for products:", err);
+      map[p._id] = linked;
     }
-  };
+
+    setProductVouchers(map);
+  } catch (err) {
+    console.error("❌ Error fetching vouchers for products:", err);
+  }
+};
+
 
   const fetchProducts = async () => {
     try {
@@ -125,11 +144,6 @@ const ProductManagement = () => {
   };
 
 const handleRemoveVoucher = async (productId, variantId = null) => {
-  const msg = variantId
-    ? "Remove voucher linked to this specific variant?"
-    : "Remove all vouchers linked to this product?";
-  if (!window.confirm(msg)) return;
-
   try {
     const res = await fetchWithAuth(
       `${API_URL}/api/admin/products/${productId}/remove-voucher`,
@@ -143,17 +157,16 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
 
     if (!res.ok) throw new Error("Failed to remove voucher links");
 
-    alert(
-      variantId
-        ? "✅ Voucher removed from variant"
-        : "✅ All vouchers removed from product"
-    );
-    fetchProducts();
+    // ✅ Refresh and close the promo section if all vouchers are gone
+    await fetchProducts();
+    setOpenPromos((prev) => ({ ...prev, [productId]: false }));
   } catch (err) {
     console.error("❌ Remove voucher failed:", err);
     alert("Failed to unlink voucher.");
   }
 };
+
+
 
   const generateSlug = (name, volumeNumber) => {
     const base = name
@@ -677,180 +690,184 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {products.map((p) => (
-                <React.Fragment key={p._id}>
-                  <tr>
-                    <td>{p.name}</td>
-                    <td>{p.category}</td>
-                    <td>
-                      {p.variants
-                        ?.map((v) => `${v.format}: ₱${v.price}`)
-                        .join(" | ")}
-                    </td>
-                    <td>
-                      {p.variants?.reduce(
-                        (sum, v) => sum + (v.countInStock || 0),
-                        0
-                      )}
-                    </td>
-                    <td>{p.status}</td>
-                    <td>
-                      <div className="featured-labels">
-                        {p.isPromotion && (
-                          <div className="featured-wrapper">
-                            <div className="featured-label promo">Promo</div>
-                            <button
-                              className="hover-action-btn"
-                              onClick={() => handleRemoveVoucher(p._id)}
-                            >
-                              Remove Voucher
-                            </button>
-                          </div>
-                        )}
-                        {p.isNewArrival && (
-                          <div className="featured-wrapper">
-                            <div className="featured-label new">New</div>
-                            <button
-                              className="hover-action-btn"
-                              onClick={() => handleRemoveNew(p._id)}
-                            >
-                              Remove New
-                            </button>
-                          </div>
-                        )}
-                        {p.isPopular && (
-                          <div className="featured-wrapper">
-                            <div className="featured-label popular">
-                              Popular
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="actions">
-                      <button
-                        className="btn-edit"
-                        onClick={() => handleEdit(p)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn-delete"
-                        onClick={() => handleDelete(p._id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-
-                  {/* 🧾 Voucher Viewer Row */}
-{/* 🧾 Voucher Viewer Row (Enhanced Variant-Level Display) */}
-{productVouchers[p._id] && productVouchers[p._id].length > 0 && (
-  <tr className="voucher-row">
-    <td colSpan="7">
-      <div className="voucher-list">
-        <strong>Linked Vouchers:</strong>
-        <ul>
-          {productVouchers[p._id].map((v) => (
-            <li key={v._id} style={{ marginBottom: "0.8rem" }}>
-              🎟️ <b>{v.name}</b>{" "}
-              —{" "}
-              {v.discount_type === "percentage"
-                ? `${v.discount_value}%`
-                : `₱${v.discount_value}`}{" "}
-              ({v.start_date?.slice(0, 10)} → {v.end_date?.slice(0, 10)})
-              {/* ✅ Product-level voucher remove */}
-              {v.applicable_products?.some(
-                (ap) => ap === p._id || ap?._id === p._id
-              ) && (
+<tbody>
+  {products.map((p) => (
+    <React.Fragment key={p._id}>
+      <tr>
+        <td>{p.name}</td>
+        <td>{p.category}</td>
+        <td>
+          {p.variants?.map((v) => `${v.format}: ₱${v.price}`).join(" | ")}
+        </td>
+        <td>
+          {p.variants?.reduce((sum, v) => sum + (v.countInStock || 0), 0)}
+        </td>
+        <td>{p.status}</td>
+        <td>
+          <div className="featured-labels">
+            {p.isPromotion && (
+              <div className="featured-wrapper">
+                <div className="featured-label promo">Promo</div>
                 <button
                   className="hover-action-btn"
-                  style={{
-                    marginLeft: "1rem",
-                    background: "#ff6b6b",
-                    color: "#fff",
-                    borderRadius: "5px",
-                    padding: "3px 8px",
-                    fontSize: "0.8rem",
-                  }}
-                  onClick={() => handleRemoveVoucher(p._id)}
+                  onClick={() => togglePromo(p._id)}
                 >
-                  Remove Product Voucher
+                  {openPromos[p._id] ? "Close Promo" : "Remove Promo"}
                 </button>
-              )}
-
-              {/* ✅ Show linked variants under this voucher */}
-              {v.applicable_variants?.some(
-                (av) => av.product === p._id || av.product?._id === p._id
-              ) && (
-                <ul
-                  style={{
-                    marginLeft: "1.5rem",
-                    marginTop: "0.4rem",
-                    color: "#444",
-                  }}
+              </div>
+            )}
+            {p.isNewArrival && (
+              <div className="featured-wrapper">
+                <div className="featured-label new">New</div>
+                <button
+                  className="hover-action-btn"
+                  onClick={() => handleRemoveNew(p._id)}
                 >
-                  {v.applicable_variants
-                    .filter(
-                      (av) =>
-                        av.product === p._id || av.product?._id === p._id
-                    )
-                    .map((av) => {
-                      const variant = p.variants.find(
-                        (vv) => vv._id === av.variant_id
-                      );
-                      return (
-                        <li
-                          key={av.variant_id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: "4px",
-                            padding: "2px 4px",
-                            background: "#f9f9f9",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          <span>
-                            ↳ Variant:{" "}
-                            <b>{variant?.format || "Unknown"}</b>{" "}
-                            — Stock: {variant?.countInStock ?? 0}
-                          </span>
-                          <button
-                            className="hover-action-btn"
-                            style={{
-                              background: "#007bff",
-                              color: "#fff",
-                              borderRadius: "5px",
-                              padding: "3px 8px",
-                              fontSize: "0.75rem",
-                              marginLeft: "0.5rem",
-                            }}
-                            onClick={() =>
-                              handleRemoveVoucher(p._id, av.variant_id)
-                            }
-                          >
-                            Remove Variant Voucher
-                          </button>
-                        </li>
-                      );
-                    })}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </td>
-  </tr>
+                  Remove New
+                </button>
+              </div>
+            )}
+            {p.isPopular && (
+              <div className="featured-wrapper">
+                <div className="featured-label popular">Popular</div>
+              </div>
+            )}
+          </div>
+        </td>
+
+        <td className="actions">
+          <button className="btn-edit" onClick={() => handleEdit(p)}>
+            Edit
+          </button>
+          <button className="btn-delete" onClick={() => handleDelete(p._id)}>
+            Delete
+          </button>
+        </td>
+      </tr>
+
+      {/* 🧾 Voucher Row */}
+{/* 🧾 Voucher Row */}
+{openPromos[p._id] &&
+  productVouchers[p._id] &&
+  productVouchers[p._id].length > 0 && (
+    <tr className="voucher-row">
+      <td colSpan="7">
+        <div
+          className="voucher-list"
+          style={{
+            background: "#fafafa",
+            borderRadius: "8px",
+            padding: "10px 15px",
+            marginTop: "4px",
+            animation: "slideDown 0.3s ease",
+          }}
+        >
+          <strong>Linked Vouchers:</strong>
+          <ul>
+            {productVouchers[p._id].map((v) => (
+              <li key={v._id} style={{ marginBottom: "1rem" }}>
+                🎟️ <b>{v.name}</b>{" "}
+                —{" "}
+                {v.discount_type === "percentage"
+                  ? `${v.discount_value}%`
+                  : `₱${v.discount_value}`}{" "}
+                ({v.start_date?.slice(0, 10)} → {v.end_date?.slice(0, 10)})
+
+                {/* ✅ VARIANT-LEVEL LINKS */}
+{(v.applicable_variants || []).some(
+  (av) => String(av?.product?._id ?? av?.product) === String(p._id)
+) && (
+  <ul
+    style={{
+      marginLeft: "1.5rem",
+      marginTop: "0.4rem",
+      color: "#444",
+    }}
+  >
+    {(v.applicable_variants || [])
+      .filter((av) => String(av?.product?._id ?? av?.product) === String(p._id))
+      .map((av) => {
+        // find variant on product (string-safe compare)
+        const variant = (p.variants || []).find(
+          (vv) => String(vv._id) === String(av.variant_id)
+        );
+
+        const variantLabel =
+          variant?.format || av?.format || `Variant ${String(av.variant_id).slice(0, 6)}`;
+        const variantStock = variant?.countInStock ?? "N/A";
+
+        return (
+          <li
+            key={String(av.variant_id)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "4px",
+              padding: "4px 6px",
+              background: "#f9f9f9",
+              borderRadius: "5px",
+            }}
+          >
+            <span>
+              ↳ Variant: <b>{variantLabel}</b> — Stock: {variantStock}
+            </span>
+            <button
+              className="hover-action-btn"
+              style={{
+                background: "#007bff",
+                color: "#fff",
+                borderRadius: "5px",
+                padding: "3px 8px",
+                fontSize: "0.75rem",
+                marginLeft: "0.5rem",
+              }}
+              onClick={() => handleRemoveVoucher(p._id, av.variant_id)}
+            >
+              Remove Variant
+            </button>
+          </li>
+        );
+      })}
+  </ul>
 )}
 
-                </React.Fragment>
-              ))}
-            </tbody>
+                {/* ✅ FALLBACK: PRODUCT-LEVEL LINK ONLY */}
+                {(!v.applicable_variants ||
+                  v.applicable_variants.length === 0 ||
+                  !v.applicable_variants.some(
+                    (av) =>
+                      av.product === p._id || av.product?._id === p._id
+                  )) && (
+                  <div style={{ marginTop: "8px" }}>
+                    <button
+                      className="hover-action-btn"
+                      style={{
+                        background: "#e74c3c",
+                        color: "#fff",
+                        borderRadius: "5px",
+                        padding: "4px 10px",
+                        fontSize: "0.8rem",
+                      }}
+                      onClick={() => handleRemoveVoucher(p._id)}
+                    >
+                      Remove Voucher (All Variants)
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </td>
+    </tr>
+  )}
+
+    </React.Fragment>
+  ))}
+</tbody>
+
+
           </table>
         )}
       </div>
