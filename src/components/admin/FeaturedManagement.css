@@ -250,3 +250,18 @@
   gap: 10px;
   margin-top: 12px;
 }
+
+
+.voucher-summary {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.voucher-summary h4 {
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.voucher-summary p {
+  margin: 4px 0;
+}

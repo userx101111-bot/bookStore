@@ -518,3 +518,34 @@ body {
     opacity: 1;
   }
 }
+/* ✅ Badge container to align both badges */
+.badge-container {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+
+/* NEW badge (existing style, just ensure it’s positioned) */
+.badge-new {
+  background: #1e90ff;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+/* PROMO badge */
+.badge-promo {
+  background: linear-gradient(45deg, #ff4d4d, #ff9900);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}

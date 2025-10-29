@@ -253,68 +253,198 @@ const FeaturedManagement = () => {
         )}
       </div>
 
-      {/* ===================== VOUCHER MODAL ===================== */}
-      {showVoucherModal && modalProduct && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Apply Voucher for: {modalProduct.name}</h3>
+{/* ===================== VOUCHER MODAL ===================== */}
+{showVoucherModal && modalProduct && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <h3>Apply Voucher for: {modalProduct.name}</h3>
 
-            <label>🎟️ Select Voucher</label>
-            <select
-              value={selectedVoucher}
-              onChange={(e) => setSelectedVoucher(e.target.value)}
-            >
-              <option value="">-- Select Voucher --</option>
-              {vouchers.map((v) => (
-                <option key={v._id} value={v._id}>
-                  {v.name} ({v.discount_type === "percentage"
-                    ? `${v.discount_value}%`
-                    : `₱${v.discount_value}`})
-                </option>
-              ))}
-            </select>
+      {/* 🎟️ Select Voucher */}
+      <label>🎟️ Select Voucher</label>
+      <select
+        value={selectedVoucher}
+        onChange={(e) => setSelectedVoucher(e.target.value)}
+      >
+        <option value="">-- Select Voucher --</option>
+        {vouchers.map((v) => (
+          <option key={v._id} value={v._id}>
+            {v.name} (
+            {v.discount_type === "percentage"
+              ? `${v.discount_value}%`
+              : `₱${v.discount_value}`}
+            )
+          </option>
+        ))}
+      </select>
 
-            <h4>📚 Select Product Variants</h4>
-            <div className="variant-list">
-              {modalProduct.variants?.length > 0 ? (
-                modalProduct.variants.map((v) => (
-                  <label key={v._id} className="variant-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedVariants.includes(v._id)}
-                      onChange={() => handleVariantSelect(v._id)}
-                    />
-                    {v.format} – ₱{v.price}
-                  </label>
-                ))
-              ) : (
-                <p>No variants available.</p>
-              )}
-            </div>
+      {/* 📚 Variant Selection */}
+      <h4>📚 Select Product Variants</h4>
+      <div className="variant-list">
+        {modalProduct.variants?.length > 0 ? (
+          modalProduct.variants.map((v) => {
+            const price = Number(v.price) || 0;
+            const isChecked = selectedVariants.includes(v._id);
 
-            <div className="modal-actions">
-              <button
-                className="btn-submit"
-                onClick={handleApplyVoucher}
-                disabled={saving}
-              >
-                {saving ? "Applying..." : "Apply Voucher"}
-              </button>
-              <button
-                className="btn-cancel"
-                onClick={() => {
-                  setShowVoucherModal(false);
-                  setModalProduct(null);
-                  setSelectedVoucher("");
-                  setSelectedVariants([]);
+            // Compute variant-specific discount summary if selectedVoucher chosen
+            const voucher = vouchers.find((vv) => vv._id === selectedVoucher);
+            let discount = 0;
+            let finalPrice = price;
+
+            if (voucher && isChecked) {
+              if (voucher.discount_type === "percentage") {
+                discount = (voucher.discount_value / 100) * price;
+              } else if (voucher.discount_type === "fixed") {
+                discount = voucher.discount_value;
+              }
+
+              if (voucher.max_discount && discount > voucher.max_discount) {
+                discount = voucher.max_discount;
+              }
+
+              finalPrice = Math.max(price - discount, 0);
+            }
+
+            return (
+              <div
+                key={v._id}
+                className={`variant-box ${isChecked ? "selected" : ""}`}
+                style={{
+                  border: "1px solid #ccc",
+                  borderRadius: "8px",
+                  padding: "10px",
+                  marginBottom: "8px",
+                  background: isChecked ? "#eef6ff" : "#fff",
                 }}
               >
-                Cancel
-              </button>
-            </div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleVariantSelect(v._id)}
+                  />
+                  <span>
+                    {v.format} – ₱{price.toLocaleString()}
+                  </span>
+                </label>
+
+                {/* 🧾 Per-variant summary if voucher selected */}
+                {selectedVoucher && isChecked && (
+                  <div
+                    style={{
+                      marginTop: "6px",
+                      padding: "8px",
+                      background: "#f9f9f9",
+                      borderRadius: "6px",
+                      fontSize: "0.9rem",
+                      color: "#333",
+                    }}
+                  >
+                    <p style={{ margin: "2px 0" }}>
+                      Original: <b>₱{price.toLocaleString()}</b>
+                    </p>
+                    <p style={{ margin: "2px 0" }}>
+                      Discount:{" "}
+                      <b>
+                        ₱{discount.toLocaleString()}{" "}
+                        {voucher.discount_type === "percentage"
+                          ? `(${voucher.discount_value}%)`
+                          : ""}
+                      </b>
+                    </p>
+                    <p style={{ margin: "2px 0" }}>
+                      Final Price:{" "}
+                      <b style={{ color: "#007bff" }}>
+                        ₱{finalPrice.toLocaleString()}
+                      </b>
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p>No variants available.</p>
+        )}
+      </div>
+
+      {/* ✅ Optional: Grand Total Summary */}
+      {selectedVoucher && selectedVariants.length > 0 && (() => {
+        const voucher = vouchers.find((v) => v._id === selectedVoucher);
+        const selectedVarObjects = modalProduct.variants.filter((v) =>
+          selectedVariants.includes(v._id)
+        );
+
+        const originalTotal = selectedVarObjects.reduce(
+          (sum, v) => sum + (Number(v.price) || 0),
+          0
+        );
+
+        const discountedTotal = selectedVarObjects.reduce((sum, v) => {
+          const price = Number(v.price) || 0;
+          let discount = 0;
+
+          if (voucher.discount_type === "percentage") {
+            discount = (voucher.discount_value / 100) * price;
+          } else if (voucher.discount_type === "fixed") {
+            discount = voucher.discount_value;
+          }
+
+          if (voucher.max_discount && discount > voucher.max_discount) {
+            discount = voucher.max_discount;
+          }
+
+          return sum + Math.max(price - discount, 0);
+        }, 0);
+
+        return (
+          <div
+            className="voucher-summary"
+            style={{
+              background: "#f0f8f5",
+              border: "1px solid #b2d8b2",
+              borderRadius: "8px",
+              padding: "12px",
+              marginTop: "10px",
+            }}
+          >
+            <h4>💰 Summary for Selected Variants</h4>
+            <p>Original Total: <b>₱{originalTotal.toLocaleString()}</b></p>
+            <p>After Discount: <b>₱{discountedTotal.toLocaleString()}</b></p>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
+      {/* 🧩 Action Buttons */}
+      <div className="modal-actions">
+        <button
+          className="btn-submit"
+          onClick={handleApplyVoucher}
+          disabled={saving}
+        >
+          {saving ? "Applying..." : "Apply Voucher"}
+        </button>
+        <button
+          className="btn-cancel"
+          onClick={() => {
+            setShowVoucherModal(false);
+            setModalProduct(null);
+            setSelectedVoucher("");
+            setSelectedVariants([]);
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
