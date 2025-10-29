@@ -275,67 +275,36 @@ router.get("/orders", protect, admin, async (req, res) => {
   }
 });
 // ============================================================
-// 🧹 REMOVE PRODUCT OR VARIANT FROM VOUCHERS (Per Variant Support)
+// 🧩 AUTO-UNLINK ALL VOUCHERS WHEN PROMO UNCHECKED
 // ============================================================
-router.patch("/products/:id/remove-voucher", protect, admin, async (req, res) => {
+router.patch("/products/:id/unset-promo", protect, admin, async (req, res) => {
   try {
-    const { variantId } = req.body; // optional
     const productId = req.params.id;
 
-    // ✅ If a variantId is given, only unlink that variant
-    let result;
-    if (variantId) {
-      result = await Voucher.updateMany(
-        { "applicable_variants.variant_id": variantId },
-        {
-          $pull: {
-            applicable_variants: { variant_id: variantId },
-          },
-        }
-      );
-      console.log(`🧹 Removed variant ${variantId} from linked vouchers`);
-    } else {
-      // ✅ Otherwise remove all product + variant associations
-      result = await Voucher.updateMany(
-        {
-          $or: [
-            { applicable_products: productId },
-            { "applicable_variants.product": productId },
-          ],
+    // Remove all product and variant-level voucher links
+    await Voucher.updateMany(
+      {
+        $or: [
+          { applicable_products: productId },
+          { "applicable_variants.product": productId },
+        ],
+      },
+      {
+        $pull: {
+          applicable_products: productId,
+          applicable_variants: { product: productId },
         },
-        {
-          $pull: {
-            applicable_products: productId,
-            applicable_variants: { product: productId },
-          },
-        }
-      );
-      console.log(`🧹 Removed product ${productId} from all vouchers`);
-    }
+      }
+    );
 
-    // ✅ Check if any vouchers still link to the product
-    const stillLinked = await Voucher.find({
-      $or: [
-        { applicable_products: productId },
-        { "applicable_variants.product": productId },
-      ],
-    });
+    // Update the product flag
+    await Product.findByIdAndUpdate(productId, { isPromotion: false });
 
-    // ✅ Update product flag accordingly
-    await Product.findByIdAndUpdate(productId, {
-      isPromotion: stillLinked.length > 0,
-    });
-
-    res.json({
-      message: variantId
-        ? "✅ Variant unlinked from vouchers"
-        : "✅ Product unlinked from all vouchers",
-      modifiedCount: result.modifiedCount,
-    });
+    res.json({ message: "✅ Product vouchers removed and promo unset" });
   } catch (error) {
-    console.error("❌ Error unlinking variant/product from vouchers:", error);
+    console.error("❌ Error in unset-promo route:", error);
     res.status(500).json({
-      message: "Failed to unlink from vouchers",
+      message: "Failed to unlink vouchers and unset promo",
       error: error.message,
     });
   }

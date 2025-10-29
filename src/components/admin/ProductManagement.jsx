@@ -176,26 +176,46 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
     return volumeNumber ? `${base}-vol-${volumeNumber}` : base;
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => {
-      const next = {
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      };
+const handleInputChange = async (e) => {
+  const { name, value, type, checked } = e.target;
 
-      if (name === "name" || name === "volumeNumber") {
-        next.slug = generateSlug(next.name, next.volumeNumber);
+  // ✅ Handle promo uncheck: remove all linked vouchers
+  if (name === "isPromotion" && !checked && isEditing && currentProduct?._id) {
+    if (window.confirm("Remove this product from promotion and unlink all vouchers?")) {
+      try {
+        await fetchWithAuth(
+          `${API_URL}/api/admin/products/${currentProduct._id}/unset-promo`,
+          { method: "PATCH" },
+          user.token
+        );
+        alert("✅ Product promotion unset and vouchers unlinked");
+        fetchProducts();
+      } catch (err) {
+        console.error("❌ Failed to unset promo:", err);
+        alert("Failed to remove promo.");
       }
+    }
+  }
 
-      // ✅ Reset subcategory when category changes
-      if (name === "category") {
-        next.subcategory = "";
-      }
+  // Normal update
+  setFormData((prev) => {
+    const next = {
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    };
 
-      return next;
-    });
-  };
+    if (name === "name" || name === "volumeNumber") {
+      next.slug = generateSlug(next.name, next.volumeNumber);
+    }
+
+    if (name === "category") {
+      next.subcategory = "";
+    }
+
+    return next;
+  });
+};
+
 
   const selectedCategory = categories.find(
     (cat) => cat.slug === formData.category
