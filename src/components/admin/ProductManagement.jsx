@@ -124,25 +124,36 @@ const ProductManagement = () => {
     }
   };
 
-  const handleRemoveVoucher = async (id) => {
-    if (!window.confirm("Remove all vouchers linked to this product?")) return;
+const handleRemoveVoucher = async (productId, variantId = null) => {
+  const msg = variantId
+    ? "Remove voucher linked to this specific variant?"
+    : "Remove all vouchers linked to this product?";
+  if (!window.confirm(msg)) return;
 
-    try {
-      const res = await fetchWithAuth(
-        `${API_URL}/api/admin/products/${id}/remove-voucher`,
-        { method: "PATCH" },
-        user.token
-      );
+  try {
+    const res = await fetchWithAuth(
+      `${API_URL}/api/admin/products/${productId}/remove-voucher`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(variantId ? { variantId } : {}),
+      },
+      user.token
+    );
 
-      if (!res.ok) throw new Error("Failed to remove voucher links");
+    if (!res.ok) throw new Error("Failed to remove voucher links");
 
-      alert("✅ All vouchers removed from this product");
-      fetchProducts(); // Refresh table to show updated promo status
-    } catch (err) {
-      console.error("❌ Remove voucher failed:", err);
-      alert("Failed to unlink product from vouchers.");
-    }
-  };
+    alert(
+      variantId
+        ? "✅ Voucher removed from variant"
+        : "✅ All vouchers removed from product"
+    );
+    fetchProducts();
+  } catch (err) {
+    console.error("❌ Remove voucher failed:", err);
+    alert("Failed to unlink voucher.");
+  }
+};
 
   const generateSlug = (name, volumeNumber) => {
     const base = name
@@ -735,59 +746,108 @@ const ProductManagement = () => {
                   </tr>
 
                   {/* 🧾 Voucher Viewer Row */}
-                  {productVouchers[p._id] &&
-                    productVouchers[p._id].length > 0 && (
-                      <tr className="voucher-row">
-                        <td colSpan="7">
-                          <div className="voucher-list">
-                            <strong>Linked Vouchers:</strong>
-                            <ul>
-                              {productVouchers[p._id].map((v) => (
-                                <li key={v._id}>
-                                  🎟️ <b>{v.name}</b> —{" "}
-                                  {v.discount_type === "percentage"
-                                    ? `${v.discount_value}%`
-                                    : `₱${v.discount_value}`}{" "}
-                                  ({v.start_date?.slice(0, 10)} →{" "}
-                                  {v.end_date?.slice(0, 10)})
-                                  {v.applicable_variants?.some(
-                                    (av) =>
-                                      av.product === p._id ||
-                                      av.product?._id === p._id
-                                  ) && (
-                                    <ul
-                                      style={{
-                                        marginLeft: "1rem",
-                                        color: "#555",
-                                      }}
-                                    >
-                                      {v.applicable_variants
-                                        .filter(
-                                          (av) =>
-                                            av.product === p._id ||
-                                            av.product?._id === p._id
-                                        )
-                                        .map((av) => {
-                                          const variant = p.variants.find(
-                                            (vv) =>
-                                              vv._id === av.variant_id
-                                          );
-                                          return (
-                                            <li key={av.variant_id}>
-                                              ↳ Variant:{" "}
-                                              {variant?.format || "Unknown"}
-                                            </li>
-                                          );
-                                        })}
-                                    </ul>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+{/* 🧾 Voucher Viewer Row (Enhanced Variant-Level Display) */}
+{productVouchers[p._id] && productVouchers[p._id].length > 0 && (
+  <tr className="voucher-row">
+    <td colSpan="7">
+      <div className="voucher-list">
+        <strong>Linked Vouchers:</strong>
+        <ul>
+          {productVouchers[p._id].map((v) => (
+            <li key={v._id} style={{ marginBottom: "0.8rem" }}>
+              🎟️ <b>{v.name}</b>{" "}
+              —{" "}
+              {v.discount_type === "percentage"
+                ? `${v.discount_value}%`
+                : `₱${v.discount_value}`}{" "}
+              ({v.start_date?.slice(0, 10)} → {v.end_date?.slice(0, 10)})
+              {/* ✅ Product-level voucher remove */}
+              {v.applicable_products?.some(
+                (ap) => ap === p._id || ap?._id === p._id
+              ) && (
+                <button
+                  className="hover-action-btn"
+                  style={{
+                    marginLeft: "1rem",
+                    background: "#ff6b6b",
+                    color: "#fff",
+                    borderRadius: "5px",
+                    padding: "3px 8px",
+                    fontSize: "0.8rem",
+                  }}
+                  onClick={() => handleRemoveVoucher(p._id)}
+                >
+                  Remove Product Voucher
+                </button>
+              )}
+
+              {/* ✅ Show linked variants under this voucher */}
+              {v.applicable_variants?.some(
+                (av) => av.product === p._id || av.product?._id === p._id
+              ) && (
+                <ul
+                  style={{
+                    marginLeft: "1.5rem",
+                    marginTop: "0.4rem",
+                    color: "#444",
+                  }}
+                >
+                  {v.applicable_variants
+                    .filter(
+                      (av) =>
+                        av.product === p._id || av.product?._id === p._id
+                    )
+                    .map((av) => {
+                      const variant = p.variants.find(
+                        (vv) => vv._id === av.variant_id
+                      );
+                      return (
+                        <li
+                          key={av.variant_id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: "4px",
+                            padding: "2px 4px",
+                            background: "#f9f9f9",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          <span>
+                            ↳ Variant:{" "}
+                            <b>{variant?.format || "Unknown"}</b>{" "}
+                            — Stock: {variant?.countInStock ?? 0}
+                          </span>
+                          <button
+                            className="hover-action-btn"
+                            style={{
+                              background: "#007bff",
+                              color: "#fff",
+                              borderRadius: "5px",
+                              padding: "3px 8px",
+                              fontSize: "0.75rem",
+                              marginLeft: "0.5rem",
+                            }}
+                            onClick={() =>
+                              handleRemoveVoucher(p._id, av.variant_id)
+                            }
+                          >
+                            Remove Variant Voucher
+                          </button>
+                        </li>
+                      );
+                    })}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </td>
+  </tr>
+)}
+
                 </React.Fragment>
               ))}
             </tbody>

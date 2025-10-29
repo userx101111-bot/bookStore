@@ -272,47 +272,45 @@ router.get("/orders", protect, admin, async (req, res) => {
   }
 });
 // ============================================================
-// 🥇 REMOVE PRODUCT FROM NEW ARRIVALS
-// ============================================================
-router.patch("/products/:id/remove-new", protect, admin, async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
-
-    await product.removeFromNewArrivals();
-    res.json({ message: "✅ Product removed from New Arrivals", product });
-  } catch (error) {
-    console.error("❌ Error removing new arrival:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-// ============================================================
-// 🧹 REMOVE PRODUCT FROM ALL VOUCHERS
+// 🧹 REMOVE PRODUCT OR VARIANT FROM VOUCHERS (Per Variant Support)
 // ============================================================
 router.patch("/products/:id/remove-voucher", protect, admin, async (req, res) => {
   try {
+    const { variantId } = req.body; // optional
     const productId = req.params.id;
 
-    // ✅ 1. Remove product and variant references from all vouchers
-    const result = await Voucher.updateMany(
-      {
-        $or: [
-          { applicable_products: productId },
-          { "applicable_variants.product": productId },
-        ],
-      },
-      {
-        $pull: {
-          applicable_products: productId,
-          applicable_variants: { product: productId },
+    // ✅ If a variantId is given, only unlink that variant
+    let result;
+    if (variantId) {
+      result = await Voucher.updateMany(
+        { "applicable_variants.variant_id": variantId },
+        {
+          $pull: {
+            applicable_variants: { variant_id: variantId },
+          },
+        }
+      );
+      console.log(`🧹 Removed variant ${variantId} from linked vouchers`);
+    } else {
+      // ✅ Otherwise remove all product + variant associations
+      result = await Voucher.updateMany(
+        {
+          $or: [
+            { applicable_products: productId },
+            { "applicable_variants.product": productId },
+          ],
         },
-      }
-    );
+        {
+          $pull: {
+            applicable_products: productId,
+            applicable_variants: { product: productId },
+          },
+        }
+      );
+      console.log(`🧹 Removed product ${productId} from all vouchers`);
+    }
 
-    // ✅ 2. Remove isPromotion flag
-    await Product.findByIdAndUpdate(productId, { isPromotion: false });
-
-    // ✅ 3. Cleanup — check if any remain linked
+    // ✅ Check if any vouchers still link to the product
     const stillLinked = await Voucher.find({
       $or: [
         { applicable_products: productId },
@@ -320,18 +318,21 @@ router.patch("/products/:id/remove-voucher", protect, admin, async (req, res) =>
       ],
     });
 
-    if (stillLinked.length === 0) {
-      await Product.findByIdAndUpdate(productId, { isPromotion: false });
-    }
+    // ✅ Update product flag accordingly
+    await Product.findByIdAndUpdate(productId, {
+      isPromotion: stillLinked.length > 0,
+    });
 
     res.json({
-      message: "✅ Product and variants unlinked from vouchers",
+      message: variantId
+        ? "✅ Variant unlinked from vouchers"
+        : "✅ Product unlinked from all vouchers",
       modifiedCount: result.modifiedCount,
     });
   } catch (error) {
-    console.error("❌ Error unlinking product/variants from vouchers:", error);
+    console.error("❌ Error unlinking variant/product from vouchers:", error);
     res.status(500).json({
-      message: "Failed to unlink vouchers",
+      message: "Failed to unlink from vouchers",
       error: error.message,
     });
   }
