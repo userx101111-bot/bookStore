@@ -745,7 +745,7 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
         </td>
       </tr>
 
-      {/* 🧾 Voucher Row */}
+
 {/* 🧾 Voucher Row */}
 {openPromos[p._id] &&
   productVouchers[p._id] &&
@@ -773,7 +773,7 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
                   : `₱${v.discount_value}`}{" "}
                 ({v.start_date?.slice(0, 10)} → {v.end_date?.slice(0, 10)})
 
-                {/* ✅ VARIANT-LEVEL LINKS */}
+{/* ✅ VARIANT-LEVEL LINKS */}
 {(v.applicable_variants || []).some(
   (av) => String(av?.product?._id ?? av?.product) === String(p._id)
 ) && (
@@ -785,15 +785,20 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
     }}
   >
     {(v.applicable_variants || [])
-      .filter((av) => String(av?.product?._id ?? av?.product) === String(p._id))
+      .filter(
+        (av) => String(av?.product?._id ?? av?.product) === String(p._id)
+      )
       .map((av) => {
-        // find variant on product (string-safe compare)
+        // Find the matching variant within the product
         const variant = (p.variants || []).find(
           (vv) => String(vv._id) === String(av.variant_id)
         );
 
+        // Fallback labels to ensure display even if lookup fails
         const variantLabel =
-          variant?.format || av?.format || `Variant ${String(av.variant_id).slice(0, 6)}`;
+          variant?.format ||
+          av?.format ||
+          `Variant ${String(av.variant_id).slice(0, 6)}`;
         const variantStock = variant?.countInStock ?? "N/A";
 
         return (
@@ -812,6 +817,8 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
             <span>
               ↳ Variant: <b>{variantLabel}</b> — Stock: {variantStock}
             </span>
+
+            {/* ✅ Remove Variant Button */}
             <button
               className="hover-action-btn"
               style={{
@@ -865,7 +872,7 @@ const handleRemoveVoucher = async (productId, variantId = null) => {
 
     </React.Fragment>
   ))}
-</tbody>
+  </tbody>
 
 
           </table>

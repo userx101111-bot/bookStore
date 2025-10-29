@@ -135,29 +135,30 @@ router.put("/products/:id", protect, admin, upload.any(), async (req, res) => {
       variants = existing.variants;
     }
 
-    variants = variants.map((variant, idx) => {
-      const main = files.find((f) => f.fieldname === `variantMainImages_${idx}`);
-      const albums = files.filter((f) => f.fieldname === `variantAlbumImages_${idx}`);
+variants = variants.map((variant, idx) => {
+  const dbVariant = existing.variants[idx] || {};
+  const main = files.find((f) => f.fieldname === `variantMainImages_${idx}`);
+  const albums = files.filter((f) => f.fieldname === `variantAlbumImages_${idx}`);
+  const uploadedUrls = albums.map((a) => a.path);
+  const frontendAlbums = sanitizeAlbumImages(variant.albumImages);
+  const mergedAlbums = [...new Set([...frontendAlbums, ...uploadedUrls])];
 
-      const dbVariant = existing.variants[idx] || {};
-      const uploadedUrls = albums.map((a) => a.path);
-      const frontendAlbums = sanitizeAlbumImages(variant.albumImages);
-      const mergedAlbums = [...new Set([...frontendAlbums, ...uploadedUrls])];
+  return {
+    _id: dbVariant._id || new mongoose.Types.ObjectId(), // ✅ preserve or assign consistent ID
+    format: variant.format || dbVariant.format,
+    price: variant.price ?? dbVariant.price,
+    countInStock: variant.countInStock ?? dbVariant.countInStock,
+    isbn: variant.isbn || dbVariant.isbn,
+    trimSize: variant.trimSize || dbVariant.trimSize,
+    pages: variant.pages || dbVariant.pages,
+    mainImage:
+      main
+        ? main.path
+        : sanitizeAlbumImages([variant.mainImage])[0] || dbVariant.mainImage || "",
+    albumImages: mergedAlbums.filter(Boolean),
+  };
+});
 
-      return {
-        format: variant.format || dbVariant.format,
-        price: variant.price ?? dbVariant.price,
-        countInStock: variant.countInStock ?? dbVariant.countInStock,
-        isbn: variant.isbn || dbVariant.isbn,
-        trimSize: variant.trimSize || dbVariant.trimSize,
-        pages: variant.pages || dbVariant.pages,
-        mainImage:
-          main
-            ? main.path
-            : sanitizeAlbumImages([variant.mainImage])[0] || dbVariant.mainImage || "",
-        albumImages: mergedAlbums.filter(Boolean),
-      };
-    });
 
     const parseBool = (val) => val === true || val === "true" || val === "1";
 
