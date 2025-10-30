@@ -85,17 +85,40 @@ router.delete("/:id", protect, admin, async (req, res) => {
 });
 
 // ----------------------------------
-// GET ALL (admin) - populate for nicer frontend displays
+// 🟢 PUBLIC — Get all active vouchers (for homepage badges)
 // ----------------------------------
-router.get("/", protect, admin, async (req, res) => {
+router.get("/", async (req, res) => {
+  try {
+    const now = new Date();
+    const vouchers = await Voucher.find({
+      is_active: true,
+      start_date: { $lte: now },
+      end_date: { $gte: now },
+    })
+      .populate("applicable_products", "name category")
+      .populate("applicable_variants.product", "name category variants")
+      .lean();
+
+    res.json(vouchers || []);
+  } catch (err) {
+    console.error("❌ Error fetching public vouchers:", err);
+    res.status(500).json({ message: "Failed to fetch public vouchers" });
+  }
+});
+
+// ----------------------------------
+// 🔒 ADMIN — Get all vouchers (manage in dashboard)
+// ----------------------------------
+router.get("/all", protect, admin, async (req, res) => {
   try {
     const vouchers = await Voucher.find()
       .populate("applicable_products", "name category")
-      .populate("applicable_variants.product", "name category variants");
-    res.json(vouchers);
+      .populate("applicable_variants.product", "name category variants")
+      .lean();
+    res.json(vouchers || []);
   } catch (err) {
-    console.error("❌ Error fetching vouchers:", err);
-    res.status(500).json({ message: "Failed to fetch vouchers" });
+    console.error("❌ Error fetching admin vouchers:", err);
+    res.status(500).json({ message: "Failed to fetch admin vouchers" });
   }
 });
 

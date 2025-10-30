@@ -1,12 +1,11 @@
 // ============================================================
-// ✅ Homepage.jsx — Modern Scroll-Snap + Dynamic Category Colors (Fixed Hooks)
+// ✅ Homepage.jsx — Modern Scroll-Snap + Dynamic Category Colors + Voucher Discounts
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "./homepage.css";
-
 
 const normalizeSlug = (str) => str?.toLowerCase().replace(/\s+/g, "-").trim();
 
@@ -22,6 +21,8 @@ const Homepage = () => {
     newArrivals: [],
     popular: [],
   });
+  const [vouchers, setVouchers] = useState([]); // 🧩 all active vouchers
+
   const navigate = useNavigate();
 
   const API_URL =
@@ -104,6 +105,23 @@ const Homepage = () => {
     fetchFeatured();
   }, [API_URL]);
 
+  // Fetch all active vouchers once globally
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/vouchers`);
+        const data = await res.json();
+        const active = Array.isArray(data)
+          ? data.filter((v) => v.is_active)
+          : [];
+        setVouchers(active);
+      } catch (err) {
+        console.error("❌ Error fetching vouchers:", err);
+      }
+    };
+    fetchVouchers();
+  }, [API_URL]);
+
   // Disclaimer modal
   useEffect(() => {
     if (!localStorage.getItem("hasSeenDisclaimer")) setShowDisclaimer(true);
@@ -125,7 +143,7 @@ const Homepage = () => {
     return () => clearInterval(interval);
   }, [banners]);
 
-  // Helper: group variants
+  // Group variants by parent product
   const groupProductsByParent = (products) => {
     const grouped = {};
     for (const p of products) {
@@ -141,9 +159,7 @@ const Homepage = () => {
     return Object.values(grouped);
   };
 
-  // ============================================================
   // 🎨 Dynamic Category Color Helper
-  // ============================================================
   const getContrastColor = (bgColor) => {
     if (!bgColor) return "#111111";
     const hex = bgColor.replace("#", "");
@@ -163,171 +179,155 @@ const Homepage = () => {
     return { bg, text };
   };
 
-// ============================================================
-// 🧱 Product Card (with Variants + Voucher + New Badge)
-// ============================================================
-const VariantCard = ({ product }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [hovered, setHovered] = useState(false);
-  const [fading, setFading] = useState(false);
-  const [voucher, setVoucher] = useState(null);
-  const intervalRef = useRef(null);
-  const navigate = useNavigate();
-  const variants = product.variants || [];
-  const hasVariants = variants.length > 1;
-  const currentVariant = variants[activeIndex];
-  const currentImage =
-    currentVariant?.mainImage ||
-    product.mainImage ||
-    "/assets/placeholder-image.png";
+  // ============================================================
+  // 🧱 Product Card (with Variants + Voucher + New Badge)
+  // ============================================================
+  const VariantCard = ({ product }) => {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [hovered, setHovered] = useState(false);
+    const [fading, setFading] = useState(false);
+    const intervalRef = useRef(null);
+    const navigate = useNavigate();
+    const variants = product.variants || [];
+    const hasVariants = variants.length > 1;
+    const currentVariant = variants[activeIndex];
+    const currentImage =
+      currentVariant?.mainImage ||
+      product.mainImage ||
+      "/assets/placeholder-image.png";
 
-  const API_URL =
-    process.env.REACT_APP_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://bookstore-yl7q.onrender.com";
+// 🎟️ Find linked voucher (variant-specific or fallback to product-level)
+const linkedVoucher =
+  vouchers.find((v) =>
+    v.applicable_variants?.some(
+      (vv) =>
+        vv.product?._id === (product.parentId || product._id) &&
+        vv.variant_id === currentVariant?._id
+    )
+  ) ||
+  vouchers.find((v) =>
+    v.applicable_products?.some(
+      (p) => p._id === (product.parentId || product._id)
+    )
+  );
 
-  // 🧠 Fetch applicable voucher for current variant
-  useEffect(() => {
-    const fetchVoucher = async () => {
-      try {
-        const res = await fetch(
-          `${API_URL}/api/vouchers/product/${product.parentId || product._id}/${currentVariant?._id}`
-        );
-        if (!res.ok) return;
-        const vouchers = await res.json();
-        if (Array.isArray(vouchers) && vouchers.length > 0) {
-          // pick first active voucher
-          setVoucher(vouchers[0]);
-        } else {
-          setVoucher(null);
-        }
-      } catch (err) {
-        console.error("❌ Voucher fetch error:", err);
-      }
+
+    // 🌀 Cycle variants when not hovered
+    useEffect(() => {
+      if (!hasVariants || hovered) return;
+      intervalRef.current = setInterval(() => {
+        setFading(true);
+        setTimeout(() => {
+          setActiveIndex((prev) => (prev + 1) % variants.length);
+          setFading(false);
+        }, 200);
+      }, 2000);
+      return () => clearInterval(intervalRef.current);
+    }, [variants, hovered, hasVariants]);
+
+    const handleMouseEnter = () => setHovered(true);
+    const handleMouseLeave = () => setHovered(false);
+    const handleVariantHover = (idx) => {
+      setActiveIndex(idx);
+      setHovered(true);
     };
-    if (product.isPromotion) fetchVoucher();
-  }, [API_URL, product, currentVariant]);
+    const handleVariantClick = (v) =>
+      navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
+    const handleCardClick = () => {
+      const v = currentVariant || variants[0];
+      navigate(
+        `/product/${product.slug}/${v.format?.toLowerCase() || "standard"}`
+      );
+    };
 
-  // 🌀 Cycle variants when not hovered
-  useEffect(() => {
-    if (!hasVariants || hovered) return;
-    intervalRef.current = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setActiveIndex((prev) => (prev + 1) % variants.length);
-        setFading(false);
-      }, 200);
-    }, 2000);
-    return () => clearInterval(intervalRef.current);
-  }, [variants, hovered, hasVariants]);
+    // ✅ Compute discounted price
+    const originalPrice = currentVariant?.price || 0;
+    let discountedPrice = originalPrice;
+    let badgeText = "";
 
-  const handleMouseEnter = () => setHovered(true);
-  const handleMouseLeave = () => setHovered(false);
-  const handleVariantHover = (idx) => {
-    setActiveIndex(idx);
-    setHovered(true);
-  };
-  const handleVariantClick = (v) =>
-    navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
-  const handleCardClick = () => {
-    const v = currentVariant || variants[0];
-    navigate(`/product/${product.slug}/${v.format?.toLowerCase() || "standard"}`);
-  };
-
-  // ✅ Compute discounted price
-  const originalPrice = currentVariant?.price || 0;
-  let discountedPrice = originalPrice;
-  let badgeText = "";
-
-  if (voucher && voucher.is_active) {
-    const value = voucher.discount_value || 0;
-    if (voucher.discount_type === "percentage") {
-      discountedPrice = originalPrice - (originalPrice * value) / 100;
-      badgeText = `-${value}% OFF`;
-    } else if (voucher.discount_type === "fixed") {
-      discountedPrice = Math.max(originalPrice - value, 0);
-      badgeText = `-₱${value.toFixed(0)} OFF`;
+    if (linkedVoucher) {
+      const value = linkedVoucher.discount_value || 0;
+      if (linkedVoucher.discount_type === "percentage") {
+        discountedPrice = originalPrice - (originalPrice * value) / 100;
+        badgeText = `-${value}% OFF`;
+      } else if (linkedVoucher.discount_type === "fixed") {
+        discountedPrice = Math.max(originalPrice - value, 0);
+        badgeText = `₱${value.toFixed(0)} OFF`;
+      }
     }
-  }
 
-  const isNewArrival = product.isNewArrival || product.isCurrentlyNew;
+    const isNewArrival = product.isNewArrival || product.isCurrentlyNew;
 
-  return (
-    <div
-      className="product-card variant-card"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleCardClick}
-      aria-label={`Product card for ${product.name}`}
-    >
-      <div className="product-image-wrap">
-        <img
-          src={currentImage}
-          alt={product.name}
-          className={fading ? "fade" : ""}
-          onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
-        />
+    return (
+      <div
+        className="product-card variant-card"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleCardClick}
+        aria-label={`Product card for ${product.name}`}
+      >
+        <div className="product-image-wrap">
+          <img
+            src={currentImage}
+            alt={product.name}
+            className={fading ? "fade" : ""}
+            onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
+          />
 
-        {/* 🆕 NEW badge */}
-        {isNewArrival && <span className="badge-new">NEW</span>}
+{/* ✅ Unified badge container */}
+<div className="badge-container">
+  {isNewArrival && <span className="badge-new">NEW</span>}
+  {linkedVoucher && (
+    <span className="badge-voucher" title="Special offer applied!">
+      {badgeText}
+    </span>
+  )}
+</div>
 
-        {/* 💥 Voucher badge */}
-        {voucher && (
-          <span
-            className="badge-voucher"
-            aria-label={`Voucher discount ${badgeText}`}
-            title="Special offer applied!"
-          >
-            {badgeText}
-          </span>
+          {/* Variant count */}
+          {hasVariants && (
+            <span className="variant-count">{variants.length} Variants</span>
+          )}
+        </div>
+
+        <p className="product-name">{product.name}</p>
+
+        {/* 🏷️ Price display */}
+        {linkedVoucher ? (
+          <p className="price discounted">
+            <span className="original">₱{originalPrice.toFixed(2)}</span>{" "}
+            <span className="discounted">₱{discountedPrice.toFixed(2)}</span>
+          </p>
+        ) : (
+          <p className="price">₱{originalPrice.toFixed(2)}</p>
         )}
 
-        {/* Variant count */}
-        {hasVariants && (
-          <span className="variant-count">{variants.length} Variants</span>
+        {/* 🔘 Variant buttons */}
+        {variants.length > 0 && (
+          <div
+            className={`variant-buttons ${
+              variants.length === 1 ? "single-variant" : ""
+            }`}
+          >
+            {variants.map((v, idx) => (
+              <button
+                key={v._id}
+                className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
+                onMouseEnter={() => handleVariantHover(idx)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleVariantClick(v);
+                }}
+                disabled={variants.length === 1}
+              >
+                {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
+              </button>
+            ))}
+          </div>
         )}
       </div>
-
-      <p className="product-name">{product.name}</p>
-
-      {/* 🏷️ Price display */}
-      {voucher ? (
-        <p className="price discounted">
-          <span className="original">₱{originalPrice.toFixed(2)}</span>{" "}
-          <span className="discounted">₱{discountedPrice.toFixed(2)}</span>
-        </p>
-      ) : (
-        <p className="price">₱{originalPrice.toFixed(2)}</p>
-      )}
-
-      {/* 🔘 Variant buttons */}
-      {variants.length > 0 && (
-        <div
-          className={`variant-buttons ${
-            variants.length === 1 ? "single-variant" : ""
-          }`}
-        >
-          {variants.map((v, idx) => (
-            <button
-              key={v._id}
-              className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
-              onMouseEnter={() => handleVariantHover(idx)}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVariantClick(v);
-              }}
-              disabled={variants.length === 1}
-            >
-              {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-
+    );
+  };
 
   // ============================================================
   // 🧭 Product Section Component (Category-based)
