@@ -94,7 +94,6 @@ app.use((req, res, next) => {
 // 🧱 ROUTES (Order Matters!)
 // ============================================================
 app.use("/api/orders", require("./routes/orderRoutes"));
-app.use("/api/cart", require("./routes/addToCartRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/search", require("./routes/searchRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
@@ -104,6 +103,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/email", require("./routes/emailVerificationRoutes"));
 app.use("/api/users", require("./routes/accountRoutes"));
 app.use("/api/static-pages", require("./routes/staticPageRoutes"));
+app.use("/api/cart", require("./routes/cartRoutes"));
 
 // 🧾 ✅ VOUCHER ROUTES — THIS WAS MISSING
 app.use("/api/vouchers", require("./routes/voucherRoutes"));

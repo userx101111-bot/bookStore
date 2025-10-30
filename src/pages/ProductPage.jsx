@@ -1,9 +1,10 @@
 // ============================================================
 // ✅ ProductPage.jsx — Show Buy Now only if stock > 0 + True NEW/PROMO badges + Variant Discount Display
+// Updated Add to Cart button behavior (token check, use API cart response, better disabling)
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import "./ProductPage.css";
 import "./homepage.css"; // ✅ reuse badge + discount styles
@@ -14,6 +15,7 @@ const API_URL =
 const ProductPage = () => {
   const { slug, variant } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -120,72 +122,95 @@ const ProductPage = () => {
 
   const handleAlbumClick = (img) => setMainImage(img);
 
-
-
-
-
-
   // ============================================================
-// 🛒 Add to Cart + Inline Confirmation Drawer
-// ============================================================
-const [showMiniCart, setShowMiniCart] = useState(false);
-const [miniCartData, setMiniCartData] = useState(null);
-const [cartLoading, setCartLoading] = useState(false);
+  // 🛒 Add to Cart + Inline Confirmation Drawer
+  // ============================================================
+  const [showMiniCart, setShowMiniCart] = useState(false);
+  const [miniCartData, setMiniCartData] = useState(null);
+  const [cartLoading, setCartLoading] = useState(false);
 
-const handleAddToCart = async () => {
-  if (!selectedVariant) return;
+  const handleAddToCart = async () => {
+    if (!selectedVariant) return;
 
-  try {
-    setCartLoading(true);
+    try {
+      setCartLoading(true);
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Please log in to add items to your cart.");
-      return;
-    }
+      const token = localStorage.getItem("token");
 
-const cleanVariantId = selectedVariant._id.includes("-")
-  ? selectedVariant._id.split("-").pop()
-  : selectedVariant._id;
-
-const cleanProductId = product._id.includes("-")
-  ? product._id.split("-")[0]
-  : product._id;
-
-const cartItem = {
-  productId: cleanProductId,
-  variantId: cleanVariantId,
-  quantity: 1,
-};
-
-
-    const res = await axios.post(
-      `${API_URL}/api/cart/add`,
-      cartItem,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+      if (!token) {
+        // redirect user to login and remember where they came from
+        alert("Please log in to add items to your cart.");
+        navigate("/login", { state: { from: location.pathname } });
+        return;
       }
-    );
 
-    // ✅ Show mini cart drawer
-    setMiniCartData({
-      name: product.name,
-      format: selectedVariant.format,
-      image: selectedVariant.mainImage || product.image,
-      price: discountedPrice || selectedVariant.price,
-      subtotal: res.data.cartTotal || (discountedPrice || selectedVariant.price),
-    });
+      // Clean IDs (handle cases where variant or product id is composite like "parentId-variantId")
+      const cleanVariantId = String(selectedVariant._id).includes("-")
+        ? String(selectedVariant._id).split("-").pop()
+        : String(selectedVariant._id);
 
-    setShowMiniCart(true);
-    setTimeout(() => setShowMiniCart(false), 3500);
-  } catch (err) {
-    console.error("❌ Error adding to cart:", err);
-    alert("Failed to add to cart. Please try again.");
-  } finally {
-    setCartLoading(false);
-  }
-};
+      const cleanProductId = String(product._id).includes("-")
+        ? String(product._id).split("-")[0]
+        : String(product._id);
 
+      const cartItem = {
+        productId: cleanProductId,
+        variantId: cleanVariantId,
+        quantity: 1,
+      };
+
+      const res = await axios.post(`${API_URL}/api/cart/add`, cartItem, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Backend response format: { message: "Added to cart", cart }
+      const cart = res.data?.cart || null;
+
+      // Try to find the newly added item in the cart to show correct pricing/subtotal
+      let addedItem = null;
+      if (cart?.items && Array.isArray(cart.items)) {
+        addedItem = cart.items.find(
+          (i) =>
+            String(i.product) === cleanProductId &&
+            String(i.variant_id).endsWith(cleanVariantId)
+        ) || cart.items[cart.items.length - 1];
+      }
+
+      const priceToShow =
+        (addedItem && (addedItem.final_price ?? addedItem.price)) ||
+        (typeof discountedPrice !== "undefined" && discountedPrice) ||
+        selectedVariant.price;
+
+      const subtotalToShow =
+        (addedItem && (addedItem.subtotal ?? priceToShow)) ||
+        priceToShow;
+
+      setMiniCartData({
+        name: product.name,
+        format: selectedVariant.format,
+        image: selectedVariant.mainImage || product.image || "/assets/placeholder-image.png",
+        price: Number(priceToShow),
+        subtotal: Number(subtotalToShow),
+      });
+
+      setShowMiniCart(true);
+      setTimeout(() => setShowMiniCart(false), 3500);
+    } catch (err) {
+      console.error("❌ Error adding to cart:", err);
+      // If token expired or unauthorized, force login
+      if (err?.response?.status === 401) {
+        alert("Session expired. Please log in again.");
+        navigate("/login");
+        return;
+      }
+      alert("Failed to add to cart. Please try again.");
+    } finally {
+      setCartLoading(false);
+    }
+  };
 
   const handleReadMoreClick = () => {
     setShowFullDescription(true);
@@ -412,18 +437,29 @@ const cartItem = {
             )}
           </div>
 
-                        {/* 🛒 Buy Box */}
-                        <div className="buy-box inline">
-              <button
-                className="add-to-cart-btn"
-                disabled={computedStatus === "Inactive" || cartLoading}
-                onClick={handleAddToCart}
-              >
-                {cartLoading ? "Adding..." : "Add to Cart"}
-              </button>
+          {/* 🛒 Buy Box */}
+          <div className="buy-box inline">
+            <button
+              className="add-to-cart-btn"
+              disabled={
+                computedStatus === "Inactive" || variantOutOfStock || cartLoading
+              }
+              onClick={handleAddToCart}
+            >
+              {cartLoading ? "Adding..." : "Add to Cart"}
+            </button>
 
             {!variantOutOfStock && computedStatus !== "Inactive" && (
-              <button className="sign-in-button">Buy Now</button>
+              <button
+                className="sign-in-button"
+                onClick={() => {
+                  // Keep Buy Now behavior (navigate to checkout or cart) — unchanged
+                  // If you want direct checkout with single item, implement later.
+                  navigate("/cart");
+                }}
+              >
+                Buy Now
+              </button>
             )}
           </div>
         </div>
