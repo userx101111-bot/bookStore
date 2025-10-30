@@ -1,10 +1,11 @@
 // ============================================================
-// ✅ MangaCategoryPage.jsx — Dynamic Category Colors
+// ✅ MangaCategoryPage.jsx — Dynamic Category Colors + Badges
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import "./MangaCategoryPage.css";
+import "../pages/homepage.css"; // ✅ reuse badge & price CSS
 
 const normalizeSlug = (str) => str?.toLowerCase().replace(/\s+/g, "-").trim();
 
@@ -14,6 +15,7 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
   const [productsData, setProductsData] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [vouchers, setVouchers] = useState([]); // ✅ new
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOption, setSortOption] = useState("default");
@@ -35,6 +37,21 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
       }
     };
     fetchCategories();
+  }, [API_URL]);
+
+  // Fetch vouchers
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/vouchers`);
+        const data = await res.json();
+        const active = Array.isArray(data) ? data.filter((v) => v.is_active) : [];
+        setVouchers(active);
+      } catch (err) {
+        console.error("Error fetching vouchers:", err);
+      }
+    };
+    fetchVouchers();
   }, [API_URL]);
 
   // Fetch products
@@ -106,36 +123,28 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
     return Object.values(grouped);
   };
 
-// ============================================================
-// 🎨 Dynamic Category Color Helper — with Auto Contrast
-// ============================================================
+  const getContrastColor = (bgColor) => {
+    if (!bgColor) return "#111111";
+    const hex = bgColor.replace("#", "");
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 160 ? "#111111" : "#ffffff";
+  };
 
-// Helper: determine readable text color (black or white)
-// based on background brightness using YIQ formula.
-const getContrastColor = (bgColor) => {
-  if (!bgColor) return "#111111"; // default fallback to dark text
-  const hex = bgColor.replace("#", "");
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  const getCategoryColors = (slug) => {
+    const found = categories.find(
+      (cat) => normalizeSlug(cat.name) === normalizeSlug(slug)
+    );
+    const bg = found?.color || "#f4f4f4";
+    const text = found?.textColor || getContrastColor(bg);
+    return { bg, text };
+  };
 
-  // If the background is light → return dark text; otherwise → white text.
-  return brightness > 160 ? "#111111" : "#ffffff";
-};
-
-// Main color getter (with admin override + fallback auto-contrast)
-const getCategoryColors = (slug) => {
-  const found = categories.find(
-    (cat) => normalizeSlug(cat.name) === normalizeSlug(slug)
-  );
-
-  const bg = found?.color || "#f4f4f4"; // use admin color or default pastel gray
-  const text = found?.textColor || getContrastColor(bg); // admin text or auto-contrast
-  return { bg, text };
-};
-
-
+  // ============================================================
+  // 🧱 VariantCard — with New + Voucher badges
+  // ============================================================
   const VariantCard = ({ product }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [hovered, setHovered] = useState(false);
@@ -144,8 +153,9 @@ const getCategoryColors = (slug) => {
 
     const variants = product.variants || [];
     const hasVariants = variants.length > 1;
+    const currentVariant = variants[activeIndex];
     const currentImage =
-      variants[activeIndex]?.mainImage ||
+      currentVariant?.mainImage ||
       product.mainImage ||
       "/assets/placeholder-image.png";
 
@@ -161,55 +171,90 @@ const getCategoryColors = (slug) => {
       return () => clearInterval(intervalRef.current);
     }, [variants, hovered, hasVariants]);
 
-    const handleMouseEnter = () => setHovered(true);
-    const handleMouseLeave = () => setHovered(false);
-    const handleVariantHover = (idx) => {
-      setActiveIndex(idx);
-      setHovered(true);
-    };
     const handleVariantClick = (v) =>
       navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
-    const handleCardClick = () => {
-      const v = variants[activeIndex] || variants[0];
-      navigate(
-        `/product/${product.slug}/${v.format?.toLowerCase() || "standard"}`
+
+    // ✅ Discount & voucher logic
+    const cleanParentId = (product.parentId || product._id)?.split("-")[0];
+    const cleanVariantId = currentVariant?._id?.split("-").pop();
+    const linkedVoucher =
+      vouchers.find((v) =>
+        v.applicable_variants?.some((vv) => {
+          const prodId = vv.product?._id || vv.product;
+          const variantId = vv.variant_id;
+          return prodId === cleanParentId && variantId === cleanVariantId;
+        })
+      ) ||
+      vouchers.find((v) =>
+        v.applicable_products?.some((p) => (p._id || p) === cleanParentId)
       );
-    };
+
+    const originalPrice = currentVariant?.price || product.price || 0;
+    let discountedPrice = originalPrice;
+    let badgeText = "";
+
+    if (linkedVoucher) {
+      const value = linkedVoucher.discount_value || 0;
+      if (linkedVoucher.discount_type === "percentage") {
+        discountedPrice = originalPrice - (originalPrice * value) / 100;
+        badgeText = `-${value}% OFF`;
+      } else if (linkedVoucher.discount_type === "fixed") {
+        discountedPrice = Math.max(originalPrice - value, 0);
+        badgeText = `₱${value.toFixed(0)} OFF`;
+      }
+    }
 
     return (
       <div
         className="product-card variant-card"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        onClick={() => navigate(`/product/${product.slug}`)}
       >
-        <div
-          className="product-image-wrap"
-          onClick={() => navigate(`/product/${product.slug}`)}
-        >
+        <div className="product-image-wrap">
           <img
             src={currentImage}
             alt={product.name}
             className={fading ? "fade" : ""}
             onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
           />
+
+          {/* ✅ BADGES */}
+          {product.isNewArrival && (
+            <span className="badge-new" title="New arrival">
+              NEW
+            </span>
+          )}
+          {linkedVoucher && (
+            <span className="badge-voucher" title="Special offer applied!">
+              {badgeText}
+            </span>
+          )}
+
           {hasVariants && (
             <span className="variant-count">{variants.length} Variants</span>
           )}
         </div>
+
         <p className="product-name">{product.name}</p>
-        <p className="price">
-          ₱
-          {variants[activeIndex]?.price?.toFixed(2) ||
-            product.price?.toFixed(2) ||
-            "N/A"}
-        </p>
+
+        {/* 💰 Price */}
+        {linkedVoucher ? (
+          <p className="price discounted">
+            <span className="original">₱{originalPrice.toFixed(2)}</span>
+            <span className="discounted">₱{discountedPrice.toFixed(2)}</span>
+          </p>
+        ) : (
+          <p className="price">₱{originalPrice.toFixed(2)}</p>
+        )}
+
         {hasVariants && (
           <div className="variant-buttons">
             {variants.map((v, idx) => (
               <button
                 key={v._id}
                 className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
-                onMouseEnter={() => handleVariantHover(idx)}
+                onMouseEnter={() => setActiveIndex(idx)}
                 onClick={() => handleVariantClick(v)}
               >
                 {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
@@ -277,15 +322,15 @@ const getCategoryColors = (slug) => {
         </select>
       </div>
 
-        <div
-          className="product-section"
-          style={{
-            "--section-color": bg,
-            "--section-text-color": text,
-            backgroundColor: `color-mix(in srgb, ${bg} 20%, white)`,
-            color: text,
-          }}
-        >
+      <div
+        className="product-section"
+        style={{
+          "--section-color": bg,
+          "--section-text-color": text,
+          backgroundColor: `color-mix(in srgb, ${bg} 20%, white)`,
+          color: text,
+        }}
+      >
         <div className="product-list">
           {groupedProducts.length > 0 ? (
             groupedProducts.map((p) => <VariantCard key={p._id} product={p} />)

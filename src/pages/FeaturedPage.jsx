@@ -1,17 +1,18 @@
 // ============================================================
-// ✅ FeaturedPage.jsx — Unified Text + Button Highlight Behavior
+// ✅ FeaturedPage.jsx — Unified with Badges + Discount Display
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./FeaturedPage.css";
-
+import "../pages/homepage.css"; // ✅ reuse badge & discount styles
 
 const normalizeSlug = (str) => str?.toLowerCase().replace(/\s+/g, "-").trim();
 
 const FeaturedPage = ({ featureType }) => {
   const navigate = useNavigate();
   const [productsData, setProductsData] = useState([]);
+  const [vouchers, setVouchers] = useState([]); // ✅ new
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOption, setSortOption] = useState("default");
@@ -21,9 +22,6 @@ const FeaturedPage = ({ featureType }) => {
     process.env.NEXT_PUBLIC_API_URL ||
     "https://bookstore-yl7q.onrender.com";
 
-  // ===============================
-  // 📦 Fetch featured products
-  // ===============================
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
@@ -31,12 +29,10 @@ const FeaturedPage = ({ featureType }) => {
         const res = await fetch(`${API_URL}/api/products/featured`);
         if (!res.ok) throw new Error("Failed to fetch featured products");
         const data = await res.json();
-
         let selected = [];
         if (featureType === "promotions") selected = data.promotions || [];
         else if (featureType === "new-arrivals") selected = data.newArrivals || [];
         else if (featureType === "popular-products") selected = data.popular || [];
-
         setProductsData(selected);
       } catch (err) {
         console.error("Error fetching featured:", err);
@@ -48,9 +44,21 @@ const FeaturedPage = ({ featureType }) => {
     fetchFeatured();
   }, [API_URL, featureType]);
 
-  // ===============================
-  // ⚙️ Sorting logic
-  // ===============================
+  // Fetch vouchers
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/vouchers`);
+        const data = await res.json();
+        const active = Array.isArray(data) ? data.filter((v) => v.is_active) : [];
+        setVouchers(active);
+      } catch (err) {
+        console.error("Error fetching vouchers:", err);
+      }
+    };
+    fetchVouchers();
+  }, [API_URL]);
+
   const handleSortChange = (e) => setSortOption(e.target.value);
 
   const getSortedProducts = () => {
@@ -64,9 +72,6 @@ const FeaturedPage = ({ featureType }) => {
     }
   };
 
-  // ===============================
-  // 🧩 Group Variants by Parent
-  // ===============================
   const groupProductsByParent = (products) => {
     const grouped = {};
     for (const p of products) {
@@ -82,19 +87,16 @@ const FeaturedPage = ({ featureType }) => {
     return Object.values(grouped);
   };
 
-  // ===============================
-  // 💳 VariantCard Component
-  // ===============================
   const VariantCard = ({ product }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [hovered, setHovered] = useState(false);
     const [fading, setFading] = useState(false);
     const intervalRef = useRef(null);
-
     const variants = product.variants || [];
     const hasVariants = variants.length > 1;
+    const currentVariant = variants[activeIndex];
     const currentImage =
-      variants[activeIndex]?.mainImage ||
+      currentVariant?.mainImage ||
       product.mainImage ||
       "/assets/placeholder-image.png";
 
@@ -110,19 +112,48 @@ const FeaturedPage = ({ featureType }) => {
       return () => clearInterval(intervalRef.current);
     }, [variants, hovered, hasVariants]);
 
-    const handleVariantClick = (v) =>
-      navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
-    const handleCardClick = () => {
-      const v = variants[activeIndex] || variants[0];
-      navigate(`/product/${product.slug}/${v.format?.toLowerCase() || "standard"}`);
-    };
+    // Voucher & badge logic
+    const cleanParentId = (product.parentId || product._id)?.split("-")[0];
+    const cleanVariantId = currentVariant?._id?.split("-").pop();
+    const linkedVoucher =
+      vouchers.find((v) =>
+        v.applicable_variants?.some((vv) => {
+          const prodId = vv.product?._id || vv.product;
+          const variantId = vv.variant_id;
+          return prodId === cleanParentId && variantId === cleanVariantId;
+        })
+      ) ||
+      vouchers.find((v) =>
+        v.applicable_products?.some((p) => (p._id || p) === cleanParentId)
+      );
+
+    const originalPrice = currentVariant?.price || product.price || 0;
+    let discountedPrice = originalPrice;
+    let badgeText = "";
+
+    if (linkedVoucher) {
+      const value = linkedVoucher.discount_value || 0;
+      if (linkedVoucher.discount_type === "percentage") {
+        discountedPrice = originalPrice - (originalPrice * value) / 100;
+        badgeText = `-${value}% OFF`;
+      } else if (linkedVoucher.discount_type === "fixed") {
+        discountedPrice = Math.max(originalPrice - value, 0);
+        badgeText = `₱${value.toFixed(0)} OFF`;
+      }
+    }
 
     return (
       <div
         className="product-card variant-card"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={handleCardClick}
+        onClick={() =>
+          navigate(
+            `/product/${product.slug}/${
+              currentVariant?.format?.toLowerCase() || "standard"
+            }`
+          )
+        }
       >
         <div className="product-image-wrap">
           <img
@@ -131,95 +162,52 @@ const FeaturedPage = ({ featureType }) => {
             className={fading ? "fade" : ""}
             onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
           />
+
+          {/* ✅ BADGES */}
+          {product.isNewArrival && (
+            <span className="badge-new" title="New arrival">
+              NEW
+            </span>
+          )}
+          {linkedVoucher && (
+            <span className="badge-voucher" title="Special offer applied!">
+              {badgeText}
+            </span>
+          )}
+
           {hasVariants && (
             <span className="variant-count">{variants.length} Variants</span>
           )}
         </div>
-        <p className="product-name">{product.name}</p>
-        <p className="price">
-          ₱
-          {variants[activeIndex]?.price?.toFixed(2) ||
-            product.price?.toFixed(2) ||
-            "N/A"}
-        </p>
 
-        {variants.length > 0 && (
-          <div className="variant-buttons">
-            {variants.map((v, idx) => (
-              <button
-                key={v._id}
-                className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
-                onMouseEnter={() => setActiveIndex(idx)}
-                onClick={() => handleVariantClick(v)}
-              >
-                {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
-              </button>
-            ))}
-          </div>
+        <p className="product-name">{product.name}</p>
+
+        {/* 💰 Price */}
+        {linkedVoucher ? (
+          <p className="price discounted">
+            <span className="original">₱{originalPrice.toFixed(2)}</span>
+            <span className="discounted">₱{discountedPrice.toFixed(2)}</span>
+          </p>
+        ) : (
+          <p className="price">₱{originalPrice.toFixed(2)}</p>
         )}
       </div>
     );
   };
 
-  // ===============================
-  // 🎨 Featured Section Colors
-  // ===============================
-  const getFeaturedStyle = () => {
-    switch (featureType) {
-      case "promotions":
-        return {
-          background: "linear-gradient(135deg, #f87171 0%, #fca5a5 100%)",
-          color: "#000",
-          "--highlight": "#f87171",
-        };
-      case "new-arrivals":
-        return {
-          background: "linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%)",
-          color: "#000",
-          "--highlight": "#60a5fa",
-        };
-      case "popular-products":
-        return {
-          background: "linear-gradient(135deg, #facc15 0%, #fde68a 100%)",
-          color: "#000",
-          "--highlight": "#facc15",
-        };
-      default:
-        return { background: "#f4f4f4", color: "#000", "--highlight": "#111" };
-    }
-  };
-
-  const { background, color, "--highlight": highlight } = getFeaturedStyle();
+  const groupedProducts = groupProductsByParent(getSortedProducts());
 
   if (loading) return <div className="loading">Loading featured products...</div>;
   if (error) return <div className="error-message">{error}</div>;
 
-  const groupedProducts = groupProductsByParent(getSortedProducts());
-
-  const headingMap = {
-    "promotions": "PROMOTIONS",
-    "new-arrivals": "NEW ARRIVALS",
-    "popular-products": "POPULAR PRODUCTS",
-  };
-  const heading = headingMap[featureType] || "FEATURED PRODUCTS";
-
   return (
     <div className="app">
-      <div
-        className={`product-section featured-page-section ${featureType}`}
-        style={{
-          background,
-          color,
-          "--section-color": background,
-          "--section-text-color": color,
-          "--highlight": highlight,
-        }}
-      >
-        <h2 className="section-heading" style={{ color: "#000" }}>
-          {heading}
+      <div className={`product-section featured-page-section ${featureType}`}>
+        <h2 className="section-heading">
+          {featureType.replace("-", " ").toUpperCase()}
         </h2>
 
-        <div className="sorting-controls" style={{ color: "#000" }}>
+        <div className="sorting-controls">
           <label htmlFor="sort-select">Sort by:</label>
           <select id="sort-select" value={sortOption} onChange={handleSortChange}>
             <option value="default">Default</option>
@@ -232,9 +220,7 @@ const FeaturedPage = ({ featureType }) => {
           {groupedProducts.length > 0 ? (
             groupedProducts.map((p) => <VariantCard key={p._id} product={p} />)
           ) : (
-            <p className="no-products" style={{ color: "#000" }}>
-              No products found.
-            </p>
+            <p className="no-products">No products found.</p>
           )}
         </div>
       </div>
