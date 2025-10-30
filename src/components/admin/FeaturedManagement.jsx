@@ -57,19 +57,63 @@ const FeaturedManagement = () => {
       console.error("❌ Fetch vouchers failed:", err);
     }
   };
+  // ✅ Update a single flag (New, Popular, etc.)
+const updateProductFlag = async (productId, flag, value) => {
+  try {
+    const res = await fetchWithAuth(
+      `${API_URL}/api/admin/products/${productId}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [flag]: value }),
+      },
+      user.token
+    );
 
-  const toggleFlag = async (index, flag) => {
-    const product = filteredProducts[index];
-    const updatedProducts = [...filteredProducts];
-    updatedProducts[index] = { ...product, [flag]: !product[flag] };
-    setFilteredProducts(updatedProducts);
+    if (!res.ok) throw new Error("Failed to update product flag");
+    console.log(`✅ ${flag} updated successfully`);
+  } catch (err) {
+    console.error("❌ Error updating flag:", err);
+    alert("Failed to update product flag.");
+  }
+};
 
-    // 🧩 If setting promo ON for a product that has no voucher -> open modal
-    if (flag === "isPromotion" && !product.isPromotion) {
-      setModalProduct(product);
-      setShowVoucherModal(true);
+
+const toggleFlag = async (index, flag) => {
+  const product = filteredProducts[index];
+  const newValue = !product[flag];
+  const updatedProducts = [...filteredProducts];
+  updatedProducts[index] = { ...product, [flag]: newValue };
+  setFilteredProducts(updatedProducts);
+
+  // ✅ If setting promo ON and has no voucher → open voucher modal
+  if (flag === "isPromotion" && newValue) {
+    setModalProduct(product);
+    setShowVoucherModal(true);
+    return;
+  }
+
+  // ✅ If unchecking promo → call backend to unlink vouchers & unset promo
+  if (flag === "isPromotion" && !newValue) {
+    try {
+      const res = await fetchWithAuth(
+        `${API_URL}/api/admin/products/${product._id}/unset-promo`,
+        { method: "PATCH" },
+        user.token
+      );
+      if (!res.ok) throw new Error("Failed to unset promo");
+      console.log("✅ Promo unset and vouchers unlinked");
+    } catch (err) {
+      console.error("❌ Error unsetting promo:", err);
+      alert("Failed to remove promo status.");
     }
-  };
+    return;
+  }
+
+  // ✅ For normal flags (New, Popular) → update product flag
+  await updateProductFlag(product._id, flag, newValue);
+};
+
 
   const handleApplyVoucher = async () => {
     try {

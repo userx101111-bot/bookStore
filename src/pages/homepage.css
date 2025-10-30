@@ -24,6 +24,7 @@ body {
   width: 100%;
   height: 90vh;
   overflow: hidden;
+  z-index: 0; /* keep carousel behind */
 }
 
 .carousel-slide {
@@ -32,12 +33,14 @@ body {
   opacity: 0;
   transform: scale(1.05);
   transition: opacity 1s ease, transform 1.5s ease;
+  pointer-events: none; /* prevent blocking */
 }
 
 .carousel-slide.active {
   opacity: 1;
   transform: scale(1);
   z-index: 1;
+  pointer-events: auto; /* only active slide clickable */
 }
 
 .carousel-slide::before {
@@ -90,9 +93,19 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
 }
+
 .carousel-btn:hover {
   background-color: #222;
   transform: scale(1.05);
+}
+
+/* ============================================================
+   🧩 FIX — Ensure Featured & Product Sections Are Clickable
+   ============================================================ */
+.featured-wrapper,
+.product-section {
+  position: relative;
+  z-index: 2; /* ensure above carousel */
 }
 
 /* ============================================================
@@ -158,14 +171,17 @@ body {
 .featured-wrapper {
   margin-top: 2rem;
 }
+
 .featured.promotions {
   background: linear-gradient(135deg, #f87171 0%, #fca5a5 100%);
   color: #fff;
 }
+
 .featured.new-arrivals {
   background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
   color: #fff;
 }
+
 .featured.popular {
   background: linear-gradient(135deg, #facc15 0%, #fde68a 100%);
   color: #000;
@@ -186,10 +202,9 @@ body {
    🧱 PRODUCT CARD
    ============================================================ */
 .product-card {
+  flex: 0 0 260px; /* ✅ Fixed width: prevents shrinking */
   background: #fff;
   padding: 1rem;
-  width: 100%;
-  max-width: 280px;
   text-align: left;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -197,6 +212,8 @@ body {
   transition: transform 0.3s, box-shadow 0.3s;
   cursor: pointer;
 }
+
+
 .product-card:hover {
   transform: translateY(-5px) scale(1.03);
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
@@ -207,6 +224,7 @@ body {
   width: 100%;
   padding-top: 100%;
 }
+
 .product-image-wrap img {
   position: absolute;
   top: 0;
@@ -217,12 +235,15 @@ body {
   border-radius: 8px;
   transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
 }
+
 .product-image-wrap img.fade {
   opacity: 0;
 }
+
 .product-card:hover .product-image-wrap img {
   transform: scale(1.02);
 }
+
 .variant-count {
   position: absolute;
   top: 8px;
@@ -241,6 +262,7 @@ body {
   font-size: 1.1rem;
   color: #1a1a1a;
 }
+
 .price {
   font-weight: bold;
   color: var(--section-text-color, #e11d48);
@@ -264,6 +286,7 @@ body {
   z-index: 9999;
   padding: 1rem;
 }
+
 .disclaimer-box {
   background-color: #fff;
   padding: 2rem;
@@ -273,22 +296,26 @@ body {
   max-width: 500px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
 }
+
 .disclaimer-logo {
   width: 140px;
   height: auto;
   margin: 0 auto 20px;
   display: block;
 }
+
 .disclaimer-header {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 10px;
 }
+
 .disclaimer-text {
   font-size: 1rem;
   font-weight: bold;
   margin-bottom: 25px;
 }
+
 .disclaimer-button {
   padding: 10px 24px;
   font-size: 16px;
@@ -299,6 +326,7 @@ body {
   cursor: pointer;
   transition: background 0.3s;
 }
+
 .disclaimer-button:hover {
   background-color: #373737;
 }
@@ -316,6 +344,7 @@ body {
   font-weight: 500;
   position: relative;
 }
+
 .loading::after {
   content: '';
   display: block;
@@ -328,6 +357,7 @@ body {
   position: absolute;
   margin-top: 60px;
 }
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -343,6 +373,7 @@ body {
   gap: 6px;
   margin-top: 10px;
 }
+
 .variant-btn {
   flex: 1 1 45%;
   background-color: #f3f4f6;
@@ -356,6 +387,7 @@ body {
   transition: all 0.25s ease;
   white-space: nowrap;
 }
+
 .variant-btn:hover,
 .variant-btn.active {
   background-color: var(--section-text-color, #111);
@@ -363,20 +395,24 @@ body {
   border-color: var(--section-text-color, #111);
   transform: translateY(-2px);
 }
+
 .variant-btn.active {
   background-color: var(--section-color, #2563eb);
   color: #fff;
   border-color: var(--section-color, #2563eb);
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
 }
+
 .variant-btn:active {
   transform: scale(0.97);
 }
+
 .variant-buttons.single-variant {
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
 .variant-buttons.single-variant .variant-btn {
   pointer-events: none;
   opacity: 0.9;
@@ -386,6 +422,7 @@ body {
   width: 90%;
   text-align: center;
 }
+
 .variant-buttons.single-variant .variant-btn.active {
   background-color: #f2f2f2;
   border-color: #ddd;
@@ -406,20 +443,25 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #ccc transparent;
 }
+
 .product-scroll.modern::-webkit-scrollbar {
   height: 6px;
 }
+
 .product-scroll.modern::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
+
 .product-scroll.modern .product-card {
   scroll-snap-align: start;
 }
+
 .scroll-controls {
   display: flex;
   gap: 0.5rem;
 }
+
 .scroll-btn {
   background: color-mix(in srgb, var(--section-text-color) 25%, white);
   border: none;
@@ -432,6 +474,7 @@ body {
   cursor: pointer;
   transition: all 0.25s ease;
 }
+
 .scroll-btn:hover {
   transform: scale(1.1);
   background: color-mix(in srgb, var(--section-color, #ccc) 60%, white);
@@ -444,44 +487,56 @@ body {
   .carousel-wrapper {
     height: 60vh;
   }
+
   .section-heading {
     font-size: 1.8rem;
   }
 }
+
 @media (max-width: 768px) {
   .carousel-wrapper {
     height: 50vh;
   }
+
   .product-section {
     padding: 1.5rem 0.5rem;
   }
+
   .section-heading {
     font-size: 1.5rem;
   }
+
   .product-card {
     max-width: 220px;
   }
 }
+
 @media (max-width: 576px) {
   .carousel-wrapper {
     height: 40vh;
   }
+
   .section-heading {
     font-size: 1.3rem;
     text-align: center;
   }
+
   .product-card {
     max-width: 180px;
   }
+
   .disclaimer-box {
     padding: 1.5rem;
   }
+
   .disclaimer-header {
     font-size: 1.3rem;
   }
+
   .disclaimer-text {
     font-size: 0.9rem;
   }
+
   .disclaimer-button {
     padding: 8px 20px;
     font-size: 14px;
@@ -489,8 +544,8 @@ body {
 }
 
 /* ============================================================
-   🆕 New Arrival Badge
-============================================================ */
+   🆕 NEW & PROMO BADGES — Separate Corners
+   ============================================================ */
 .badge-new {
   position: absolute;
   top: 10px;
@@ -503,7 +558,24 @@ body {
   border-radius: 4px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  z-index: 5;
+  animation: popIn 0.3s ease-in-out;
+}
+
+.badge-voucher {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, #ff5f6d, #ffc371);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   z-index: 5;
   animation: popIn 0.3s ease-in-out;
 }
@@ -518,84 +590,10 @@ body {
     opacity: 1;
   }
 }
-/* ✅ Badge container to align both badges */
-.badge-container {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  display: flex;
-  gap: 6px;
-  z-index: 5;
-}
 
-/* NEW badge (existing style, just ensure it’s positioned) */
-.badge-new {
-  background: #1e90ff;
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 6px;
-  text-transform: uppercase;
-}
-
-/* PROMO badge */
-.badge-promo {
-  background: linear-gradient(45deg, #ff4d4d, #ff9900);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 6px;
-  text-transform: uppercase;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* === Voucher Badge === */
-.badge-voucher {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  background: linear-gradient(135deg, #ff5f6d, #ffc371);
-  color: #fff;
-  font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  z-index: 5;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-}
-
+/* ============================================================
+   💰 PRICE STYLING (Discounted)
+   ============================================================ */
 .price.discounted {
   display: flex;
   flex-direction: column;
@@ -613,12 +611,4 @@ body {
   font-weight: bold;
   font-size: 1.05rem;
 }
-
-
-
-
-
-
-
-
 
