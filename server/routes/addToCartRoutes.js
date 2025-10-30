@@ -10,6 +10,10 @@ const { protect } = require("../middleware/authMiddleware");
 // ============================================================
 router.post("/add", protect, async (req, res) => {
   try {
+    console.log("🟢 Incoming /api/cart/add");
+    console.log("req.user:", req.user);
+    console.log("req.body:", req.body);
+
     const userId = req.user._id;
     const { productId, variantId, quantity = 1 } = req.body;
 
@@ -55,6 +59,7 @@ router.post("/add", protect, async (req, res) => {
       cartTotal: cart.totalPrice,
       cart,
     });
+
   } catch (err) {
     console.error("❌ Error adding to cart:", err);
     res.status(500).json({ message: "Server error adding to cart" });

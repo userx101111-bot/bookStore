@@ -138,18 +138,36 @@ const handleAddToCart = async () => {
   try {
     setCartLoading(true);
 
-    const cartItem = {
-      productId: product._id,
-      variantId: selectedVariant._id,
-      quantity: 1,
-    };
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please log in to add items to your cart.");
+      return;
+    }
 
-    // ✅ POST to backend cart route
-    const res = await axios.post(`${API_URL}/api/cart/add`, cartItem, {
-      withCredentials: true,
-    });
+const cleanVariantId = selectedVariant._id.includes("-")
+  ? selectedVariant._id.split("-").pop()
+  : selectedVariant._id;
 
-    // ✅ Show confirmation popover
+const cleanProductId = product._id.includes("-")
+  ? product._id.split("-")[0]
+  : product._id;
+
+const cartItem = {
+  productId: cleanProductId,
+  variantId: cleanVariantId,
+  quantity: 1,
+};
+
+
+    const res = await axios.post(
+      `${API_URL}/api/cart/add`,
+      cartItem,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    // ✅ Show mini cart drawer
     setMiniCartData({
       name: product.name,
       format: selectedVariant.format,
@@ -159,12 +177,10 @@ const handleAddToCart = async () => {
     });
 
     setShowMiniCart(true);
-
-    // Auto-hide after 3.5s
     setTimeout(() => setShowMiniCart(false), 3500);
   } catch (err) {
     console.error("❌ Error adding to cart:", err);
-    alert("Failed to add to cart. Please sign in first or try again.");
+    alert("Failed to add to cart. Please try again.");
   } finally {
     setCartLoading(false);
   }
