@@ -4,16 +4,26 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const addressSchema = new mongoose.Schema({
+  houseNumber: String,
+  street: String,
+  barangay: String,
+  city: String,
+  region: String,
+  zip: String,
+  country: { type: String, default: "Philippines" },
+  lat: Number,
+  lng: Number,
+});
+
 const userSchema = new mongoose.Schema(
   {
     firstName: String,
     lastName: String,
     email: { type: String, required: true, unique: true },
 
-    // Separate password fields for each login method
     passwordManual: { type: String },
     passwordGoogle: { type: String },
-
     googleId: { type: String },
 
     loginMethod: {
@@ -25,6 +35,9 @@ const userSchema = new mongoose.Schema(
     phone: String,
     role: { type: String, enum: ["user", "admin"], default: "user" },
     isActive: { type: Boolean, default: true },
+
+    // ✅ Add this
+    address: { type: addressSchema, default: {} },
   },
   { timestamps: true }
 );

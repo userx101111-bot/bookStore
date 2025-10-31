@@ -1,268 +1,465 @@
-import React, { useState, useEffect } from 'react';
-import { FaHeart, FaCog,FaUser, FaCreditCard, FaMapMarkerAlt } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
-import './profile.css';
-import { useUser } from '../contexts/UserContext';
-//const RENDER_URL = process.env.REACT_APP_RENDER_URL;
+import React, { useState, useEffect } from "react";
+import {
+  FaUser,
+  FaCog,
+  FaCreditCard,
+  FaMapMarkerAlt,
+  FaCrosshairs,
+} from "react-icons/fa";
+import { Link } from "react-router-dom";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMapEvents,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "./address.css";
+import { useUser } from "../contexts/UserContext";
+
+const markerIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+/** 🧭 Reverse geocode */
+const reverseGeocode = async (lat, lng) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`
+    );
+    if (!res.ok) throw new Error("Failed to fetch address");
+    const data = await res.json();
+    const a = data.address || {};
+
+    const street =
+      [a.road, a.residential, a.subdivision].filter(Boolean).join(" ") || "";
+    const barangay =
+      a.suburb ||
+      a.neighbourhood ||
+      a.village ||
+      a.hamlet ||
+      a.quarter ||
+      a.borough ||
+      a.city_district ||
+      "";
+    const city =
+      a.city || a.municipality || a.town || a.village || a.county || "";
+    const region =
+      a.state || a.region || a.state_district || a.province || "";
+    const zip = a.postcode || "";
+    const country = a.country || "Philippines";
+
+    return {
+      street,
+      barangay,
+      city,
+      region,
+      zip,
+      country,
+      house_number: a.house_number || "",
+    };
+  } catch (err) {
+    console.error("Reverse geocode error:", err);
+    return {};
+  }
+};
+
+/** 🗺️ Forward geocode: address → lat/lng */
+const forwardGeocode = async (addressString) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        addressString
+      )}`
+    );
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const { lat, lon } = data[0];
+      return { lat: parseFloat(lat), lng: parseFloat(lon) };
+    }
+    return null;
+  } catch (err) {
+    console.error("Forward geocode error:", err);
+    return null;
+  }
+};
+
+/** 📍 Map re-centering helper */
+function RecenterMap({ lat, lng }) {
+  const map = useMapEvents({});
+  useEffect(() => {
+    if (lat && lng) {
+      map.setView([lat, lng], 15);
+    }
+  }, [lat, lng, map]);
+  return null;
+}
+
+/** 📍 Draggable marker */
+function DraggableMarker({ formData, setFormData }) {
+  const [position, setPosition] = useState(
+    formData.lat && formData.lng
+      ? [formData.lat, formData.lng]
+      : [14.5995, 120.9842]
+  );
+  const [popupText, setPopupText] = useState("");
+
+  useMapEvents({
+    click: async (e) => {
+      const { lat, lng } = e.latlng;
+      setPosition([lat, lng]);
+      const address = await reverseGeocode(lat, lng);
+      setFormData((prev) => ({
+        ...prev,
+        lat,
+        lng,
+        ...address,
+        houseNumber: prev.houseNumber || address.house_number || "",
+      }));
+      setPopupText(
+        `${address.street ? address.street + ", " : ""}${
+          address.barangay ? address.barangay + ", " : ""
+        }${address.city}`
+      );
+    },
+  });
+
+  const handleDragEnd = async (e) => {
+    const lat = e.target.getLatLng().lat;
+    const lng = e.target.getLatLng().lng;
+    setPosition([lat, lng]);
+    const address = await reverseGeocode(lat, lng);
+    setFormData((prev) => ({
+      ...prev,
+      lat,
+      lng,
+      ...address,
+      houseNumber: prev.houseNumber || address.house_number || "",
+    }));
+    setPopupText(
+      `${address.street ? address.street + ", " : ""}${
+        address.barangay ? address.barangay + ", " : ""
+      }${address.city}`
+    );
+  };
+
+  useEffect(() => {
+    if (formData.lat && formData.lng) {
+      setPosition([formData.lat, formData.lng]);
+    }
+  }, [formData.lat, formData.lng]);
+
+  return (
+    <Marker
+      position={position}
+      draggable
+      icon={markerIcon}
+      eventHandlers={{ dragend: handleDragEnd }}
+    >
+      {popupText && <Popup>{popupText}</Popup>}
+    </Marker>
+  );
+}
 
 const Address = () => {
-    const { user, updateUser, setUser } = useUser();
-    const [formData, setFormData] = useState({
-        addressLine1: '',
-        addressLine2: '',
-        city: '',
-        state: '',
-        zip: '',
-        country: '',
-        telephone: ''
-    });
-    const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState({ text: '', type: '' });
-    const [savedAddress, setSavedAddress] = useState(null);
-    const [isInitialized, setIsInitialized] = useState(false);
+  const { user, updateUser } = useUser();
+  const [formData, setFormData] = useState({
+    houseNumber: "",
+    street: "",
+    barangay: "",
+    city: "",
+    region: "",
+    zip: "",
+    country: "Philippines",
+    lat: null,
+    lng: null,
+  });
+  const [message, setMessage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [savedAddress, setSavedAddress] = useState(null);
+  let typingTimeout;
 
-    useEffect(() => {
-        if (!isInitialized) {
-            console.log("Initializing form data...");
-            
-            // First check localStorage
-            const storedUser = JSON.parse(localStorage.getItem('user'));
-            console.log("Stored user from localStorage:", storedUser);
-      
-            if (storedUser && storedUser.address && Object.keys(storedUser.address).length > 0) {
-                setUser(storedUser);
-                setFormData({ ...storedUser.address });
-                setSavedAddress({ ...storedUser.address });
-            } else if (user && user.address && Object.keys(user.address).length > 0) {
-                setFormData({ ...user.address });
-                setSavedAddress({ ...user.address });
-            } else {
-                // If no address in localStorage or current user state, fetch from API
-                fetchUserAddress();
-            }
-            
-            setIsInitialized(true);
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser?.address) {
+      setFormData(storedUser.address);
+      setSavedAddress(storedUser.address);
+    }
+  }, []);
+
+  /** ✏️ Update form and auto-move map */
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    clearTimeout(typingTimeout);
+    if (["street", "barangay", "city", "region"].includes(name)) {
+      typingTimeout = setTimeout(async () => {
+        const addressString = [
+          formData.houseNumber,
+          name === "street" ? value : formData.street,
+          name === "barangay" ? value : formData.barangay,
+          name === "city" ? value : formData.city,
+          name === "region" ? value : formData.region,
+          "Philippines",
+        ]
+          .filter(Boolean)
+          .join(", ");
+        const coords = await forwardGeocode(addressString);
+        if (coords) {
+          setFormData((prev) => ({
+            ...prev,
+            lat: coords.lat,
+            lng: coords.lng,
+          }));
         }
-    }, [isInitialized, user, setUser]);
+      }, 800);
+    }
+  };
 
-    // Add this new function to fetch address from the backend
-    const fetchUserAddress = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.log("No token found, skipping address fetch");
-                return;
-            }
-
-            setIsLoading(true);
-            const response = await fetch(`https://bookstore-yl7q.onrender.com/api/users/profile`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Error fetching user profile: ${response.status}`);
-            }
-            
-            const userData = await response.json();
-            console.log("User profile data from API:", userData);
-            
-            if (userData.address && Object.keys(userData.address).length > 0) {
-                // Update local state with address from backend
-                setFormData({ ...userData.address });
-                setSavedAddress({ ...userData.address });
-                
-                // Update user context and localStorage to include address
-                const updatedUser = { ...user, address: userData.address };
-                updateUser(updatedUser);
-                localStorage.setItem('user', JSON.stringify(updatedUser));
-                
-                setMessage({ text: 'Address loaded from database', type: 'success' });
-            }
-        } catch (error) {
-            console.error("Error fetching user address:", error);
-            setMessage({ text: 'Could not load address from database', type: 'error' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        console.log(`Updating ${name} to: ${value}`);
-        
-        // Use the function form of setState to ensure you're working with the latest state
-        setFormData(prevData => {
-            const newData = { ...prevData, [name]: value };
-            console.log("New form data:", newData);
-            return newData;
-        });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setMessage({ text: '', type: '' });
-
-        try {
-            // First, update the address in the backend
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('You must be logged in to update your address');
-            }
-
-            console.log("Sending update to:", `https://bookstore-yl7q.onrender.com/api/users/update-address`);
-            console.log("With payload:", {
-                userId: user._id,
-                address: formData
-            });
-
-            const response = await fetch(`https://bookstore-yl7q.onrender.com/api/users/update-address`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    userId: user._id,
-                    address: formData
-                })
-            });
-
-            // Check if the response is OK before trying to parse JSON
-            if (!response.ok) {
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
-                } else {
-                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
-                }
-            }
-            
-            const data = await response.json();
-            
-            // If backend update was successful, update local state and storage
-            const updatedUser = { ...user, address: formData };
-            updateUser(updatedUser);
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            setSavedAddress({ ...formData });
-            
-            setMessage({ text: 'Address updated successfully!', type: 'success' });
-        } catch (error) {
-            console.error("Error updating address:", error);
-            setMessage({ text: error.message || 'Failed to update address. Please try again.', type: 'error' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <div className="app" style={{ minHeight: "100vh" }}>
-            <div className="profile-main" style={{ minHeight: "calc(100vh - 150px)", paddingBottom: "50px" }}>
-                <aside className="sidebar">
-                    <div className="profile-info">
-                        <div className="avatar-placeholder">👤</div>
-                        <h2>{user ? (user.firstName || user.name || 'Guest') : 'Guest'}</h2>
-                    </div>
-                    <nav className="menu-list">
-                        <Link to="/profile" className="menu-item"><FaUser /> Profile</Link>
-                        <Link to="/settings" className="menu-item"><FaCog /> Settings</Link>
-                        <Link to="/payments" className="menu-item"><FaCreditCard /> Payments</Link>
-                        <Link to="/address" className="menu-item active"><FaMapMarkerAlt /> Address</Link>
-                    </nav>
-                </aside>
-
-                <div className="main-content" style={{ minHeight: "calc(100vh - 200px)" }}>
-                    <div className="address-section">
-                        <h2>Shipping Address</h2>
-                        
-                        {message.text && (
-                            <div className={`message ${message.type}`}>
-                                {message.text}
-                            </div>
-                        )}
-                        
-                        {/* Display the current saved address */}
-                        {savedAddress && (
-                            <div className="saved-address">
-                                <h3>Current Address</h3>
-                                <p>{savedAddress.addressLine1}</p>
-                                {savedAddress.addressLine2 && <p>{savedAddress.addressLine2}</p>}
-                                <p>{savedAddress.city}, {savedAddress.state} {savedAddress.zip}</p>
-                                <p>{savedAddress.country}</p>
-                                {savedAddress.telephone && <p>Phone: {savedAddress.telephone}</p>}
-                            </div>
-                        )}
-                        
-                        <form onSubmit={handleSubmit} className="address-form">
-                            <div className="form-group">
-                                <label htmlFor="addressLine1">Address Line 1 *</label>
-                                <input type="text" id="addressLine1" name="addressLine1" required value={formData.addressLine1 || ''} onChange={handleChange} />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="addressLine2">Address Line 2</label>
-                                <input type="text" id="addressLine2" name="addressLine2" value={formData.addressLine2 || ''} onChange={handleChange} />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="city">City *</label>
-                                <input type="text" id="city" name="city" required value={formData.city || ''} onChange={handleChange} />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="state">State/Province *</label>
-                                <select id="state" name="state" required value={formData.state || ''} onChange={handleChange}>
-                                    <option value="">Select</option>
-                                    <option value="Metro Manila">Metro Manila</option>
-                                    <option value="Cebu">Cebu</option>
-                                    <option value="Davao">Davao</option>
-                                    <option value="Rizal">Rizal</option>
-                                    <option value="Bulacan">Bulacan</option>
-                                    <option value="Laguna">Laguna</option>
-                                    <option value="Cavite">Cavite</option>
-                                    <option value="Pampanga">Pampanga</option>
-                                    <option value="Batangas">Batangas</option>
-                                    <option value="Iloilo">Iloilo</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="zip">Zip/Postal Code *</label>
-                                <input type="text" id="zip" name="zip" required value={formData.zip || ''} onChange={handleChange} />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="country">Country *</label>
-                                <select id="country" name="country" required value={formData.country || ''} onChange={handleChange}>
-                                    <option value="">Select</option>
-                                    <option value="Philippines">Philippines</option>
-                                    <option value="Japan">Japan</option>
-                                    <option value="United States">United States</option>
-                                    <option value="South Korea">South Korea</option>
-                                    <option value="China">China</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="telephone">Telephone *</label>
-                                <input type="text" id="telephone" name="telephone" required value={formData.telephone || ''} onChange={handleChange} />
-                            </div>
-                            
-                            <div className="form-actions">
-                                <button 
-                                    type="submit" 
-                                    className="save-button" 
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? 'Saving...' : 'Save Address'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            
-           {/* Space for footer */}
-            <div style={{ height: "150px" }}></div>
-        </div>
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) return alert("Geolocation not supported.");
+    setIsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const address = await reverseGeocode(lat, lng);
+        setFormData((prev) => ({
+          ...prev,
+          lat,
+          lng,
+          ...address,
+          houseNumber: prev.houseNumber || address.house_number || "",
+        }));
+        setIsLoading(false);
+      },
+      () => {
+        setMessage({ text: "Unable to detect location.", type: "error" });
+        setIsLoading(false);
+      }
     );
+  };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setMessage(null);
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Not logged in");
+
+    const res = await fetch(
+      `https://bookstore-yl7q.onrender.com/api/users/update-address`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ address: formData }),
+      }
+    );
+
+    if (!res.ok) throw new Error("Failed to update address");
+
+    const updatedData = await res.json();
+    updateUser(updatedData); // ✅ update context & localStorage
+
+    setMessage({ text: "✅ Address updated successfully!", type: "success" });
+  } catch (err) {
+    setMessage({ text: err.message, type: "error" });
+  } finally {
+    setIsLoading(false);
+  }
+};
+  return (
+    <div className="app" style={{ minHeight: "100vh" }}>
+      <div className="profile-main" style={{ minHeight: "calc(100vh - 150px)" }}>
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="profile-info">
+            <div className="avatar-placeholder">👤</div>
+            <h2>{user?.firstName || user?.name || "Guest"}</h2>
+          </div>
+          <nav className="menu-list">
+            <Link to="/profile" className="menu-item">
+              <FaUser /> Profile
+            </Link>
+            <Link to="/settings" className="menu-item">
+              <FaCog /> Settings
+            </Link>
+            <Link to="/payments" className="menu-item">
+              <FaCreditCard /> Payments
+            </Link>
+            <Link to="/address" className="menu-item active">
+              <FaMapMarkerAlt /> Address
+            </Link>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <div className="main-content modern-ui">
+          <div className="address-card">
+            <div className="address-header">
+              <h2>Shipping Address</h2>
+              <p className="subtitle">
+                Manage your delivery details and set your preferred location.
+              </p>
+            </div>
+
+            {message && (
+              <div className={`alert ${message.type}`}>
+                <span>{message.text}</span>
+              </div>
+            )}
+
+            {savedAddress && (
+              <div className="saved-address modern-card">
+                <h3>Current Address</h3>
+                <p>
+                  {savedAddress.houseNumber
+                    ? `${savedAddress.houseNumber} `
+                    : ""}
+                  {savedAddress.street}
+                </p>
+                <p>
+                  {savedAddress.barangay}, {savedAddress.city},{" "}
+                  {savedAddress.region} {savedAddress.zip}
+                </p>
+                <p>{savedAddress.country}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="address-form-grid">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>House Number *</label>
+                  <input
+                    name="houseNumber"
+                    value={formData.houseNumber}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Street / Subdivision *</label>
+                  <input
+                    name="street"
+                    value={formData.street}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Barangay *</label>
+                  <input
+                    name="barangay"
+                    value={formData.barangay}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>City / Municipality *</label>
+                  <input
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Region / Province *</label>
+                  <input
+                    name="region"
+                    value={formData.region}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Postal / ZIP Code *</label>
+                  <input
+                    name="zip"
+                    value={formData.zip}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group full-width">
+                <label>Country *</label>
+                <input
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="map-section">
+                <div className="map-header">
+                  <h4>📍 Pin Your Location</h4>
+                  <button
+                    type="button"
+                    onClick={handleDetectLocation}
+                    disabled={isLoading}
+                    className="detect-btn"
+                  >
+                    <FaCrosshairs />{" "}
+                    {isLoading ? "Detecting..." : "Use My Location"}
+                  </button>
+                </div>
+
+                <div className="map-container">
+                  <MapContainer
+                    center={[formData.lat || 14.5995, formData.lng || 120.9842]}
+                    zoom={15}
+                    style={{
+                      height: "300px",
+                      width: "100%",
+                      borderRadius: "12px",
+                    }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <RecenterMap lat={formData.lat} lng={formData.lng} />
+                    <DraggableMarker
+                      formData={formData}
+                      setFormData={setFormData}
+                    />
+                  </MapContainer>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button className="save-btn" disabled={isLoading}>
+                  {isLoading ? "Saving..." : "Save Address"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Address;
