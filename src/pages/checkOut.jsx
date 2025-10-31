@@ -14,6 +14,8 @@ const Checkout = () => {
   const [error, setError] = useState(null);
   const { clearCart } = useCart();
 
+  const [paymentMethod, setPaymentMethod] = useState("cash on delivery");
+
   // 🧠 Load cart + user
   useEffect(() => {
     if (location.state?.cartItems) {
@@ -103,7 +105,7 @@ const Checkout = () => {
           postalCode: user.address.zip || user.address.postalCode || "",
           country: user.address.country || "Philippines",
         },
-        paymentMethod: "cash on delivery",
+        paymentMethod,
         totalAmount: totalPayment,
         status: "pending",
       };
@@ -256,10 +258,16 @@ const Checkout = () => {
             </div>
 
             {discountTotal > 0 && (
-              <div className="paymentDetailRow discount">
-                <span>Discounts:</span>
-                <span>-₱{discountTotal.toFixed(2)}</span>
-              </div>
+              <>
+                <div className="paymentDetailRow discount">
+                  <span>Discounts:</span>
+                  <span>-₱{discountTotal.toFixed(2)}</span>
+                </div>
+                <div className="paymentDetailRow saved">
+                  <span>You Saved:</span>
+                  <span>₱{discountTotal.toFixed(2)}</span>
+                </div>
+              </>
             )}
 
             <div className="paymentDetailRow">
@@ -267,6 +275,47 @@ const Checkout = () => {
               <span>₱{shipping.toFixed(2)}</span>
             </div>
 
+            {/* ❌ Removed Deliver To */}
+
+            <div className="paymentDetailRow">
+              <span>Estimated Delivery:</span>
+              <span>3–5 business days</span>
+            </div>
+
+            {/* 🏦 Payment Method Selection */}
+            <div className="paymentDetailRow">
+              <span>Payment Method:</span>
+              <div className="payment-method-options">
+                <label>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash on delivery"
+                    checked={paymentMethod === "cash on delivery"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <span className="method-label">Cash on Delivery</span>
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="paypal"
+                    checked={paymentMethod === "paypal"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <img
+                    src="https://www.paypalobjects.com/webstatic/icon/pp258.png"
+                    alt="PayPal"
+                    className="paypal-logo"
+                  />
+                  <span className="method-label">PayPal</span>
+                </label>
+              </div>
+            </div>
+
+            {/* ✅ Final Total */}
             <div className="paymentDetailRow total">
               <strong>Total Payment:</strong>
               <strong>₱{totalPayment.toFixed(2)}</strong>

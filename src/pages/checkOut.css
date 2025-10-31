@@ -295,3 +295,81 @@
   color: #16a34a;
   font-weight: 600;
 }
+
+
+/* 🏦 Payment Method Section */
+.payment-method-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.payment-method-options label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f9f9f9;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.payment-method-options label:hover {
+  border-color: #0070ba;
+  background-color: #f0f8ff;
+}
+
+.payment-method-options input[type="radio"] {
+  accent-color: #0070ba;
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+/* Highlight selected */
+.payment-method-options label:has(input[type="radio"]:checked) {
+  border-color: #0070ba;
+  background-color: #e9f3ff;
+  color: #004b9b;
+  font-weight: 600;
+}
+
+/* 🪙 COD & PayPal Labels */
+.method-label {
+  flex-grow: 1;
+  font-size: 0.95rem;
+}
+
+/* 💰 PayPal Logo */
+.paypal-logo {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* 🧾 Payment Summary layout tweak */
+.paymentDetailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.paymentDetailRow.total {
+  margin-top: 15px;
+  border-top: 2px solid #ddd;
+  padding-top: 10px;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+
+.paymentDetailRow.saved {
+  color: #16a34a;
+  font-weight: 600;
+}

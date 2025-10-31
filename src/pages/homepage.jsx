@@ -126,6 +126,7 @@ const Homepage = () => {
           ? data.filter((v) => v.is_active)
           : [];
         setVouchers(active);
+        console.log("🧾 Active vouchers loaded:", active);
       } catch (err) {
         console.error("❌ Error fetching vouchers:", err);
       }
@@ -190,7 +191,7 @@ const Homepage = () => {
   // ============================================================
   // 🧱 Product Card (with Variants + Voucher + New Badge)
   // ============================================================
-  const VariantCard = ({ product }) => {
+  const VariantCard = ({ product, vouchers }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [hovered, setHovered] = useState(false);
     const [fading, setFading] = useState(false);
@@ -420,7 +421,7 @@ const ProductSection = React.memo(
 
         <div className="product-scroll modern" ref={scrollRef}>
           {grouped.map((p) => (
-            <VariantCard key={p._id} product={p} />
+            <VariantCard key={p._id} product={p} vouchers={vouchers} />
           ))}
         </div>
 
@@ -486,7 +487,7 @@ const FeaturedBlock = React.memo(
 
         <div className="product-scroll modern" ref={scrollRef}>
           {grouped.map((p) => (
-            <VariantCard key={p._id} product={p} />
+           <VariantCard key={p._id} product={p} vouchers={vouchers} />
           ))}
         </div>
 
@@ -565,9 +566,14 @@ const FeaturedBlock = React.memo(
 
 
       {/* Category Sections */}
-      {Object.entries(productData).map(([slug, products]) => (
-        <ProductSection key={slug} slug={slug} products={products} />
-      ))}
+{Object.entries(productData).map(([slug, products]) => (
+  <ProductSection
+    key={slug}
+    slug={slug}
+    products={products}
+    vouchers={vouchers}
+  />
+))}
     </div>
   );
 };

@@ -41,15 +41,22 @@ const VoucherManagement = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const fetchVouchers = async () => {
-    try {
-      const res = await fetchWithAuth(`${API_URL}/api/vouchers`, {}, user.token);
-      const data = await res.json();
-      setVouchers(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("❌ Fetch vouchers failed:", err);
-    }
-  };
+const fetchVouchers = async () => {
+  try {
+    // ✅ Use admin route to get ALL vouchers (not just active ones)
+    const res = await fetchWithAuth(`${API_URL}/api/vouchers/all`, {}, user.token);
+    const data = await res.json();
+
+    console.log("📦 Admin vouchers fetched:", data); // Optional: debug log
+
+    // Defensive check — ensure it's an array
+    setVouchers(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error("❌ Fetch vouchers failed:", err);
+    setVouchers([]); // fallback
+  }
+};
+
 
   const fetchProducts = async () => {
     try {

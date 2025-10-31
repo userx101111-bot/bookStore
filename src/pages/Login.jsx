@@ -18,7 +18,7 @@ const GOOGLE_CLIENT_ID =
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, continueAsGuest } = useUser();
+  const { login, continueAsGuest, refreshUser } = useUser();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailInput, setEmailInput] = useState('');
@@ -68,9 +68,13 @@ const handleSubmit = async (event) => {
     await login(userData);
 
     // ✅ Force refresh right after login to ensure consistency
-    await refreshUser?.();
+    // Optional: only refresh if phone or createdAt missing
+if (!userData.phone || !userData.createdAt) {
+  await refreshUser?.();
+}
 
-    navigate(userData.role === 'admin' ? '/admin' : '/profile');
+
+    navigate(userData.role === 'admin' ? '/admin' : '/');
   } catch (err) {
     console.error('Login error:', err);
     setError(err.message || 'Login failed. Please try again.');
