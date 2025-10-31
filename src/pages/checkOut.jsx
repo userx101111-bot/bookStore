@@ -212,7 +212,7 @@ const Checkout = () => {
         <div className="detailsContainer">
           {/* 👤 Personal Info */}
           <div className="personalDetails">
-            <h3>Personal Details</h3>
+            <h3>Ship To</h3>
             <div className="subpersonalDetails">
               <p>
                 {user ? (
