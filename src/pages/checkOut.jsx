@@ -90,17 +90,20 @@ const Checkout = () => {
           price: item.price,
           product: item.productId || item.id,
         })),
-        shippingAddress: {
-          street: user.address.street || "",
-          city: user.address.city || "",
-          state:
-            user.address.region ||
-            user.address.state ||
-            user.address.province ||
-            "",
-          postalCode: user.address.zip || user.address.postalCode || "",
-          country: user.address.country || "Philippines",
-        },
+shippingAddress: {
+  houseNumber: user.address.houseNumber || "",
+  street: user.address.street || "",
+  barangay: user.address.barangay || "",
+  city: user.address.city || "",
+  region:
+    user.address.region ||
+    user.address.state ||
+    user.address.province ||
+    "",
+  postalCode: user.address.zip || user.address.postalCode || "",
+  country: user.address.country || "Philippines",
+},
+
         paymentMethod,
         itemsPrice: merchandiseSubTotal,
         shippingPrice: shipping,
@@ -143,13 +146,24 @@ const Checkout = () => {
     try {
       const orderData = {
         userId: user._id || user.id,
-        orderItems: cartItems.map((item) => ({
-          name: item.name,
-          qty: item.quantity,
-          image: item.image,
-          price: item.price,
-          product: item.productId || item.id,
-        })),
+orderItems: cartItems.map((item) => ({
+  product: item.productId || item.id,
+  variantId: item.variantId || item.variant_id || null,
+  name: item.name,
+  format: item.format || item.variant_format || "Standard",
+  originalPrice: item.originalPrice || item.price || 0,
+  discountedPrice:
+    item.discount_value && item.discount_value > 0
+      ? item.final_price || item.price
+      : item.price,
+  qty: item.quantity,
+  itemTotal:
+    ((item.discount_value && item.discount_value > 0
+      ? item.final_price || item.price
+      : item.price) * item.quantity),
+  image: item.image,
+})),
+
         shippingAddress: {
           street: user.address.street || "",
           city: user.address.city || "",

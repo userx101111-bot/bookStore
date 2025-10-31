@@ -629,7 +629,7 @@ const Profile = () => {
 
             {/* Orders */}
             <div className="order-section" style={{ marginTop: 20 }}>
-              <h2>Completed Orders</h2>
+              <h2>My Orders</h2>
               {loading ? (
                 <p>Loading...</p>
               ) : error ? (

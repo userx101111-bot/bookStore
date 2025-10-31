@@ -21,10 +21,19 @@ router.post('/', protect, async (req, res) => {
       paymentResult,
     } = req.body;
 
-    if (!orderItems || orderItems.length === 0) {
-      return res.status(400).json({ message: 'No order items provided.' });
+    // ✅ Validation — make sure orderItems exist
+    if (!orderItems || !orderItems.length) {
+      return res.status(400).json({ message: "No order items provided" });
     }
 
+    // ✅ Validation — check each item for required fields
+    orderItems.forEach((item) => {
+      if (!item.product || !item.name || !item.qty) {
+        throw new Error("Order item missing required fields");
+      }
+    });
+
+    // ✅ Create the order object
     const order = new Order({
       user: req.user._id,
       orderItems,
@@ -37,16 +46,17 @@ router.post('/', protect, async (req, res) => {
       isPaid: isPaid || false,
       paidAt: paidAt || null,
       paymentResult: paymentResult || {},
-      status: isPaid ? 'processing' : 'pending',
+      status: isPaid ? "processing" : "pending",
     });
 
     const createdOrder = await order.save();
     res.status(201).json(createdOrder);
   } catch (error) {
-    console.error('❌ Create order error:', error.message);
-    res.status(500).json({ message: 'Failed to create order', error: error.message });
+    console.error("❌ Create order error:", error.message);
+    res.status(500).json({ message: "Failed to create order", error: error.message });
   }
 });
+
 
 // ============================================================
 // 📜 Get Logged-In User’s Orders

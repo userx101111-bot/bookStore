@@ -7,26 +7,30 @@ const orderSchema = new mongoose.Schema(
       required: true,
       ref: 'User',
     },
-    orderItems: [
-      {
-        name: { type: String, required: true },
-        qty: { type: Number, required: true },
-        image: { type: String, required: true },
-        price: { type: Number, required: true },
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          required: true,
-          ref: 'Product',
-        },
-      },
-    ],
-    shippingAddress: {
-      street: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      postalCode: { type: String },
-      country: { type: String, default: 'Philippines' },
-    },
+orderItems: [
+  {
+    product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+    variantId: { type: mongoose.Schema.Types.ObjectId, required: false },
+    name: { type: String, required: true },
+    format: { type: String, required: false },
+    originalPrice: { type: Number, required: true },
+    discountedPrice: { type: Number, required: true },
+    qty: { type: Number, required: true },
+    itemTotal: { type: Number, required: true },
+    image: { type: String, required: true },
+  },
+],
+
+shippingAddress: {
+  houseNumber: { type: String },
+  street: { type: String, required: true },
+  barangay: { type: String },
+  city: { type: String, required: true },
+  region: { type: String, required: true }, 
+  postalCode: { type: String },
+  country: { type: String, default: "Philippines" },
+},
+
     paymentMethod: {
       type: String,
       required: true,
