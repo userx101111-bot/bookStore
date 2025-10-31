@@ -110,7 +110,7 @@ export const CartProvider = ({ children }) => {
         handleAddToCart,
         updateQuantity,
         removeFromCart,
-        clearCart, // ✅ make sure it's exported here
+        clearCart, // ✅ exported properly
       }}
     >
       {children}

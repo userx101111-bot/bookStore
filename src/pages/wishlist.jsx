@@ -69,7 +69,6 @@ const Wishlist = () => {
        <nav className="menu-list">
         
          <Link to="/wishlist" className="menu-item"><FaHeart /> Wishlist</Link>
-         <Link to="/settings" className="menu-item"><FaCog /> Settings</Link>
          <Link to="/payments" className="menu-item"><FaCreditCard /> Payments</Link>
          <Link to="/address" className="menu-item"><FaMapMarkerAlt /> Address</Link>
        </nav>

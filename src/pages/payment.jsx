@@ -64,7 +64,6 @@ const Payment = () => {
           </div>
           <nav className="menu-list">
                   <Link to="/profile" className="menu-item"><FaUser /> Profile</Link>
-                  <Link to="/settings" className="menu-item"><FaCog /> Settings</Link>
                    <Link to="/payments" className="menu-item"><FaCreditCard /> Payments</Link>
                   <Link to="/address" className="menu-item active"><FaMapMarkerAlt /> Address</Link>
           </nav>

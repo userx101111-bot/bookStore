@@ -350,9 +350,6 @@ const Profile = () => {
             <Link to="/profile" className="menu-item active">
               <FaUser /> Profile
             </Link>
-            <Link to="/settings" className="menu-item">
-              <FaCog /> Settings
-            </Link>
             <Link to="/payments" className="menu-item">
               <FaCreditCard /> Payments
             </Link>

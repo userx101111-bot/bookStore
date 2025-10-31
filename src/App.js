@@ -13,7 +13,6 @@ import Profile from './pages/profile';
 import ProductPage from './pages/ProductPage';
 import Address from './pages/address';
 import Wishlist from './pages/wishlist';
-import Settings from './pages/settings';
 import Payment from './pages/payment';
 import Checkout from './pages/checkOut';
 import Cart from './pages/Cart';
@@ -152,14 +151,6 @@ const AppLayout = () => {
           }
         />
         <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/payments"
           element={
             <ProtectedRoute>
@@ -168,7 +159,7 @@ const AppLayout = () => {
           }
         />
         <Route
-          path="/user/my-purchases"
+          path="/my-purchases"
           element={
             <ProtectedRoute>
               <MyPurchases />
