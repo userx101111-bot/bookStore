@@ -349,12 +349,12 @@ const Checkout = () => {
 
               {paymentMethod === "paypal" ? (
                 <div style={{ width: "100%", marginTop: "10px" }}>
-                  <PayPalScriptProvider
-                    options={{
-                      "client-id": "YOUR_SANDBOX_CLIENT_ID",
-                      currency: "PHP",
-                    }}
-                  >
+<PayPalScriptProvider
+  options={{
+    "client-id": "AdhQtb5SkntTJOPADCLRicbNxnshl3fzbIC2K_kz7t_92uS9PU17whoivVnhJe0EQimCF2dIsKX4VU4G",
+    currency: "PHP",
+  }}
+>
                     <PayPalButtons
                       style={{ layout: "vertical" }}
                       createOrder={(data, actions) => {

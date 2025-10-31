@@ -29,6 +29,7 @@ import MangaCategoryPage from './pages/MangaCategoryPage';
 import FeaturedPage from "./pages/FeaturedPage";
 import './styles/Responsive.css';
 import './App.css';
+import MyPurchases from "./pages/MyPurchases";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
@@ -163,6 +164,14 @@ const AppLayout = () => {
           element={
             <ProtectedRoute>
               <Payment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/my-purchases"
+          element={
+            <ProtectedRoute>
+              <MyPurchases />
             </ProtectedRoute>
           }
         />

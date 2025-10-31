@@ -14,7 +14,7 @@ export const CartProvider = ({ children }) => {
   const { getToken, isGuest } = useUser();
   const [cart, setCart] = useState([]);
 
-  // Normalize backend cart structure
+  // ✅ Normalize backend cart structure
   const normalizeCartData = (data) => {
     if (!data || !data.items) return [];
     return data.items.map((i) => ({
@@ -26,8 +26,8 @@ export const CartProvider = ({ children }) => {
       price: i.price || 0,
       final_price: i.final_price || i.price || 0,
       quantity: i.quantity || 1,
-      format: i.variant_format || i.format || "standard", // ✅ ensures format always exists
-      variant_format: i.variant_format || i.format || "standard", // ✅ adds this too
+      format: i.variant_format || i.format || "standard",
+      variant_format: i.variant_format || i.format || "standard",
       subtotal: i.subtotal || i.final_price * (i.quantity || 1),
       discount_type: i.discount_type,
       discount_value: i.discount_value,
@@ -38,6 +38,7 @@ export const CartProvider = ({ children }) => {
     }));
   };
 
+  // ✅ Fetch cart from backend
   const fetchCart = async () => {
     try {
       const token = getToken();
@@ -49,6 +50,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // ✅ Add item to cart
   const handleAddToCart = async (productId, variantId, quantity = 1) => {
     try {
       const token = getToken();
@@ -67,7 +69,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // ✅ UPDATE quantity (PATCH)
+  // ✅ Update quantity (PATCH)
   const updateQuantity = async (variantId, newQty) => {
     if (newQty < 1) return;
     try {
@@ -79,7 +81,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // ✅ DELETE item (DELETE)
+  // ✅ Remove item (DELETE)
   const removeFromCart = async (variantId) => {
     try {
       const token = getToken();
@@ -87,6 +89,16 @@ export const CartProvider = ({ children }) => {
       setCart(normalizeCartData(updatedCart));
     } catch (err) {
       console.error("❌ Remove item failed:", err);
+    }
+  };
+
+  // ✅ CLEAR CART (used after successful checkout)
+  const clearCart = () => {
+    try {
+      setCart([]); // clear frontend state
+      localStorage.removeItem("cart"); // clear any locally stored cart data
+    } catch (err) {
+      console.error("❌ Failed to clear cart:", err);
     }
   };
 
@@ -98,6 +110,7 @@ export const CartProvider = ({ children }) => {
         handleAddToCart,
         updateQuantity,
         removeFromCart,
+        clearCart, // ✅ make sure it's exported here
       }}
     >
       {children}
