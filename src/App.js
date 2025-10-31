@@ -167,6 +167,7 @@ const AppLayout = () => {
           }
         />
         
+        
       </Routes>
       {!hideNavbarFooter && <Footer />}
     </>

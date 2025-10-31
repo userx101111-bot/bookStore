@@ -30,9 +30,10 @@ const computeDiscount = (price, voucher) => {
  */
 const getPopulatedCart = async (userId) => {
   return await Cart.findOne({ user: userId })
-    .populate("items.product", "name author mainImage image")
+    .populate("items.product", "name author mainImage image slug")
     .populate("items.applied_voucher", "name discount_type discount_value");
 };
+
 
 /**
  * POST /api/cart/add

@@ -100,6 +100,17 @@ const Cart = () => {
     setItemToRemove(null);
   };
 
+  // 🧭 Navigate to Product Page
+  const handleNavigateToProduct = (item) => {
+    const slug = item.product?.slug || item.slug;
+    const variant = item.variant_format?.toLowerCase() || "standard";
+    if (!slug) {
+      alert("This product link is unavailable.");
+      return;
+    }
+    navigate(`/product/${slug}/${variant}`);
+  };
+
   return (
     <div className="modern-cart-container">
       {cartWithImages.length === 0 ? (
@@ -138,17 +149,25 @@ const Cart = () => {
                   />
                 </div>
 
+                {/* 🖼 Clickable Product Image */}
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="cart-img"
+                  className="cart-img clickable"
+                  onClick={() => handleNavigateToProduct(item)}
                   onError={(e) =>
                     (e.target.src = "/assets/placeholder-image.png")
                   }
                 />
 
                 <div className="cart-details">
-                  <h3 className="cart-name">{item.name}</h3>
+                  {/* 🧭 Clickable Product Name */}
+                  <h3
+                    className="cart-name clickable"
+                    onClick={() => handleNavigateToProduct(item)}
+                  >
+                    {item.name}
+                  </h3>
                   <p className="cart-format">Format: {item.format}</p>
                   {item.discount_value > 0 ? (
                     <p className="cart-price">
