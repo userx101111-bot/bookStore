@@ -1,232 +1,244 @@
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import { FaShoppingBag } from "react-icons/fa";
-import "./Cart.css";
+import { FaTrashAlt, FaArrowRight } from "react-icons/fa";
 import { useCart } from "../contexts/CartContext";
 import { fetchVariantImage } from "../utils/fetchVariantImage";
+import "./Cart.css";
 
 const Cart = () => {
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, fetchCart } = useCart();
-  const [checkedItems, setCheckedItems] = useState({});
   const [cartWithImages, setCartWithImages] = useState([]);
+  const [checkedItems, setCheckedItems] = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState(null);
 
-  // ✅ Fetch cart from backend
+  // Fetch cart from backend
   useEffect(() => {
     fetchCart();
   }, []);
 
-  // ✅ Fetch and attach main image for each variant
+  // Load variant images
   useEffect(() => {
-const loadVariantImages = async () => {
-  const updated = await Promise.all(
-    cart.map(async (item) => {
-      const productId = item.productId;
-      const variantId = item.variantId;
+    const loadImages = async () => {
+      const updated = await Promise.all(
+        cart.map(async (item) => {
+          const productId = item.productId;
+          const variantId = item.variantId;
+          const img = await fetchVariantImage(productId, variantId);
+          return { ...item, image: img || item.image };
+        })
+      );
+      setCartWithImages(updated);
 
-      if (!productId || !variantId) {
-        console.warn("⚠️ Missing IDs for cart item:", item);
-        return { ...item, image: "/assets/placeholder-image.png" };
-      }
-
-      const img = await fetchVariantImage(productId, variantId);
-      return { ...item, image: img };
-    })
-  );
-
-  setCartWithImages(updated);
-};
-
-
-
-
-    if (cart.length > 0) loadVariantImages();
+      // Default: check all items
+      const initialChecks = {};
+      cart.forEach((i) => (initialChecks[i.id] = true));
+      setCheckedItems(initialChecks);
+    };
+    if (cart.length > 0) loadImages();
   }, [cart]);
 
-  // ✅ Default all items to checked
-  useEffect(() => {
-    const initialChecks = {};
-    cart.forEach((item) => (initialChecks[item.id] = true));
-    setCheckedItems(initialChecks);
-  }, [cart]);
-
-  // ✅ Toggle selection
-  const toggleCheck = (id) =>
+  // Toggle selection
+  const toggleCheck = (id) => {
     setCheckedItems((prev) => ({ ...prev, [id]: !prev[id] }));
-
-  // ✅ Proceed to checkout with selected items
-  const handleCheckout = () => {
-    const itemsToCheckout = cartWithImages.filter(
-      (item) => checkedItems[item.id]
-    );
-    navigate("/checkout", { state: { cartItems: itemsToCheckout } });
   };
 
-  // ✅ Totals
+  // Select all
+  const toggleAll = (checked) => {
+    const newChecks = {};
+    cartWithImages.forEach((item) => {
+      newChecks[item.id] = checked;
+    });
+    setCheckedItems(newChecks);
+  };
+
+  // Compute subtotal only for checked items
   const subtotal = cartWithImages.reduce(
     (sum, item) =>
-      checkedItems[item.id] ? sum + item.price * item.quantity : sum,
+      checkedItems[item.id] ? sum + item.final_price * item.quantity : sum,
     0
   );
 
-  const totalBeforeDiscount = cartWithImages.reduce(
-    (sum, item) =>
-      checkedItems[item.id]
-        ? sum + (item.originalPrice || item.price) * item.quantity
-        : sum,
-    0
-  );
+  // Proceed to checkout with selected
+  const handleCheckout = () => {
+    const selected = cartWithImages.filter((i) => checkedItems[i.id]);
+    if (selected.length === 0) {
+      alert("Please select at least one item to proceed to checkout.");
+      return;
+    }
+    navigate("/checkout", { state: { cartItems: selected } });
+  };
 
-  const totalDiscount = totalBeforeDiscount - subtotal;
+  // Show confirmation modal
+  const confirmRemove = (item) => {
+    setItemToRemove(item);
+    setShowModal(true);
+  };
 
-  // ✅ Render
+  // Confirm removal
+  const handleConfirmRemove = async () => {
+    if (itemToRemove) {
+      await removeFromCart(itemToRemove.variantId);
+      await fetchCart(); // Refresh cart after removal
+      setCartWithImages((prev) =>
+        prev.filter((i) => i.variantId !== itemToRemove.variantId)
+      );
+      setCheckedItems((prev) => {
+        const updated = { ...prev };
+        delete updated[itemToRemove.id];
+        return updated;
+      });
+    }
+    setShowModal(false);
+    setItemToRemove(null);
+  };
+
+  // Cancel removal
+  const handleCancelRemove = () => {
+    setShowModal(false);
+    setItemToRemove(null);
+  };
+
   return (
-    <div className="container">
-      <div className="subcontainer">
-        <h2 className="title">Your Shopping Cart</h2>
+    <div className="modern-cart-container">
+      {cartWithImages.length === 0 ? (
+        <div className="empty-cart">
+          <h3>Your cart is empty</h3>
+          <p>Browse our collections and add something you love!</p>
+          <Link to="/" className="btn-continue">
+            Continue Shopping
+          </Link>
+        </div>
+      ) : (
+        <div className="cart-grid">
+          <div className="cart-items">
+            <div className="cart-header-row">
+              <h2 className="cart-header">Shopping Cart</h2>
+              <label className="select-all">
+                <input
+                  type="checkbox"
+                  checked={
+                    Object.keys(checkedItems).length > 0 &&
+                    Object.values(checkedItems).every(Boolean)
+                  }
+                  onChange={(e) => toggleAll(e.target.checked)}
+                />
+                <span>Select All</span>
+              </label>
+            </div>
 
-        {cartWithImages.length === 0 ? (
-          <div className="empty-cart">
-            <p>Your cart is empty.</p>
-            <Link to="/home-page">
-              <button className="continue-shopping">
-                <FaShoppingBag style={{ marginRight: "10px" }} /> Continue
-                Shopping
-              </button>
+            {cartWithImages.map((item) => (
+              <div key={item.id} className="cart-card">
+                <div className="checkbox-area">
+                  <input
+                    type="checkbox"
+                    checked={checkedItems[item.id] || false}
+                    onChange={() => toggleCheck(item.id)}
+                  />
+                </div>
+
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="cart-img"
+                  onError={(e) =>
+                    (e.target.src = "/assets/placeholder-image.png")
+                  }
+                />
+
+                <div className="cart-details">
+                  <h3 className="cart-name">{item.name}</h3>
+                  <p className="cart-format">Format: {item.format}</p>
+                  {item.discount_value > 0 ? (
+                    <p className="cart-price">
+                      <span className="old-price">
+                        ₱{item.price.toFixed(2)}
+                      </span>
+                      <span className="new-price">
+                        ₱{item.final_price.toFixed(2)}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="cart-price">₱{item.price.toFixed(2)}</p>
+                  )}
+                  <div className="quantity-box">
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.variantId, item.quantity - 1)
+                      }
+                      disabled={item.quantity <= 1}
+                    >
+                      −
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.variantId, item.quantity + 1)
+                      }
+                    >
+                      ＋
+                    </button>
+                  </div>
+                </div>
+
+                <div className="cart-actions">
+                  <span className="cart-subtotal">
+                    ₱{(item.final_price * item.quantity).toFixed(2)}
+                  </span>
+                  <button
+                    className="remove-btn-modern"
+                    title="Remove from cart"
+                    onClick={() => confirmRemove(item)}
+                  >
+                    <FaTrashAlt />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="cart-summary-modern">
+            <h3>Order Summary</h3>
+            <div className="summary-line">
+              <span>Subtotal</span>
+              <span>₱{subtotal.toFixed(2)}</span>
+            </div>
+            <p className="summary-note">
+              Shipping calculated at checkout.
+            </p>
+
+            <button className="checkout-btn-modern" onClick={handleCheckout}>
+              Proceed to Checkout <FaArrowRight />
+            </button>
+
+            <Link to="/" className="continue-link">
+              ← Continue Shopping
             </Link>
           </div>
-        ) : (
-          <>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th></th>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartWithImages.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={checkedItems[item.id] || false}
-                        onChange={() => toggleCheck(item.id)}
-                      />
-                    </td>
-                    <td>
-<img
-  src={item.image || "/assets/placeholder-image.png"}
-  alt={item.name}
-  className="image"
-  onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
-/>
-                    </td>
-                    <td>
-                      <div className="product-info">
-                        <strong>{item.name}</strong>
-                        <p className="variant">
-                          Format: {item.variant_format}
-                        </p>
+        </div>
+      )}
 
-                        {item.discount_value > 0 ? (
-                          <p className="price discounted">
-                            <span className="original">
-                              ₱
-                              {item.price.toFixed(2) ||
-                                (
-                                  item.price +
-                                  item.discount_value
-                                ).toFixed(2)}
-                            </span>{" "}
-                            <span className="discounted">
-                              ₱{item.final_price?.toFixed(2) || item.price}
-                            </span>{" "}
-                            <span className="badge-discount">
-                              {item.discount_type === "percentage"
-                                ? `-${item.discount_value}%`
-                                : `₱${item.discount_value} OFF`}
-                            </span>
-                          </p>
-                        ) : (
-                          <p className="price">₱{item.price.toFixed(2)}</p>
-                        )}
-                      </div>
-                    </td>
-
-                    <td>
-                      <div className="quantityControl">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity - 1)
-                          }
-                          className="qtyBtn"
-                          disabled={item.quantity <= 1}
-                        >
-                          −
-                        </button>
-                        <span className="qtyValue">{item.quantity}</span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
-                          }
-                          className="qtyBtn"
-                        >
-                          ＋
-                        </button>
-                      </div>
-                    </td>
-
-                    <td>
-                      ₱{(item.final_price * item.quantity).toFixed(2)}
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="remove-btn"
-                      >
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* ✅ Cart Summary */}
-            <div className="cart-summary">
-              <div className="summary-line">
-                <span>Subtotal:</span>
-                <span>₱{totalBeforeDiscount.toFixed(2)}</span>
-              </div>
-              {totalDiscount > 0 && (
-                <div className="summary-line discount">
-                  <span>Discounts:</span>
-                  <span>−₱{totalDiscount.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="summary-line total">
-                <strong>Total:</strong>
-                <strong>₱{subtotal.toFixed(2)}</strong>
-              </div>
-
-              <div className="cart-actions">
-                <Link to="/home-page">
-                  <button className="continue-shopping">
-                    Continue Shopping
-                  </button>
-                </Link>
-                <button onClick={handleCheckout} className="checkout">
-                  Proceed to Checkout
-                </button>
-              </div>
+      {/* 🧾 Remove Confirmation Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Remove item</h3>
+            <p>
+              Are you sure you want to remove{" "}
+              <strong>{itemToRemove?.name}</strong> from your cart?
+            </p>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={handleCancelRemove}>
+                Cancel
+              </button>
+              <button className="btn-confirm" onClick={handleConfirmRemove}>
+                Remove
+              </button>
             </div>
-          </>
-        )}
-      </div>
-
-      <div style={{ height: "450px" }}></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

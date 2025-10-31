@@ -26,6 +26,15 @@ const computeDiscount = (price, voucher) => {
 };
 
 /**
+ * Helper: repopulate and return full cart
+ */
+const getPopulatedCart = async (userId) => {
+  return await Cart.findOne({ user: userId })
+    .populate("items.product", "name author mainImage image")
+    .populate("items.applied_voucher", "name discount_type discount_value");
+};
+
+/**
  * POST /api/cart/add
  * Add item to cart (user must be logged in)
  */
@@ -55,6 +64,7 @@ router.post("/add", protect, async (req, res) => {
         { "applicable_variants.variant_id": variantId },
       ],
     });
+
     const voucher = vouchers[0] || null;
     const { finalPrice, discount_value, discount_type } = computeDiscount(variant.price, voucher);
 
@@ -84,7 +94,11 @@ router.post("/add", protect, async (req, res) => {
     }
 
     await cart.save();
-    res.status(200).json({ message: "Added to cart", cart });
+
+    // ✅ Populate before returning
+    const populatedCart = await getPopulatedCart(userId);
+
+    res.status(200).json({ message: "Added to cart", cart: populatedCart });
   } catch (err) {
     console.error("❌ Add to cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -97,9 +111,7 @@ router.post("/add", protect, async (req, res) => {
  */
 router.get("/", protect, async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user._id })
-      .populate("items.product", "name author")
-      .populate("items.applied_voucher", "name discount_type discount_value");
+    const cart = await getPopulatedCart(req.user._id);
     res.json(cart || { items: [] });
   } catch (err) {
     console.error("❌ Fetch cart error:", err);
@@ -125,7 +137,11 @@ router.patch("/update/:variantId", protect, async (req, res) => {
     item.subtotal = item.final_price * quantity;
 
     await cart.save();
-    res.json({ message: "Quantity updated", cart });
+
+    // ✅ Re-fetch populated cart
+    const populatedCart = await getPopulatedCart(req.user._id);
+
+    res.json({ message: "Quantity updated", cart: populatedCart });
   } catch (err) {
     console.error("❌ Update quantity error:", err);
     res.status(500).json({ message: "Server error" });
@@ -144,7 +160,10 @@ router.delete("/remove/:variantId", protect, async (req, res) => {
     cart.items = cart.items.filter((i) => i.variant_id.toString() !== variantId);
     await cart.save();
 
-    res.json({ message: "Item removed", cart });
+    // ✅ Return populated cart
+    const populatedCart = await getPopulatedCart(req.user._id);
+
+    res.json({ message: "Item removed", cart: populatedCart });
   } catch (err) {
     console.error("❌ Remove item error:", err);
     res.status(500).json({ message: "Server error" });
