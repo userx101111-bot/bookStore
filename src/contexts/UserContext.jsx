@@ -51,42 +51,41 @@ export const UserProvider = ({ children }) => {
   /**
    * 🔁 Refresh user from backend
    */
-// inside src/contexts/UserContext.jsx
+      // inside src/contexts/UserContext.jsx
 const refreshUser = async () => {
   try {
     const token = localStorage.getItem("token");
     if (!token) return;
+
+    let data;
 
     // 🔹 Try /api/auth/profile first
     let res = await fetch("https://bookstore-yl7q.onrender.com/api/auth/profile", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    // 🔹 Fallback to /api/users/profile if auth route fails or returns minimal data
-// 🔹 Fallback to /api/users/profile if auth route fails OR missing fields
-if (!res.ok) {
-  console.warn("⚠️ /api/auth/profile failed, falling back to /api/users/profile");
-  res = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  data = await res.json();
-} else {
-  data = await res.json();
-  // 🧠 Check for missing fields (phone or createdAt)
-  if (!data?.createdAt || !data?.phone) {
-    console.warn("⚠️ Incomplete user data, retrying via /api/users/profile");
-    const retry = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (retry.ok) data = await retry.json();
-  }
-}
+    // 🔹 Fallback to /api/users/profile if auth route fails OR missing fields
+    if (!res.ok) {
+      console.warn("⚠️ /api/auth/profile failed, falling back to /api/users/profile");
+      res = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      data = await res.json();
+    } else {
+      data = await res.json();
 
-
-    const data = await res.json();
+      // 🧠 Check for missing fields (phone or createdAt)
+      if (!data?.createdAt || !data?.phone) {
+        console.warn("⚠️ Incomplete user data, retrying via /api/users/profile");
+        const retry = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (retry.ok) data = await retry.json();
+      }
+    }
 
     // 🚨 Defensive check: verify we got the key profile fields
-    if (!res.ok || !data || !data.email) {
+    if (!data || !data.email) {
       console.error("❌ Failed to refresh user:", data?.message || data);
       return;
     }
@@ -121,6 +120,7 @@ if (!res.ok) {
     console.error("❌ Refresh user error:", err);
   }
 };
+
 
 
   /**
@@ -177,28 +177,35 @@ if (!res.ok) {
   /**
    * 🔵 Load user from localStorage on first load
    */
-  useEffect(() => {
-    try {
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      const storedToken = localStorage.getItem("token");
+useEffect(() => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const storedToken = localStorage.getItem("token");
 
-      if (storedUser && storedToken) {
-        const cleanUser = sanitizeUserData(storedUser);
-        setUser(cleanUser);
-        setIsGuest(false);
-        console.log("🔵 Loaded user from storage:", cleanUser);
-      } else {
-        setUser({ isGuest: true });
-        setIsGuest(true);
+    if (storedUser && storedToken) {
+      const cleanUser = sanitizeUserData(storedUser);
+      setUser(cleanUser);
+      setIsGuest(false);
+      console.log("🔵 Loaded user from storage:", cleanUser);
+
+      // 🔹 Auto-refresh if critical fields missing
+      if (!cleanUser.createdAt || !cleanUser.phone) {
+        console.log("🔄 Missing fields detected — refreshing from API");
+        refreshUser();
       }
-    } catch (err) {
-      console.error("❌ Failed to load stored user:", err);
+    } else {
       setUser({ isGuest: true });
       setIsGuest(true);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  } catch (err) {
+    console.error("❌ Failed to load stored user:", err);
+    setUser({ isGuest: true });
+    setIsGuest(true);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
 
   const getToken = () => localStorage.getItem("token");
   const isAdmin = () => user?.role === "admin";
