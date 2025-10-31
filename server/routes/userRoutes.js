@@ -11,16 +11,25 @@ const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fet
 const router = express.Router();
 
 // ============================================================
-// Get user profile
+// Get user profile (with full details including phone + createdAt)
 // ============================================================
 router.get("/profile", protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-passwordManual -passwordGoogle");
+    const user = await User.findById(req.user._id)
+      .select("_id firstName lastName email role loginMethod phone address createdAt")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res.json(user);
   } catch (error) {
+    console.error("Profile fetch error:", error);
     res.status(500).json({ message: error.message });
   }
 });
+
 
 // ============================================================
 // Update user profile

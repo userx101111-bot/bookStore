@@ -211,6 +211,7 @@ router.get("/profile", async (req, res) => {
 });
 
 
+
 // ============================================================
 // ADD MANUAL PASSWORD + UPDATE USER DETAILS (after email verified)
 // ============================================================

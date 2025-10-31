@@ -63,12 +63,25 @@ const refreshUser = async () => {
     });
 
     // 🔹 Fallback to /api/users/profile if auth route fails or returns minimal data
-    if (!res.ok) {
-      console.warn("⚠️ /api/auth/profile failed, falling back to /api/users/profile");
-      res = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    }
+// 🔹 Fallback to /api/users/profile if auth route fails OR missing fields
+if (!res.ok) {
+  console.warn("⚠️ /api/auth/profile failed, falling back to /api/users/profile");
+  res = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  data = await res.json();
+} else {
+  data = await res.json();
+  // 🧠 Check for missing fields (phone or createdAt)
+  if (!data?.createdAt || !data?.phone) {
+    console.warn("⚠️ Incomplete user data, retrying via /api/users/profile");
+    const retry = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (retry.ok) data = await retry.json();
+  }
+}
+
 
     const data = await res.json();
 
