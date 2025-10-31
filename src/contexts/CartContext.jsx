@@ -18,14 +18,16 @@ export const CartProvider = ({ children }) => {
   const normalizeCartData = (data) => {
     if (!data || !data.items) return [];
     return data.items.map((i) => ({
-      id: i._id, // cart item id
+      id: i._id,
       productId: i.product?._id || i.product,
-      variantId: i.variant_id, // ✅ This is the backend variant_id
+      variantId: i.variant_id,
       name: i.product?.name || "Unknown Product",
+      slug: i.product?.slug || "",
       price: i.price || 0,
       final_price: i.final_price || i.price || 0,
       quantity: i.quantity || 1,
-      format: i.variant_format || "",
+      format: i.variant_format || i.format || "standard", // ✅ ensures format always exists
+      variant_format: i.variant_format || i.format || "standard", // ✅ adds this too
       subtotal: i.subtotal || i.final_price * (i.quantity || 1),
       discount_type: i.discount_type,
       discount_value: i.discount_value,

@@ -447,3 +447,23 @@
   background-color: #be123c;
   transform: translateY(-2px);
 }
+
+/* --------------------
+🖱 Clickable Product Elements
+-------------------- */
+.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Make it feel interactive when hovered */
+.clickable:hover {
+  opacity: 0.85;
+  transform: scale(1.03);
+}
+
+/* Specific tweaks for text links (product name) */
+.cart-name.clickable:hover {
+  color: #e11d48; /* Matches your theme accent */
+  text-decoration: underline;
+}

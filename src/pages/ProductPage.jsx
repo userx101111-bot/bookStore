@@ -1,6 +1,5 @@
 // ============================================================
-// ✅ ProductPage.jsx — Show Buy Now only if stock > 0 + True NEW/PROMO badges + Variant Discount Display
-// Updated Add to Cart button behavior (token check, use API cart response, better disabling)
+// ✅ ProductPage.jsx — Fixed Variant Routing & Redirect Logic
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
@@ -29,7 +28,7 @@ const ProductPage = () => {
   const descriptionTabRef = useRef(null);
 
   // ============================================================
-  // 🔹 Fetch product
+  // 🔹 Fetch product (with correct variant sync)
   // ============================================================
   useEffect(() => {
     const fetchProduct = async () => {
@@ -46,12 +45,13 @@ const ProductPage = () => {
 
         setProduct(data);
 
-        // ✅ Select variant from URL or fallback
         if (data.variants?.length > 0) {
+          // ✅ Find matching variant based on URL param (case-insensitive)
           const matched =
             data.variants.find(
               (v) => v.format?.toLowerCase() === variant?.toLowerCase()
             ) || data.variants[0];
+
           setSelectedVariant(matched);
 
           const baseMain = matched.mainImage || "/assets/placeholder-image.png";
@@ -63,12 +63,14 @@ const ProductPage = () => {
           setMainImage(baseMain);
           setAlbumImages(uniqueAlbum);
 
-          if (!variant) {
+          // ✅ Only redirect if NO variant param exists
+          if (!variant && matched?.format) {
             navigate(`/product/${slug}/${matched.format.toLowerCase()}`, {
               replace: true,
             });
           }
         } else {
+          // Non-variant product fallback
           const baseMain = data.image || "/assets/placeholder-image.png";
           const album = data.albumImages?.length ? data.albumImages : [];
           const uniqueAlbum = [
@@ -85,8 +87,9 @@ const ProductPage = () => {
         setLoading(false);
       }
     };
+
     fetchProduct();
-  }, [slug, variant, navigate]);
+  }, [slug, variant]); // ✅ Removed `navigate` from deps to avoid unwanted re-runs
 
   // ============================================================
   // 🔹 Fetch vouchers
