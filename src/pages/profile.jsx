@@ -355,10 +355,28 @@ const Profile = () => {
 
         <div className="main-content">
           <div className="profile-details">
-            <h2>Account Information</h2>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>Login Method:</strong> {loginMethod.join(", ")}</p>
-            <p><strong>Registered:</strong> {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}</p>
+<h2>Account Information</h2>
+
+<p>
+  <strong>Name:</strong>{" "}
+  {user?.firstName || user?.lastName
+    ? `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
+    : user?.name || "—"}
+</p>
+
+<p><strong>Email:</strong> {user?.email || "—"}</p>
+
+<p><strong>Phone:</strong> {user?.phone || "—"}</p>
+
+<p><strong>Login Method:</strong> {loginMethod.join(", ")}</p>
+
+<p>
+  <strong>Registered:</strong>{" "}
+  {user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString()
+    : "—"}
+</p>
+
 
             <div className="manage-account-section">
               <div

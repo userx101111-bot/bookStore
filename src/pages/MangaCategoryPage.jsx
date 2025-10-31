@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import "./MangaCategoryPage.css";
-import "../pages/homepage.css"; // ✅ reuse badge & price CSS
+
 
 const normalizeSlug = (str) => str?.toLowerCase().replace(/\s+/g, "-").trim();
 
@@ -248,20 +248,29 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
           <p className="price">₱{originalPrice.toFixed(2)}</p>
         )}
 
-        {hasVariants && (
-          <div className="variant-buttons">
-            {variants.map((v, idx) => (
-              <button
-                key={v._id}
-                className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
-                onMouseEnter={() => setActiveIndex(idx)}
-                onClick={() => handleVariantClick(v)}
-              >
-                {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
-              </button>
-            ))}
-          </div>
-        )}
+ {variants.length > 0 && (
+   <div
+     className={`variant-buttons ${
+       variants.length === 1 ? "single-variant" : ""
+     }`}
+   >
+     {variants.map((v, idx) => (
+       <button
+         key={v._id}
+         className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
+         onMouseEnter={() => setActiveIndex(idx)}
+         onClick={(e) => {
+           e.stopPropagation();
+           handleVariantClick(v);
+         }}
+         disabled={variants.length === 1}
+       >
+         {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
+       </button>
+     ))}
+   </div>
+ )}
+
       </div>
     );
   };

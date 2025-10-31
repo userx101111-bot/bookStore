@@ -87,113 +87,141 @@ const FeaturedPage = ({ featureType }) => {
     return Object.values(grouped);
   };
 
-  const VariantCard = ({ product }) => {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [hovered, setHovered] = useState(false);
-    const [fading, setFading] = useState(false);
-    const intervalRef = useRef(null);
-    const variants = product.variants || [];
-    const hasVariants = variants.length > 1;
-    const currentVariant = variants[activeIndex];
-    const currentImage =
-      currentVariant?.mainImage ||
-      product.mainImage ||
-      "/assets/placeholder-image.png";
+const VariantCard = ({ product }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [fading, setFading] = useState(false);
+  const intervalRef = useRef(null);
+  const variants = product.variants || [];
+  const hasVariants = variants.length > 1;
+  const currentVariant = variants[activeIndex];
+  const currentImage =
+    currentVariant?.mainImage ||
+    product.mainImage ||
+    "/assets/placeholder-image.png";
 
-    useEffect(() => {
-      if (!hasVariants || hovered) return;
-      intervalRef.current = setInterval(() => {
-        setFading(true);
-        setTimeout(() => {
-          setActiveIndex((prev) => (prev + 1) % variants.length);
-          setFading(false);
-        }, 200);
-      }, 2000);
-      return () => clearInterval(intervalRef.current);
-    }, [variants, hovered, hasVariants]);
+  useEffect(() => {
+    if (!hasVariants || hovered) return;
+    intervalRef.current = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setActiveIndex((prev) => (prev + 1) % variants.length);
+        setFading(false);
+      }, 200);
+    }, 2000);
+    return () => clearInterval(intervalRef.current);
+  }, [variants, hovered, hasVariants]);
 
-    // Voucher & badge logic
-    const cleanParentId = (product.parentId || product._id)?.split("-")[0];
-    const cleanVariantId = currentVariant?._id?.split("-").pop();
-    const linkedVoucher =
-      vouchers.find((v) =>
-        v.applicable_variants?.some((vv) => {
-          const prodId = vv.product?._id || vv.product;
-          const variantId = vv.variant_id;
-          return prodId === cleanParentId && variantId === cleanVariantId;
-        })
-      ) ||
-      vouchers.find((v) =>
-        v.applicable_products?.some((p) => (p._id || p) === cleanParentId)
-      );
+  // Voucher & badge logic
+  const cleanParentId = (product.parentId || product._id)?.split("-")[0];
+  const cleanVariantId = currentVariant?._id?.split("-").pop();
+  const linkedVoucher =
+    vouchers.find((v) =>
+      v.applicable_variants?.some((vv) => {
+        const prodId = vv.product?._id || vv.product;
+        const variantId = vv.variant_id;
+        return prodId === cleanParentId && variantId === cleanVariantId;
+      })
+    ) ||
+    vouchers.find((v) =>
+      v.applicable_products?.some((p) => (p._id || p) === cleanParentId)
+    );
 
-    const originalPrice = currentVariant?.price || product.price || 0;
-    let discountedPrice = originalPrice;
-    let badgeText = "";
+  const originalPrice = currentVariant?.price || product.price || 0;
+  let discountedPrice = originalPrice;
+  let badgeText = "";
 
-    if (linkedVoucher) {
-      const value = linkedVoucher.discount_value || 0;
-      if (linkedVoucher.discount_type === "percentage") {
-        discountedPrice = originalPrice - (originalPrice * value) / 100;
-        badgeText = `-${value}% OFF`;
-      } else if (linkedVoucher.discount_type === "fixed") {
-        discountedPrice = Math.max(originalPrice - value, 0);
-        badgeText = `₱${value.toFixed(0)} OFF`;
-      }
+  if (linkedVoucher) {
+    const value = linkedVoucher.discount_value || 0;
+    if (linkedVoucher.discount_type === "percentage") {
+      discountedPrice = originalPrice - (originalPrice * value) / 100;
+      badgeText = `-${value}% OFF`;
+    } else if (linkedVoucher.discount_type === "fixed") {
+      discountedPrice = Math.max(originalPrice - value, 0);
+      badgeText = `₱${value.toFixed(0)} OFF`;
     }
+  }
 
-    return (
-      <div
-        className="product-card variant-card"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onClick={() =>
-          navigate(
-            `/product/${product.slug}/${
-              currentVariant?.format?.toLowerCase() || "standard"
-            }`
-          )
-        }
-      >
-        <div className="product-image-wrap">
-          <img
-            src={currentImage}
-            alt={product.name}
-            className={fading ? "fade" : ""}
-            onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
-          />
+  const handleVariantClick = (v) =>
+    navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
 
-          {/* ✅ BADGES */}
-          {product.isNewArrival && (
-            <span className="badge-new" title="New arrival">
-              NEW
-            </span>
-          )}
-          {linkedVoucher && (
-            <span className="badge-voucher" title="Special offer applied!">
-              {badgeText}
-            </span>
-          )}
+  return (
+    <div
+      className="product-card variant-card"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() =>
+        navigate(
+          `/product/${product.slug}/${
+            currentVariant?.format?.toLowerCase() || "standard"
+          }`
+        )
+      }
+    >
+      <div className="product-image-wrap">
+        <img
+          src={currentImage}
+          alt={product.name}
+          className={fading ? "fade" : ""}
+          onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
+        />
 
-          {hasVariants && (
-            <span className="variant-count">{variants.length} Variants</span>
-          )}
-        </div>
+        {/* ✅ BADGES */}
+        {product.isNewArrival && (
+          <span className="badge-new" title="New arrival">
+            NEW
+          </span>
+        )}
+        {linkedVoucher && (
+          <span className="badge-voucher" title="Special offer applied!">
+            {badgeText}
+          </span>
+        )}
 
-        <p className="product-name">{product.name}</p>
-
-        {/* 💰 Price */}
-        {linkedVoucher ? (
-          <p className="price discounted">
-            <span className="original">₱{originalPrice.toFixed(2)}</span>
-            <span className="discounted">₱{discountedPrice.toFixed(2)}</span>
-          </p>
-        ) : (
-          <p className="price">₱{originalPrice.toFixed(2)}</p>
+        {hasVariants && (
+          <span className="variant-count">{variants.length} Variants</span>
         )}
       </div>
-    );
-  };
+
+      <p className="product-name">{product.name}</p>
+
+      {/* 💰 Price */}
+      {linkedVoucher ? (
+        <p className="price discounted">
+          <span className="original">₱{originalPrice.toFixed(2)}</span>
+          <span className="discounted">₱{discountedPrice.toFixed(2)}</span>
+        </p>
+      ) : (
+        <p className="price">₱{originalPrice.toFixed(2)}</p>
+      )}
+
+      {/* ✅ Variant Buttons (same behavior as homepage) */}
+      {variants.length > 0 && (
+        <div
+          className={`variant-buttons ${
+            variants.length === 1 ? "single-variant" : ""
+          }`}
+        >
+          {variants.map((v, idx) => (
+            <button
+              key={v._id}
+              className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
+              onMouseEnter={() => setActiveIndex(idx)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVariantClick(v);
+              }}
+              disabled={variants.length === 1}
+            >
+              {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
   const groupedProducts = groupProductsByParent(getSortedProducts());
 

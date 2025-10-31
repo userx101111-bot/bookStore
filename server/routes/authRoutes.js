@@ -194,26 +194,22 @@ router.post("/google-login", async (req, res) => {
 // ==========================================================
 router.get("/profile", async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.split(" ")[1];
-
-    if (!token)
-      return res.status(401).json({ message: "No token provided" });
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "No token provided" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select(
-      "-passwordManual -passwordGoogle"
-    );
+    const user = await User.findById(decoded.id)
+      .select("_id firstName lastName email role loginMethod phone createdAt")
+      .lean();
 
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
-
+    if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
     console.error("Profile fetch error:", err);
     res.status(401).json({ message: "Invalid or expired token" });
   }
 });
+
 
 // ============================================================
 // ADD MANUAL PASSWORD + UPDATE USER DETAILS (after email verified)

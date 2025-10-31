@@ -51,29 +51,64 @@ export const UserProvider = ({ children }) => {
   /**
    * 🔁 Refresh user from backend
    */
-  const refreshUser = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+// inside src/contexts/UserContext.jsx
+const refreshUser = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-      const res = await fetch("https://bookstore-yl7q.onrender.com/api/auth/profile", {
+    // 🔹 Try /api/auth/profile first
+    let res = await fetch("https://bookstore-yl7q.onrender.com/api/auth/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // 🔹 Fallback to /api/users/profile if auth route fails or returns minimal data
+    if (!res.ok) {
+      console.warn("⚠️ /api/auth/profile failed, falling back to /api/users/profile");
+      res = await fetch("https://bookstore-yl7q.onrender.com/api/users/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        const cleanUser = sanitizeUserData(data);
-        localStorage.setItem("user", JSON.stringify(cleanUser));
-        setUser(cleanUser);
-        setIsGuest(false);
-        console.log("🔄 User refreshed:", cleanUser);
-      } else {
-        console.error("❌ Failed to refresh user:", data.message);
-      }
-    } catch (err) {
-      console.error("❌ Refresh user error:", err);
     }
-  };
+
+    const data = await res.json();
+
+    // 🚨 Defensive check: verify we got the key profile fields
+    if (!res.ok || !data || !data.email) {
+      console.error("❌ Failed to refresh user:", data?.message || data);
+      return;
+    }
+
+    // 🧹 Normalize field names & timestamps
+    const cleanUser = {
+      _id: data._id,
+      firstName: data.firstName || "",
+      lastName: data.lastName || "",
+      name:
+        data.firstName || data.lastName
+          ? `${data.firstName || ""} ${data.lastName || ""}`.trim()
+          : data.name || "",
+      email: data.email || "",
+      phone: data.phone || "",
+      role: data.role || "user",
+      loginMethod: Array.isArray(data.loginMethod)
+        ? data.loginMethod
+        : [data.loginMethod || "email"],
+      createdAt: data.createdAt || data.timestamp || null,
+      isGuest: false,
+      token,
+    };
+
+    // 🗄️ Persist & update state
+    localStorage.setItem("user", JSON.stringify(cleanUser));
+    setUser(cleanUser);
+    setIsGuest(false);
+
+    console.log("🔄 User refreshed:", cleanUser);
+  } catch (err) {
+    console.error("❌ Refresh user error:", err);
+  }
+};
+
 
   /**
    * 🟢 Login handler

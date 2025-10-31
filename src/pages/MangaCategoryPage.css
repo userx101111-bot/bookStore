@@ -307,3 +307,67 @@ body {
     max-width: 180px;
   }
 }
+
+/* ============================================================
+🧩 VARIANT BUTTONS — Full standalone styling (Homepage parity)
+============================================================ */
+.variant-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.variant-btn {
+  flex: 1 1 45%;
+  background-color: #f3f4f6;
+  color: #333;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.variant-btn:hover,
+.variant-btn.active {
+  background-color: var(--section-text-color, #111);
+  color: var(--section-color, #fafafa);
+  border-color: var(--section-text-color, #111);
+  transform: translateY(-2px);
+}
+
+.variant-btn.active {
+  background-color: var(--section-color, #2563eb);
+  color: #fff;
+  border-color: var(--section-color, #2563eb);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.variant-btn:active {
+  transform: scale(0.97);
+}
+
+/* ✅ SINGLE VARIANT STYLE (non-clickable, centered) */
+.variant-buttons.single-variant {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.variant-buttons.single-variant .variant-btn {
+  pointer-events: none;
+  opacity: 0.9;
+  cursor: default;
+  transform: none;
+  transition: none;
+  width: 90%;
+  text-align: center;
+  background-color: #f2f2f2;
+  border-color: #ddd;
+  color: #333;
+}
+
