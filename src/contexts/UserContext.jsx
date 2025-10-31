@@ -116,21 +116,27 @@ export const UserProvider = ({ children }) => {
   /**
    * 🟢 Login handler
    */
-  const login = async (userData) => {
-    try {
-      if (!userData) return;
-      const cleanUser = sanitizeUserData(userData);
+const login = async (userData) => {
+  try {
+    if (!userData) return;
+    const cleanUser = sanitizeUserData(userData);
 
-      if (userData.token) localStorage.setItem("token", userData.token);
-      localStorage.setItem("user", JSON.stringify(cleanUser));
+    if (userData.token) localStorage.setItem("token", userData.token);
+    localStorage.setItem("user", JSON.stringify(cleanUser));
 
-      setUser(cleanUser);
-      setIsGuest(false);
-      console.log("🟢 User logged in:", cleanUser);
-    } catch (err) {
-      console.error("❌ Error saving user data:", err);
+    setUser(cleanUser);
+    setIsGuest(false);
+    console.log("🟢 User logged in:", cleanUser);
+
+    // ✅ Auto-refresh if missing key data (phone or createdAt)
+    if (!cleanUser.phone || !cleanUser.createdAt) {
+      console.log("🔁 Auto-refreshing user after login (missing fields)...");
+      await refreshUser();
     }
-  };
+  } catch (err) {
+    console.error("❌ Error saving user data:", err);
+  }
+};
 
   /**
    * 🟢 Update user locally (used after address or profile update)

@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { MdKeyboardArrowRight } from 'react-icons/md';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import './checkOut.css';
-import { useCart } from '../contexts/CartContext';
-
+import React, { useState, useEffect } from "react";
+import { MdKeyboardArrowRight } from "react-icons/md";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import "./checkOut.css";
+import { useCart } from "../contexts/CartContext";
 
 const Checkout = () => {
   const location = useLocation();
@@ -15,22 +14,22 @@ const Checkout = () => {
   const [error, setError] = useState(null);
   const { clearCart } = useCart();
 
+  // 🧠 Load cart + user
   useEffect(() => {
-    if (location.state && location.state.cartItems) {
+    if (location.state?.cartItems) {
       setCartItems(location.state.cartItems);
     } else {
-      const storedCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
       setCartItems(storedCart);
     }
 
-    const storedUser = JSON.parse(localStorage.getItem('user'));
+    const storedUser = JSON.parse(localStorage.getItem("user"));
     if (storedUser) setUser(storedUser);
   }, [location]);
 
   // 🧮 Totals
   const merchandiseSubTotal = cartItems.reduce(
-    (sum, item) =>
-      sum + (item.originalPrice || item.price) * item.quantity,
+    (sum, item) => sum + (item.originalPrice || item.price) * item.quantity,
     0
   );
   const discountTotal = cartItems.reduce(
@@ -44,23 +43,37 @@ const Checkout = () => {
   const totalPayment = merchandiseSubTotal - discountTotal + shipping;
   const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  // 🏠 Prepare address safely
+  const address = user?.address || {};
+  const fullAddress =
+    address.houseNumber || address.street || address.barangay
+      ? `${address.houseNumber ? address.houseNumber + " " : ""}${
+          address.street || address.addressLine1 || ""
+        }, ${address.barangay || ""}, ${address.city || ""}, ${
+          address.region || address.state || address.province || ""
+        }, ${address.zip || address.postalCode || ""}`
+      : "No address provided";
+
   // 🚀 Handle Checkout
   const handleCheckout = async () => {
     if (!user || !user.token) {
-      alert('Please log in to complete your purchase.');
-      navigate('/login');
+      alert("Please log in to complete your purchase.");
+      navigate("/login");
       return;
     }
 
-    if (!user.address || !user.address.addressLine1) {
-      alert('Please add your shipping address before checking out.');
-      navigate('/address');
+    if (
+      !user.address ||
+      (!user.address.street && !user.address.houseNumber)
+    ) {
+      alert("Please add your shipping address before checking out.");
+      navigate("/address");
       return;
     }
 
     if (cartItems.length === 0) {
-      alert('Your cart is empty. Please add items before checking out.');
-      navigate('/products');
+      alert("Your cart is empty. Please add items before checking out.");
+      navigate("/products");
       return;
     }
 
@@ -70,7 +83,7 @@ const Checkout = () => {
 
       const orderData = {
         userId: user._id || user.id,
-        products: cartItems.map(item => ({
+        products: cartItems.map((item) => ({
           productId: item.productId || item.id,
           name: item.name,
           quantity: item.quantity,
@@ -78,19 +91,26 @@ const Checkout = () => {
           price: item.price,
         })),
         shippingAddress: {
-          street: user.address.addressLine1 || '',
-          city: user.address.city || '',
-          state: user.address.state || user.address.province || '',
-          postalCode: user.address.zip || user.address.postalCode || '',
+          houseNumber: user.address.houseNumber || "",
+          street: user.address.street || "",
+          barangay: user.address.barangay || "",
+          city: user.address.city || "",
+          region:
+            user.address.region ||
+            user.address.state ||
+            user.address.province ||
+            "",
+          postalCode: user.address.zip || user.address.postalCode || "",
+          country: user.address.country || "Philippines",
         },
-        paymentMethod: 'cash on delivery',
+        paymentMethod: "cash on delivery",
         totalAmount: totalPayment,
-        status: 'pending',
+        status: "pending",
       };
 
       const config = {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
         },
       };
@@ -102,9 +122,9 @@ const Checkout = () => {
       );
 
       if (response.data) {
-        localStorage.removeItem('cart');
+        localStorage.removeItem("cart");
         clearCart();
-        navigate('/order-success', {
+        navigate("/order-success", {
           state: {
             orderId: response.data._id,
             orderTotal: totalPayment,
@@ -112,10 +132,10 @@ const Checkout = () => {
         });
       }
     } catch (error) {
-      console.error('Checkout error:', error);
+      console.error("Checkout error:", error);
       setError(
         error.response?.data?.message ||
-          'Failed to process your order. Please try again.'
+          "Failed to process your order. Please try again."
       );
     } finally {
       setLoading(false);
@@ -139,26 +159,26 @@ const Checkout = () => {
           </thead>
           <tbody>
             {cartItems.length > 0 ? (
-              cartItems.map(item => (
+              cartItems.map((item) => (
                 <tr key={item.id}>
                   <td className="tdimage">
                     <img src={item.image} alt={item.name} />
                   </td>
                   <td className="tdnameprice">
                     <strong>{item.name}</strong>
-                    <p className="variant">Format: {item.format || '—'}</p>
+                    <p className="variant">Format: {item.format || "—"}</p>
                     {item.discount_value > 0 ? (
                       <p className="price discounted">
                         <span className="original">
                           ₱
                           {item.originalPrice?.toFixed(2) ||
                             (item.price + item.discount_value).toFixed(2)}
-                        </span>{' '}
+                        </span>{" "}
                         <span className="discounted">
                           ₱{item.price.toFixed(2)}
-                        </span>{' '}
+                        </span>{" "}
                         <span className="badge-discount">
-                          {item.discount_type === 'percentage'
+                          {item.discount_type === "percentage"
                             ? `-${item.discount_value}%`
                             : `₱${item.discount_value} OFF`}
                         </span>
@@ -170,14 +190,15 @@ const Checkout = () => {
                   <td>
                     <span>x{item.quantity}</span>
                   </td>
-                  <td>
-                    ₱{(item.price * item.quantity).toFixed(2)}
-                  </td>
+                  <td>₱{(item.price * item.quantity).toFixed(2)}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
+                <td
+                  colSpan="4"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
                   No items in cart. Please add items before checking out.
                 </td>
               </tr>
@@ -196,25 +217,20 @@ const Checkout = () => {
                   <>
                     <strong>Name:</strong> {user.firstName} {user.lastName}
                     <br />
-                    <strong>Phone:</strong>{' '}
+                    <strong>Phone:</strong>{" "}
                     {user.phone ||
                       user.address?.telephone ||
-                      'No phone'}
+                      "No phone"}
                     <br />
-                    <strong>Address:</strong>{' '}
-                    {user.address
-                      ? `${user.address.addressLine1}, ${user.address.city}, ${
-                          user.address.state || user.address.province
-                        }`
-                      : 'No address provided'}
+                    <strong>Address:</strong> {fullAddress}
                     <br />
-                    <strong>Registered:</strong>{' '}
+                    <strong>Registered:</strong>{" "}
                     {user.createdAt
                       ? new Date(user.createdAt).toLocaleDateString()
-                      : 'Not available'}
+                      : "Not available"}
                   </>
                 ) : (
-                  'Please log in to complete your purchase.'
+                  "Please log in to complete your purchase."
                 )}
               </p>
               <div className="arrowWrapper">
@@ -261,7 +277,7 @@ const Checkout = () => {
             <div className="footer">
               <button
                 className="cancel"
-                onClick={() => navigate('/cart')}
+                onClick={() => navigate("/cart")}
                 disabled={loading}
               >
                 Cancel
@@ -272,7 +288,7 @@ const Checkout = () => {
                 className="checkout"
                 disabled={loading}
               >
-                {loading ? 'Processing...' : 'Checkout'}
+                {loading ? "Processing..." : "Checkout"}
               </button>
             </div>
           </div>

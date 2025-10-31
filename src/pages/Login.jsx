@@ -33,55 +33,51 @@ const Login = () => {
   // -------------------------
   // EMAIL / PASSWORD LOGIN
   // -------------------------
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setError('');
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  setLoading(true);
+  setError('');
 
-    const email = event.target.email.value.trim();
-    const password = event.target.password.value;
+  const email = event.target.email.value.trim();
+  const password = event.target.password.value;
 
-    try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error('Server returned HTML instead of JSON. Check backend API.');
-      }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Invalid email or password');
 
-      if (!res.ok) throw new Error(data.message || 'Invalid email or password');
-      if (!data.token) throw new Error('Token not received from server');
+    // ✅ Get detailed profile (from /api/users/profile)
+    const profileRes = await fetch(`${API_URL}/api/users/profile`, {
+      headers: { Authorization: `Bearer ${data.token}` },
+    });
+    const profileData = await profileRes.json();
 
-      const profileRes = await fetch(`${API_URL}/api/auth/profile`, {
-        headers: { Authorization: `Bearer ${data.token}` },
-      });
+    // Merge and save
+    const userData = {
+      ...profileData,
+      token: data.token,
+      isLoggedIn: true,
+      isGuest: false,
+    };
 
-      if (!profileRes.ok) throw new Error('Failed to fetch profile');
-      const profileData = await profileRes.json();
+    await login(userData);
 
-      const userData = {
-        ...profileData,
-        token: data.token,
-        isLoggedIn: true,
-        isGuest: false,
-      };
+    // ✅ Force refresh right after login to ensure consistency
+    await refreshUser?.();
 
-      await login(userData);
-      navigate(userData.role === 'admin' ? '/admin' : '/');
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    navigate(userData.role === 'admin' ? '/admin' : '/profile');
+  } catch (err) {
+    console.error('Login error:', err);
+    setError(err.message || 'Login failed. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // -------------------------
   // GOOGLE LOGIN

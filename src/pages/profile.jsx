@@ -133,6 +133,15 @@ const Profile = () => {
   const [googleDisconnected, setGoogleDisconnected] = useState(false);
   const [showVerifiedBox, setShowVerifiedBox] = useState(false);
 
+
+
+  useEffect(() => {
+  if (!user?.createdAt || !user?.phone) {
+    console.log("🔁 Missing fields, reloading profile data...");
+    refreshUser();
+  }
+}, [user, refreshUser]);
+
   // ============================================================
   // Verified Fade Animation
   // ============================================================

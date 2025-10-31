@@ -295,3 +295,46 @@
 }
 
 
+.fadeIn {
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+/* ---------- ADDRESS FORM GRID (TWO COLUMN) ---------- */
+.address-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.form-left,
+.form-right {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.map-container {
+  margin-top: 1rem;
+}
+
+/* Responsive: stack vertically on small screens */
+@media (max-width: 900px) {
+  .address-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-right {
+    margin-top: 1.5rem;
+  }
+}
+
+.app {
+  padding-bottom: 80px; /* adjust height as needed */
+}
