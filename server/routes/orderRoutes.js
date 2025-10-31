@@ -1,24 +1,28 @@
-//server/routes/orderRoutes.js
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const { protect, admin } = require('../middleware/authMiddleware');
 
-// Create new order
+// ============================================================
+// 📦 Create New Order (Cash on Delivery or PayPal)
+// ============================================================
 router.post('/', protect, async (req, res) => {
   try {
-    const { 
-      orderItems, 
-      shippingAddress, 
-      paymentMethod, 
-      itemsPrice, 
-      taxPrice, 
-      shippingPrice, 
-      totalPrice 
+    const {
+      orderItems,
+      shippingAddress,
+      paymentMethod,
+      itemsPrice,
+      taxPrice,
+      shippingPrice,
+      totalPrice,
+      isPaid,
+      paidAt,
+      paymentResult,
     } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
-      return res.status(400).json({ message: 'No order items' });
+      return res.status(400).json({ message: 'No order items provided.' });
     }
 
     const order = new Order({
@@ -30,164 +34,142 @@ router.post('/', protect, async (req, res) => {
       taxPrice,
       shippingPrice,
       totalPrice,
-      status: 'pending'
+      isPaid: isPaid || false,
+      paidAt: paidAt || null,
+      paymentResult: paymentResult || {},
+      status: isPaid ? 'processing' : 'pending',
     });
 
     const createdOrder = await order.save();
     res.status(201).json(createdOrder);
   } catch (error) {
-    console.error('Create order error:', error);
+    console.error('❌ Create order error:', error.message);
     res.status(500).json({ message: 'Failed to create order', error: error.message });
   }
 });
 
-// Get all user orders
+// ============================================================
+// 📜 Get Logged-In User’s Orders
+// ============================================================
 router.get('/myorders', protect, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id });
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
-    console.error('Get my orders error:', error);
+    console.error('❌ Get my orders error:', error.message);
     res.status(500).json({ message: 'Failed to fetch orders', error: error.message });
   }
 });
 
-// Get order by ID
+// ============================================================
+// 🔍 Get Order by ID
+// ============================================================
 router.get('/:id', protect, async (req, res) => {
   try {
-    const order = await Order.findById(req.orderId).populate('user', 'name email');
-    
+    const order = await Order.findById(req.params.id).populate('user', 'firstName lastName email');
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Check if the order belongs to the logged-in user or if user is admin
+    // Only allow the owner or admin to view
     if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(401).json({ message: 'Not authorized to view this order' });
     }
 
     res.json(order);
   } catch (error) {
-    console.error('Get order error:', error);
+    console.error('❌ Get order error:', error.message);
     res.status(500).json({ message: 'Failed to fetch order', error: error.message });
   }
 });
 
-// Update order to paid
+// ============================================================
+// 💰 Update Order to Paid (PayPal or Manual)
+// ============================================================
 router.put('/:id/pay', protect, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Only allow the user who placed the order or an admin to update payment
+    // Only the buyer or admin can mark as paid
     if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(401).json({ message: 'Not authorized to update this order' });
     }
 
     order.isPaid = true;
     order.paidAt = Date.now();
-    
-    // If we're using a payment processor, we would include payment result details
+
+    // If PayPal or any gateway returns payment result, store it
     if (req.body.paymentResult) {
       order.paymentResult = {
         id: req.body.paymentResult.id,
         status: req.body.paymentResult.status,
         update_time: req.body.paymentResult.update_time,
-        email_address: req.body.paymentResult.payer?.email_address
+        email_address: req.body.paymentResult.email_address || req.body.paymentResult.payer?.email_address,
       };
+    }
+
+    // Optionally change order status after payment
+    if (order.status === 'pending') {
+      order.status = 'processing';
     }
 
     const updatedOrder = await order.save();
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Update payment error:', error);
+    console.error('❌ Update payment error:', error.message);
     res.status(500).json({ message: 'Failed to update payment', error: error.message });
   }
 });
 
-// Update order status (for admin use)
-router.put('/:id/status', protect, async (req, res) => {
+// ============================================================
+// 🚚 Update Order Status (Admin Only)
+// ============================================================
+router.put('/:id/status', protect, admin, async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     if (!status) {
       return res.status(400).json({ message: 'Status is required' });
     }
 
-    // Verify user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(401).json({ message: 'Not authorized as admin' });
-    }
-
     const order = await Order.findById(req.params.id);
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     order.status = status;
-    
-    // If status is "delivered", update delivered status
+
     if (status === 'delivered') {
-      order.isDelivered = true;
       order.deliveredAt = Date.now();
     }
-    
+
     const updatedOrder = await order.save();
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Update status error:', error);
-    res.status(500).json({ message: 'Failed to update status', error: error.message });
+    console.error('❌ Update status error:', error.message);
+    res.status(500).json({ message: 'Failed to update order status', error: error.message });
   }
 });
 
-// Add alternate endpoint for status update to support both formats
-router.put('/status/:id', protect, async (req, res) => {
-  try {
-    const { status } = req.body;
-    
-    if (!status) {
-      return res.status(400).json({ message: 'Status is required' });
-    }
-
-    // Verify user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(401).json({ message: 'Not authorized as admin' });
-    }
-
-    const order = await Order.findById(req.params.id);
-    
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-    
-    order.status = status;
-    
-    // If status is "delivered", update delivered status
-    if (status === 'delivered') {
-      order.isDelivered = true;
-      order.deliveredAt = Date.now();
-    }
-    
-    const updatedOrder = await order.save();
-    res.json(updatedOrder);
-  } catch (error) {
-    console.error('Update status error:', error);
-    res.status(500).json({ message: 'Failed to update status', error: error.message });
-  }
-});
-
-// Get all orders (admin only)
+// ============================================================
+// 📋 Admin: Get All Orders
+// ============================================================
 router.get('/', protect, admin, async (req, res) => {
   try {
-    const orders = await Order.find({}).populate('user', 'id name email');
+    const orders = await Order.find({})
+      .populate('user', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
     res.json(orders);
   } catch (error) {
-    console.error('Get all orders error:', error);
-    res.status(500).json({ message: 'Failed to fetch orders', error: error.message });
+    console.error('❌ Get all orders error:', error.message);
+    res.status(500).json({ message: 'Failed to fetch all orders', error: error.message });
   }
 });
 

@@ -1,58 +1,58 @@
-//server/models/Order.js
 const mongoose = require('mongoose');
 
-const orderSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User'
+const orderSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: 'User',
+    },
+    orderItems: [
+      {
+        name: { type: String, required: true },
+        qty: { type: Number, required: true },
+        image: { type: String, required: true },
+        price: { type: Number, required: true },
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          ref: 'Product',
+        },
+      },
+    ],
+    shippingAddress: {
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      postalCode: { type: String },
+      country: { type: String, default: 'Philippines' },
+    },
+    paymentMethod: {
+      type: String,
+      required: true,
+      enum: ['cash on delivery', 'PayPal'],
+      default: 'cash on delivery',
+    },
+    paymentResult: {
+      id: { type: String },
+      status: { type: String },
+      update_time: { type: String },
+      email_address: { type: String },
+    },
+    itemsPrice: { type: Number, default: 0.0 },
+    taxPrice: { type: Number, default: 0.0 },
+    shippingPrice: { type: Number, default: 0.0 },
+    totalPrice: { type: Number, required: true, default: 0.0 },
+    isPaid: { type: Boolean, default: false },
+    paidAt: { type: Date },
+    status: {
+      type: String,
+      enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+      default: 'pending',
+    },
+    deliveredAt: { type: Date },
   },
-  orderItems: [  // Changed from products to orderItems
-    {
-      name: { type: String, required: true },
-      qty: { type: Number, required: true },  // Changed from quantity to qty
-      image: { type: String, required: true },
-      price: { type: Number, required: true },
-      product: {  // Changed from productId to product
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'Product'
-      }
-    }
-  ],
-  shippingAddress: {
-    street: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    postalCode: { type: String, required: false },
-    country: { type: String, default: 'Philippines' }
-  },
-  paymentMethod: {
-    type: String,
-    default: 'cash on delivery'
-  },
-  totalPrice: {  // Changed from totalAmount to totalPrice
-    type: Number,
-    required: true,
-    default: 0.0
-  },
-  isPaid: {
-    type: Boolean,
-    default: false
-  },
-  paidAt: {
-    type: Date
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
-  },
-  deliveredAt: {  // Added field used in orderRoutes.js
-    type: Date
-  }
-}, {
-  timestamps: true  // This will maintain createdAt
-});
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('Order', orderSchema);

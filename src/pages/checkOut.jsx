@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./checkOut.css";
 import { useCart } from "../contexts/CartContext";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 const Checkout = () => {
   const location = useLocation();
@@ -56,7 +57,7 @@ const Checkout = () => {
         }, ${address.zip || address.postalCode || ""}`
       : "No address provided";
 
-  // 🚀 Handle Checkout
+  // 🚀 Handle COD Checkout
   const handleCheckout = async () => {
     if (!user || !user.token) {
       alert("Please log in to complete your purchase.");
@@ -64,10 +65,7 @@ const Checkout = () => {
       return;
     }
 
-    if (
-      !user.address ||
-      (!user.address.street && !user.address.houseNumber)
-    ) {
+    if (!user.address || (!user.address.street && !user.address.houseNumber)) {
       alert("Please add your shipping address before checking out.");
       navigate("/address");
       return;
@@ -85,19 +83,17 @@ const Checkout = () => {
 
       const orderData = {
         userId: user._id || user.id,
-        products: cartItems.map((item) => ({
-          productId: item.productId || item.id,
+        orderItems: cartItems.map((item) => ({
           name: item.name,
-          quantity: item.quantity,
+          qty: item.quantity,
           image: item.image,
           price: item.price,
+          product: item.productId || item.id,
         })),
         shippingAddress: {
-          houseNumber: user.address.houseNumber || "",
           street: user.address.street || "",
-          barangay: user.address.barangay || "",
           city: user.address.city || "",
-          region:
+          state:
             user.address.region ||
             user.address.state ||
             user.address.province ||
@@ -106,7 +102,10 @@ const Checkout = () => {
           country: user.address.country || "Philippines",
         },
         paymentMethod,
-        totalAmount: totalPayment,
+        itemsPrice: merchandiseSubTotal,
+        shippingPrice: shipping,
+        taxPrice: 0,
+        totalPrice: totalPayment,
         status: "pending",
       };
 
@@ -126,12 +125,7 @@ const Checkout = () => {
       if (response.data) {
         localStorage.removeItem("cart");
         clearCart();
-        navigate("/order-success", {
-          state: {
-            orderId: response.data._id,
-            orderTotal: totalPayment,
-          },
-        });
+        navigate("/user/my-purchases");
       }
     } catch (error) {
       console.error("Checkout error:", error);
@@ -141,6 +135,73 @@ const Checkout = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🚀 PayPal Success Handler
+  const handlePayPalSuccess = async (details, data) => {
+    try {
+      const orderData = {
+        userId: user._id || user.id,
+        orderItems: cartItems.map((item) => ({
+          name: item.name,
+          qty: item.quantity,
+          image: item.image,
+          price: item.price,
+          product: item.productId || item.id,
+        })),
+        shippingAddress: {
+          street: user.address.street || "",
+          city: user.address.city || "",
+          state:
+            user.address.region ||
+            user.address.state ||
+            user.address.province ||
+            "",
+          postalCode: user.address.zip || user.address.postalCode || "",
+          country: user.address.country || "Philippines",
+        },
+        paymentMethod: "PayPal",
+        itemsPrice: merchandiseSubTotal,
+        shippingPrice: shipping,
+        taxPrice: 0,
+        totalPrice: totalPayment,
+        isPaid: true,
+        paidAt: new Date(),
+        paymentResult: {
+          id: data.orderID,
+          status: details.status,
+          update_time: details.update_time,
+          email_address: details.payer.email_address,
+        },
+      };
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      const { data: createdOrder } = await axios.post(
+        `https://bookstore-yl7q.onrender.com/api/orders`,
+        orderData,
+        config
+      );
+
+      // ✅ Mark as paid in backend (optional double-save)
+      await axios.put(
+        `https://bookstore-yl7q.onrender.com/api/orders/${createdOrder._id}/pay`,
+        { paymentResult: orderData.paymentResult },
+        config
+      );
+
+      localStorage.removeItem("cart");
+      clearCart();
+      navigate("/user/my-purchases");
+    } catch (err) {
+      console.error("PayPal order save error:", err);
+      setError("Failed to finalize PayPal payment. Please contact support.");
     }
   };
 
@@ -169,25 +230,7 @@ const Checkout = () => {
                   <td className="tdnameprice">
                     <strong>{item.name}</strong>
                     <p className="variant">Format: {item.format || "—"}</p>
-                    {item.discount_value > 0 ? (
-                      <p className="price discounted">
-                        <span className="original">
-                          ₱
-                          {item.originalPrice?.toFixed(2) ||
-                            (item.price + item.discount_value).toFixed(2)}
-                        </span>{" "}
-                        <span className="discounted">
-                          ₱{item.price.toFixed(2)}
-                        </span>{" "}
-                        <span className="badge-discount">
-                          {item.discount_type === "percentage"
-                            ? `-${item.discount_value}%`
-                            : `₱${item.discount_value} OFF`}
-                        </span>
-                      </p>
-                    ) : (
-                      <p className="price">₱{item.price.toFixed(2)}</p>
-                    )}
+                    <p className="price">₱{item.price.toFixed(2)}</p>
                   </td>
                   <td>
                     <span>x{item.quantity}</span>
@@ -201,7 +244,7 @@ const Checkout = () => {
                   colSpan="4"
                   style={{ textAlign: "center", padding: "20px" }}
                 >
-                  No items in cart. Please add items before checking out.
+                  No items in cart.
                 </td>
               </tr>
             )}
@@ -220,9 +263,7 @@ const Checkout = () => {
                     <strong>Name:</strong> {user.firstName} {user.lastName}
                     <br />
                     <strong>Phone:</strong>{" "}
-                    {user.phone ||
-                      user.address?.telephone ||
-                      "No phone"}
+                    {user.phone || user.address?.telephone || "No phone"}
                     <br />
                     <strong>Address:</strong> {fullAddress}
                     <br />
@@ -251,38 +292,20 @@ const Checkout = () => {
               <span>Total Quantity:</span>
               <span>{totalQuantity} item(s)</span>
             </div>
-
             <div className="paymentDetailRow">
-              <span>Merchandise Subtotal:</span>
+              <span>Subtotal:</span>
               <span>₱{merchandiseSubTotal.toFixed(2)}</span>
             </div>
-
-            {discountTotal > 0 && (
-              <>
-                <div className="paymentDetailRow discount">
-                  <span>Discounts:</span>
-                  <span>-₱{discountTotal.toFixed(2)}</span>
-                </div>
-                <div className="paymentDetailRow saved">
-                  <span>You Saved:</span>
-                  <span>₱{discountTotal.toFixed(2)}</span>
-                </div>
-              </>
-            )}
-
             <div className="paymentDetailRow">
-              <span>Shipping Fee:</span>
+              <span>Shipping:</span>
               <span>₱{shipping.toFixed(2)}</span>
             </div>
-
-            {/* ❌ Removed Deliver To */}
-
-            <div className="paymentDetailRow">
-              <span>Estimated Delivery:</span>
-              <span>3–5 business days</span>
+            <div className="paymentDetailRow total">
+              <strong>Total Payment:</strong>
+              <strong>₱{totalPayment.toFixed(2)}</strong>
             </div>
 
-            {/* 🏦 Payment Method Selection */}
+            {/* 🏦 Payment Method */}
             <div className="paymentDetailRow">
               <span>Payment Method:</span>
               <div className="payment-method-options">
@@ -296,7 +319,6 @@ const Checkout = () => {
                   />
                   <span className="method-label">Cash on Delivery</span>
                 </label>
-
                 <label>
                   <input
                     type="radio"
@@ -310,15 +332,8 @@ const Checkout = () => {
                     alt="PayPal"
                     className="paypal-logo"
                   />
-                  <span className="method-label">PayPal</span>
                 </label>
               </div>
-            </div>
-
-            {/* ✅ Final Total */}
-            <div className="paymentDetailRow total">
-              <strong>Total Payment:</strong>
-              <strong>₱{totalPayment.toFixed(2)}</strong>
             </div>
 
             {error && <div className="error-message">{error}</div>}
@@ -332,13 +347,47 @@ const Checkout = () => {
                 Cancel
               </button>
 
-              <button
-                onClick={handleCheckout}
-                className="checkout"
-                disabled={loading}
-              >
-                {loading ? "Processing..." : "Checkout"}
-              </button>
+              {paymentMethod === "paypal" ? (
+                <div style={{ width: "100%", marginTop: "10px" }}>
+                  <PayPalScriptProvider
+                    options={{
+                      "client-id": "YOUR_SANDBOX_CLIENT_ID",
+                      currency: "PHP",
+                    }}
+                  >
+                    <PayPalButtons
+                      style={{ layout: "vertical" }}
+                      createOrder={(data, actions) => {
+                        return actions.order.create({
+                          purchase_units: [
+                            {
+                              amount: {
+                                value: totalPayment.toFixed(2),
+                              },
+                            },
+                          ],
+                        });
+                      }}
+                      onApprove={async (data, actions) => {
+                        const details = await actions.order.capture();
+                        handlePayPalSuccess(details, data);
+                      }}
+                      onError={(err) => {
+                        console.error("PayPal error:", err);
+                        setError("PayPal payment failed.");
+                      }}
+                    />
+                  </PayPalScriptProvider>
+                </div>
+              ) : (
+                <button
+                  onClick={handleCheckout}
+                  className="checkout"
+                  disabled={loading}
+                >
+                  {loading ? "Processing..." : "Checkout"}
+                </button>
+              )}
             </div>
           </div>
         </div>
