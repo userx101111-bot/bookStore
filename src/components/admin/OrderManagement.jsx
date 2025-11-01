@@ -113,7 +113,7 @@ const OrderManagement = () => {
   // ------------------------------------------------------------
   const applyBulkStatus = async (status) => {
     if (selectedIds.size === 0) return alert("Select at least one order.");
-    if (!confirm(`Set status "${status}" for ${selectedIds.size} orders?`)) return;
+    if (!window.confirm(`Set status "${status}" for ${selectedIds.size} orders?`)) return;
     setBulkUpdating(true);
     try {
       const promises = Array.from(selectedIds).map((id) =>
