@@ -35,22 +35,23 @@ const MyPurchases = () => {
 
   const toggleExpand = (id) => setExpandedOrder(expandedOrder === id ? null : id);
 
-  const renderStatusBadge = (status) => {
-    const map = {
-      pending: { label: "To Ship", color: "#ffb84d" },
-      processing: { label: "Processing", color: "#4da6ff" },
-      shipped: { label: "To Receive", color: "#7d5fff" },
-      delivered: { label: "Completed", color: "#28a745" },
-      cancelled: { label: "Cancelled", color: "#dc3545" },
-      refunded: { label: "Refunded", color: "#6c757d" },
-    };
-    const { label, color } = map[status] || { label: status, color: "#888" };
-    return (
-      <span className="status-badge" style={{ backgroundColor: `${color}1a`, color }}>
-        {label}
-      </span>
-    );
+const renderStatusBadge = (status) => {
+  const map = {
+    pending: { label: "Pending", color: "#ffb84d" },
+    processing: { label: "Processing", color: "#4da6ff" },
+    to_ship: { label: "To Ship", color: "#ffcc00" }, 
+    shipped: { label: "To Receive", color: "#7d5fff" },
+    delivered: { label: "Completed", color: "#28a745" },
+    cancelled: { label: "Cancelled", color: "#dc3545" },
+    refunded: { label: "Refunded", color: "#6c757d" },
   };
+  const { label, color } = map[status] || { label: status, color: "#888" };
+  return (
+    <span className="status-badge" style={{ backgroundColor: `${color}1a`, color }}>
+      {label}
+    </span>
+  );
+};
 
   const calculateTotalSaved = (orderItems = []) =>
     orderItems.reduce((sum, item) => {

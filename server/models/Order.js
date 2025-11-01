@@ -52,21 +52,22 @@ const orderSchema = new mongoose.Schema(
     isPaid: { type: Boolean, default: false },
     paidAt: Date,
 
-    status: {
-      type: String,
-      enum: [
-        'pending',
-        'processing',
-        'shipped',
-        'delivered',
-        'cancelled',
-        'refunded',
-        'return_requested',
-        'return_approved',
-        'return_rejected',
-      ],
-      default: 'pending',
-    },
+status: {
+  type: String,
+  enum: [
+    'pending',        // COD before admin approval
+    'processing',     // Paid (PayPal, Wallet, GCash) or COD approved
+    'to_ship',        // ✅ newly added
+    'shipped',
+    'delivered',
+    'cancelled',
+    'refunded',
+    'return_requested',
+    'return_approved',
+    'return_rejected',
+  ],
+  default: 'pending',
+},
 
     deliveredAt: Date,
 

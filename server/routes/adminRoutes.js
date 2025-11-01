@@ -279,6 +279,9 @@ router.get("/orders", protect, admin, async (req, res) => {
 // ============================================================
 // 🟢 UPDATE ORDER STATUS (Admin)
 // ============================================================
+// ============================================================
+// 🟢 UPDATE ORDER STATUS (Admin)
+// ============================================================
 router.put("/orders/:id/status", protect, admin, async (req, res) => {
   try {
     const { status } = req.body;
@@ -287,18 +290,42 @@ router.put("/orders/:id/status", protect, admin, async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    order.status = status;
+    // 💵 COD Handling Logic
+    if (order.paymentMethod === "cash on delivery") {
+      if (status === "processing") {
+        // admin approved COD for checking
+        order.status = "processing";
+      } else if (status === "to_ship") {
+        // ready for shipment after processing
+        if (order.status !== "processing") {
+          return res.status(400).json({
+            message: "Order must be in processing before marking as 'to ship'",
+          });
+        }
+        order.status = "to_ship";
+      } else {
+        order.status = status;
+      }
+    } else {
+      // 💳 For paid orders (wallet/paypal/gcash)
+      order.status = status;
+    }
+
     if (status === "delivered") {
       order.deliveredAt = Date.now();
     }
 
     const updatedOrder = await order.save();
-    res.json(updatedOrder);
+    res.json({ message: `Order marked as '${status}'`, order: updatedOrder });
   } catch (error) {
     console.error("❌ Error updating order status:", error);
-    res.status(500).json({ message: "Failed to update order status", error: error.message });
+    res.status(500).json({
+      message: "Failed to update order status",
+      error: error.message,
+    });
   }
 });
+
 
 
 // ============================================================

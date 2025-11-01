@@ -13,11 +13,13 @@ const API_URL =
 const STATUS_ORDER = [
   "pending",
   "processing",
+  "to_ship",   
   "shipped",
   "delivered",
   "cancelled",
   "refunded",
 ];
+
 
 const humanize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "Unknown");
 
@@ -632,8 +634,54 @@ const handleReturnAction = async (orderId, action) => {
 
               <div className="modal-actions">
                 <div className="status-actions">
-                  {selectedOrder.status === "pending" && <button className="btn-processing" onClick={() => { updateOrderStatus(selectedOrder._id, "processing"); setShowModal(false); }}>Processing</button>}
-                  {selectedOrder.status === "processing" && <button className="btn-ship" onClick={() => { updateOrderStatus(selectedOrder._id, "shipped"); setShowModal(false); }}>Mark Shipped</button>}
+{selectedOrder.status === "pending" && (
+  <button
+    className="btn-processing"
+    onClick={() => {
+      updateOrderStatus(selectedOrder._id, "processing");
+      setShowModal(false);
+    }}
+  >
+    Mark Processing
+  </button>
+)}
+
+{selectedOrder.status === "processing" && (
+  <button
+    className="btn-toship"
+    onClick={() => {
+      updateOrderStatus(selectedOrder._id, "to_ship");
+      setShowModal(false);
+    }}
+  >
+    Mark To Ship
+  </button>
+)}
+
+{selectedOrder.status === "to_ship" && (
+  <button
+    className="btn-ship"
+    onClick={() => {
+      updateOrderStatus(selectedOrder._id, "shipped");
+      setShowModal(false);
+    }}
+  >
+    Mark Shipped
+  </button>
+)}
+
+{selectedOrder.status === "shipped" && (
+  <button
+    className="btn-deliver"
+    onClick={() => {
+      updateOrderStatus(selectedOrder._id, "delivered");
+      setShowModal(false);
+    }}
+  >
+    Mark Delivered
+  </button>
+)}
+
                   {selectedOrder.status === "shipped" && <button className="btn-deliver" onClick={() => { updateOrderStatus(selectedOrder._id, "delivered"); setShowModal(false); }}>Mark Delivered</button>}
                 </div>
                 <button className="btn-ghost" onClick={() => setShowModal(false)}>Close</button>
