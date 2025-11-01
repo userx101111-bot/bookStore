@@ -40,6 +40,7 @@ router.post('/', protect, async (req, res) => {
         throw new Error("Order item missing required fields");
       }
     });
+    const normalizedPaymentMethod = paymentMethod?.toLowerCase() || 'cash on delivery';
 
     const order = new Order({
       user: userId,
@@ -47,7 +48,7 @@ router.post('/', protect, async (req, res) => {
       shippingAddress,
       name,
       phone,
-      paymentMethod,
+      paymentMethod: normalizedPaymentMethod,
       itemsPrice,
       taxPrice,
       shippingPrice,
@@ -55,10 +56,9 @@ router.post('/', protect, async (req, res) => {
       isPaid: isPaid || false,
       paidAt: paidAt || null,
       paymentResult: paymentResult || {},
-      status:
-        ["wallet", "paypal"].includes(paymentMethod?.toLowerCase())
-          ? "processing"
-          : "pending",
+      status: ["wallet", "paypal"].includes(normalizedPaymentMethod)
+        ? "processing"
+        : "pending",
 
 
     });
@@ -67,6 +67,14 @@ router.post('/', protect, async (req, res) => {
     res.status(201).json(createdOrder);
   } catch (error) {
     console.error("❌ Create order error:", error);
+
+   if (error.name === "ValidationError") {
+     return res.status(400).json({
+       message: "Validation failed",
+       details: Object.values(error.errors).map((e) => e.message),
+     });
+   }
+
     res.status(500).json({
       message: "Failed to create order",
       error: error.message,
@@ -173,9 +181,10 @@ router.put('/:id/status', protect, admin, async (req, res) => {
 
     order.status = status;
 
-    if (status === 'delivered') {
-      order.deliveredAt = Date.now();
-    }
+if (status === 'delivered') {
+  order.deliveredAt = Date.now();
+  order.cancelRequest = { requested: false };
+}
 
     const updatedOrder = await order.save();
     res.json(updatedOrder);
@@ -321,7 +330,11 @@ order.cancelRequest.handledAt = new Date();
 if (order.isPaid) {
   const user = await User.findById(order.user);
   if (user) {
+    try {
     await user.addWalletCredit(order.totalPrice, `Refund for cancelled order ${order._id}`);
+       } catch (walletErr) {
+     console.error("⚠️ Wallet credit failed:", walletErr.message);
+   }
   }
 }
 
