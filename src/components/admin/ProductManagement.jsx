@@ -17,6 +17,12 @@ const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+    const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterSubcategory, setFilterSubcategory] = useState("");
+  const [filterType, setFilterType] = useState("all");
+
   const [productVouchers, setProductVouchers] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -353,9 +359,18 @@ const handleVariantAlbumImages = useCallback((index, files) => {
         throw new Error(`Failed to save product ${res.status} ${errText}`);
       }
 
-      await fetchProducts();
-      resetForm();
-      alert(isEditing ? "✅ Product updated!" : "✅ Product created!");
+const savedProduct = await res.json();
+
+setProducts((prev) => {
+  if (isEditing) {
+    return prev.map((p) => (p._id === savedProduct._id ? savedProduct : p));
+  } else {
+    return [savedProduct, ...prev];
+  }
+});
+
+resetForm();
+alert(isEditing ? "✅ Product updated!" : "✅ Product created!");
     } catch (err) {
       console.error("❌ Save failed:", err);
       alert("Error saving product. Check console for details.");
@@ -438,6 +453,31 @@ const handleVariantAlbumImages = useCallback((index, files) => {
     setIsEditing(false);
     setCurrentProduct(null);
   };
+
+ // ✅ Filter logic (⬇️ paste right before return)
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch =
+      p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.publisher?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
+      !filterCategory || p.category === filterCategory;
+    const matchesSubcategory =
+      !filterSubcategory || p.subcategory === filterSubcategory;
+    const matchesType =
+      filterType === "all" ||
+      (filterType === "promo" && p.isPromotion) ||
+      (filterType === "new" && p.isNewArrival) ||
+      (filterType === "popular" && p.isPopular);
+
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesSubcategory &&
+      matchesType
+    );
+  });
 
   if (loading) return <div className="loading">Loading products...</div>;
 
@@ -700,252 +740,291 @@ const handleVariantAlbumImages = useCallback((index, files) => {
       </div>
 
       {/* Product List */}
-      <div className="products-list-container">
-        <h2>Product List</h2>
-        {products.length === 0 ? (
-          <div className="no-products">No products found.</div>
-        ) : (
-          <table className="products-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Variants</th>
-                <th>Stock</th>
-                <th>Status</th>
-                <th>Featured</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-<tbody>
-  {products.map((p) => (
-    <React.Fragment key={p._id}>
-      <tr>
-        <td>{p.name}</td>
-        <td>{p.category}</td>
-        <td>
-          {p.variants?.map((v) => `${v.format}: ₱${v.price}`).join(" | ")}
-        </td>
-        <td>
-          {p.variants?.reduce((sum, v) => sum + (v.countInStock || 0), 0)}
-        </td>
-        <td>{p.status}</td>
-        <td>
-          <div className="featured-labels">
-            {p.isPromotion && (
-              <div className="featured-wrapper">
-                <div className="featured-label promo">Promo</div>
-                <button
-                  className="hover-action-btn"
-                  onClick={() => togglePromo(p._id)}
-                >
-                  {openPromos[p._id] ? "Close Promo" : "Remove Promo"}
-                </button>
-              </div>
-            )}
-            {p.isNewArrival && (
-              <div className="featured-wrapper">
-                <div className="featured-label new">New</div>
-                <button
-                  className="hover-action-btn"
-                  onClick={() => handleRemoveNew(p._id)}
-                >
-                  Remove New
-                </button>
-              </div>
-            )}
-            {p.isPopular && (
-              <div className="featured-wrapper">
-                <div className="featured-label popular">Popular</div>
-              </div>
-            )}
-          </div>
-        </td>
+{/* ==========================
+    📋 Product List + Filters
+========================== */}
+<div className="products-list-container">
+  <h2>Product List</h2>
 
-        <td className="actions">
-          <button className="btn-edit" onClick={() => handleEdit(p)}>
-            Edit
-          </button>
-          <button className="btn-delete" onClick={() => handleDelete(p._id)}>
-            Delete
-          </button>
-        </td>
-      </tr>
+  {/* 🔍 Search & Filters */}
+  <div className="filter-bar">
+    <input
+      type="text"
+      placeholder="Search by name, author, or publisher..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="filter-search"
+    />
 
+    {/* Category Filter */}
+    <select
+      value={filterCategory}
+      onChange={(e) => {
+        setFilterCategory(e.target.value);
+        setFilterSubcategory("");
+      }}
+    >
+      <option value="">All Categories</option>
+      {categories.map((cat) => (
+        <option key={cat.slug} value={cat.slug}>
+          {cat.name}
+        </option>
+      ))}
+    </select>
 
-{/* 🧾 Voucher Row */}
-{openPromos[p._id] &&
-  productVouchers[p._id] &&
-  productVouchers[p._id].length > 0 && (
-    <>
-      {/* ✅ Render promo details in a full-width block BELOW the main row */}
-      <tr>
-        <td colSpan="7" style={{ padding: 0, border: "none" }}>
-          <div
-            className="voucher-list"
-            style={{
-              background: "#fafafa",
-              borderRadius: "8px",
-              padding: "12px 16px",
-              margin: "8px 0 16px 0",
-              border: "1px solid #ddd",
-              display: "block",
-            }}
-          >
-            <strong>Linked Vouchers:</strong>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {productVouchers[p._id].map((v) => (
-                <li key={v._id} style={{ marginBottom: "1rem" }}>
-                  🎟️ <b>{v.name}</b>{" "}
-                  —{" "}
-                  {v.discount_type === "percentage"
-                    ? `${v.discount_value}%`
-                    : `₱${v.discount_value}`}{" "}
-                  ({v.start_date?.slice(0, 10)} → {v.end_date?.slice(0, 10)})
+    {/* Subcategory Filter */}
+    <select
+      value={filterSubcategory}
+      onChange={(e) => setFilterSubcategory(e.target.value)}
+      disabled={!filterCategory}
+    >
+      <option value="">
+        {filterCategory ? "All Subcategories" : "Select Category First"}
+      </option>
+      {filterCategory &&
+        categories
+          .find((cat) => cat.slug === filterCategory)
+          ?.subcategories?.map((sub) => (
+            <option key={sub.slug} value={sub.slug}>
+              {sub.name}
+            </option>
+          ))}
+    </select>
 
-                  {/* 🧩 Debug Step */}
-                  {console.log(
-                    "Voucher applicable_variants for product:",
-                    p.name,
-                    v.applicable_variants
-                  )}
+    {/* Featured Type Filter */}
+    <select
+      value={filterType}
+      onChange={(e) => setFilterType(e.target.value)}
+    >
+      <option value="all">All Products</option>
+      <option value="promo">Promotions</option>
+      <option value="new">New Arrivals</option>
+      <option value="popular">Popular</option>
+    </select>
 
-                  {/* ✅ VARIANT-LEVEL LINKS */}
-                  {(v.applicable_variants || []).length > 0 && (
-                    <div
-                      style={{
-                        marginLeft: "1.5rem",
-                        marginTop: "0.4rem",
-                        color: "#444",
-                        border: "1px solid #ccc",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        background: "#fdfdfd",
-                        display: "block",
-                      }}
-                    >
-                      <ul
-                        style={{
-                          listStyle: "none",
-                          padding: 0,
-                          margin: 0,
-                          display: "block",
-                        }}
-                      >
-                        {(v.applicable_variants || [])
-                          .filter((av) => {
-                            const productId = String(
-                              av?.product?._id ?? av?.product
-                            );
-                            const currentId = String(p._id);
-                            return (
-                              productId === currentId ||
-                              productId.includes(currentId) ||
-                              currentId.includes(productId)
-                            );
-                          })
-                          .map((av) => {
-                            console.log(
-                              "🔍 Matching variant check for",
-                              p.name,
-                              "p._id:",
-                              p._id,
-                              "av.product:",
-                              av.product?._id ?? av.product
-                            );
+    {/* Reset Button */}
+    <button
+      className="btn-reset"
+      onClick={() => {
+        setSearchQuery("");
+        setFilterCategory("");
+        setFilterSubcategory("");
+        setFilterType("all");
+      }}
+    >
+      Reset
+    </button>
+  </div>
 
-                            const variant = (p.variants || []).find(
-                              (vv) =>
-                                String(vv._id) === String(av.variant_id)
-                            );
+  {/* ==========================
+      🧾 Product Table
+  ========================== */}
+  {filteredProducts.length === 0 ? (
+    <div className="no-products">No matching products found.</div>
+  ) : (
+    <table className="products-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Variants</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th>Featured</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
 
-                            const variantLabel =
-                              variant?.format ||
-                              av?.format ||
-                              `Variant ${String(av.variant_id).slice(0, 6)}`;
-                            const variantStock =
-                              variant?.countInStock ?? "N/A";
-
-                            return (
-<li
-  key={String(av.variant_id)}
-  style={{
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px", // small space between text and button
-    marginBottom: "6px",
-    padding: "6px 8px",
-    background: "#eef5ff",
-    borderRadius: "5px",
-    border: "1px solid #bbb",
-  }}
->
-  <span>
-    ↳ Variant: <b>{variantLabel}</b> — Stock: {variantStock}
-  </span>
-  <button
-    className="hover-action-btn"
-    style={{
-      background: "#007bff",
-      color: "#fff",
-      borderRadius: "5px",
-      padding: "4px 10px",
-      fontSize: "0.75rem",
-      cursor: "pointer",
-    }}
-    onClick={() => handleRemoveVoucher(p._id, av.variant_id)}
-  >
-    Remove Variant
-  </button>
-</li>
-                            );
-                          })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* ✅ FALLBACK: PRODUCT-LEVEL LINK ONLY */}
-                  {(!v.applicable_variants ||
-                    v.applicable_variants.length === 0 ||
-                    !v.applicable_variants.some(
-                      (av) =>
-                        av.product === p._id || av.product?._id === p._id
-                    )) && (
-                    <div style={{ marginTop: "8px" }}>
+      <tbody>
+        {filteredProducts.map((p) => (
+          <React.Fragment key={p._id}>
+            <tr>
+              <td>{p.name}</td>
+              <td>{p.category}</td>
+              <td>
+                {p.variants?.map((v) => `${v.format}: ₱${v.price}`).join(" | ")}
+              </td>
+              <td>
+                {p.variants?.reduce(
+                  (sum, v) => sum + (v.countInStock || 0),
+                  0
+                )}
+              </td>
+              <td>{p.status}</td>
+              <td>
+                <div className="featured-labels">
+                  {p.isPromotion && (
+                    <div className="featured-wrapper">
+                      <div className="featured-label promo">Promo</div>
                       <button
                         className="hover-action-btn"
-                        style={{
-                          background: "#e74c3c",
-                          color: "#fff",
-                          borderRadius: "5px",
-                          padding: "5px 12px",
-                          fontSize: "0.8rem",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => handleRemoveVoucher(p._id)}
+                        onClick={() => togglePromo(p._id)}
                       >
-                        Remove Voucher (All Variants)
+                        {openPromos[p._id] ? "Close Promo" : "Remove Promo"}
                       </button>
                     </div>
                   )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </td>
-      </tr>
-    </>
+                  {p.isNewArrival && (
+                    <div className="featured-wrapper">
+                      <div className="featured-label new">New</div>
+                      <button
+                        className="hover-action-btn"
+                        onClick={() => handleRemoveNew(p._id)}
+                      >
+                        Remove New
+                      </button>
+                    </div>
+                  )}
+                  {p.isPopular && (
+                    <div className="featured-wrapper">
+                      <div className="featured-label popular">Popular</div>
+                    </div>
+                  )}
+                </div>
+              </td>
+
+              <td className="actions">
+                <button className="btn-edit" onClick={() => handleEdit(p)}>
+                  Edit
+                </button>
+                <button
+                  className="btn-delete"
+                  onClick={() => handleDelete(p._id)}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+
+            {/* 🧾 Voucher Row */}
+            {openPromos[p._id] &&
+              productVouchers[p._id] &&
+              productVouchers[p._id].length > 0 && (
+                <tr>
+                  <td colSpan="7" style={{ padding: 0, border: "none" }}>
+                    <div className="voucher-list">
+                      <strong>Linked Vouchers:</strong>
+                      <ul
+                        style={{ listStyle: "none", padding: 0, margin: 0 }}
+                      >
+                        {productVouchers[p._id].map((v) => (
+                          <li key={v._id} style={{ marginBottom: "1rem" }}>
+                            🎟️ <b>{v.name}</b> —{" "}
+                            {v.discount_type === "percentage"
+                              ? `${v.discount_value}%`
+                              : `₱${v.discount_value}`}{" "}
+                            ({v.start_date?.slice(0, 10)} →{" "}
+                            {v.end_date?.slice(0, 10)})
+
+                            {/* ✅ VARIANT LEVEL */}
+                            {(v.applicable_variants || []).length > 0 && (
+                              <div
+                                style={{
+                                  marginLeft: "1.5rem",
+                                  marginTop: "0.4rem",
+                                  border: "1px solid #ccc",
+                                  padding: "8px",
+                                  borderRadius: "6px",
+                                  background: "#fdfdfd",
+                                }}
+                              >
+                                <ul
+                                  style={{
+                                    listStyle: "none",
+                                    padding: 0,
+                                    margin: 0,
+                                  }}
+                                >
+                                  {(v.applicable_variants || [])
+                                    .filter((av) => {
+                                      const pid = String(
+                                        av?.product?._id ?? av?.product
+                                      );
+                                      return pid === String(p._id);
+                                    })
+                                    .map((av) => {
+                                      const variant = (p.variants || []).find(
+                                        (vv) =>
+                                          String(vv._id) ===
+                                          String(av.variant_id)
+                                      );
+                                      return (
+                                        <li
+                                          key={String(av.variant_id)}
+                                          style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                            marginBottom: "6px",
+                                            padding: "6px 8px",
+                                            background: "#eef5ff",
+                                            borderRadius: "5px",
+                                            border: "1px solid #bbb",
+                                          }}
+                                        >
+                                          <span>
+                                            ↳ Variant:{" "}
+                                            <b>
+                                              {variant?.format ||
+                                                `Variant ${String(
+                                                  av.variant_id
+                                                ).slice(0, 6)}`}
+                                            </b>{" "}
+                                            — Stock:{" "}
+                                            {variant?.countInStock ?? "N/A"}
+                                          </span>
+                                          <button
+                                            className="hover-action-btn"
+                                            onClick={() =>
+                                              handleRemoveVoucher(
+                                                p._id,
+                                                av.variant_id
+                                              )
+                                            }
+                                          >
+                                            Remove Variant
+                                          </button>
+                                        </li>
+                                      );
+                                    })}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* ✅ Product-level link */}
+                            {(!v.applicable_variants ||
+                              v.applicable_variants.length === 0) && (
+                              <div style={{ marginTop: "8px" }}>
+                                <button
+                                  className="hover-action-btn"
+                                  style={{
+                                    background: "#e74c3c",
+                                    color: "#fff",
+                                    borderRadius: "5px",
+                                    padding: "5px 12px",
+                                    fontSize: "0.8rem",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => handleRemoveVoucher(p._id)}
+                                >
+                                  Remove Voucher (All Variants)
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              )}
+          </React.Fragment>
+        ))}
+      </tbody>
+    </table>
   )}
+</div>
 
-
-    </React.Fragment>
-  ))}
-  </tbody>
-
-
-          </table>
-        )}
-      </div>
     </div>
   );
 };
