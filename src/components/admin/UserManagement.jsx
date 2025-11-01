@@ -1,155 +1,118 @@
-//src/components/admin/UserManagement.jsx
-// ============================================================
-// ✅ UserManagement.jsx (Fixed with Token Header + Safe Auth)
-// ============================================================
+// src/components/admin/UserManagement.jsx
 import React, { useState, useEffect } from "react";
 import { useUser } from "../../contexts/UserContext";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
 import "./UserManagement.css";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://bookstore-yl7q.onrender.com";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { user, logout } = useUser();
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("users"); // "users" or "admins"
+  const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // ==========================
-  // 🔹 Fetch all users (admin)
-  // ==========================
+  // 🔹 Fetch all users
   const fetchUsers = async () => {
     try {
-      if (!user?.token) {
-        console.warn("⚠️ No token yet, skipping user fetch...");
-        return;
-      }
+      if (!user?.token) return;
       setLoading(true);
-      const response = await fetchWithAuth(
-        `${API_URL}/api/admin/users`,
-        {},
-        user.token
-      );
-
+      const response = await fetchWithAuth(`${API_URL}/api/admin/users`, {}, user.token);
       if (!response.ok) throw new Error("Failed to fetch users");
-
       const data = await response.json();
       setUsers(data);
+      setFilteredUsers(data);
     } catch (err) {
-      setError(err.message);
-      console.error("❌ Error fetching users:", err);
+      console.error("Error fetching users:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // ==========================
-  // 🔹 Lifecycle: load users once user is available
-  // ==========================
   useEffect(() => {
-    if (user?.token) {
-      fetchUsers();
-    }
+    if (user?.token) fetchUsers();
   }, [user]);
 
-  // ==========================
-  // 🔹 Promote to admin
-  // ==========================
-  const handleMakeAdmin = async (userId) => {
-    if (!window.confirm("Make this user an admin?")) return;
-    try {
-      const response = await fetchWithAuth(
-        `${API_URL}/api/admin/users/${userId}/make-admin`,
-        { method: "PUT" },
-        user.token
-      );
+  // 🔍 Search
+  useEffect(() => {
+    const q = search.toLowerCase();
+    const list = users.filter((u) =>
+      `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q)
+    );
+    setFilteredUsers(list);
+  }, [search, users]);
 
-      if (!response.ok) throw new Error("Failed to promote user to admin");
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === userId ? { ...u, role: "admin", isAdmin: true } : u
-        )
-      );
-    } catch (err) {
-      console.error("❌ Error promoting user:", err);
-      alert("Failed to update user role.");
+  // 🔧 Promote/Demote/Delete
+  const handleAction = async (userId, action) => {
+    let confirmMsg = "";
+    if (action === "makeAdmin") confirmMsg = "Promote this user to admin?";
+    if (action === "removeAdmin") confirmMsg = "Remove this admin role?";
+    if (action === "delete") confirmMsg = "Delete this account permanently?";
+    if (!window.confirm(confirmMsg)) return;
+
+    let method = "PUT";
+    let url = `${API_URL}/api/admin/users/${userId}`;
+
+    if (action === "makeAdmin") url += "/make-admin";
+    if (action === "removeAdmin") url += "/remove-admin";
+    if (action === "delete") {
+      url = `${API_URL}/api/admin/users/${userId}`;
+      method = "DELETE";
     }
+
+    const res = await fetchWithAuth(url, { method }, user.token);
+    if (res.ok) fetchUsers();
   };
 
-  // ==========================
-  // 🔹 Remove admin privileges
-  // ==========================
-  const handleRemoveAdmin = async (userId) => {
-    if (!window.confirm("Remove admin privileges from this user?")) return;
-    try {
-      const response = await fetchWithAuth(
-        `${API_URL}/api/admin/users/${userId}/remove-admin`,
-        { method: "PUT" },
-        user.token
-      );
-
-      if (!response.ok) throw new Error("Failed to remove admin privileges");
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === userId ? { ...u, role: "user", isAdmin: false } : u
-        )
-      );
-    } catch (err) {
-      console.error("❌ Error removing admin:", err);
-      alert("Failed to update user role.");
-    }
-  };
-
-  // ==========================
-  // 🔹 Delete user
-  // ==========================
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Delete this user? This cannot be undone.")) return;
-    try {
-      const response = await fetchWithAuth(
-        `${API_URL}/api/admin/users/${userId}`,
-        { method: "DELETE" },
-        user.token
-      );
-
-      if (!response.ok) throw new Error("Failed to delete user");
-      setUsers((prev) => prev.filter((u) => u._id !== userId));
-    } catch (err) {
-      console.error("❌ Error deleting user:", err);
-      alert("Failed to delete user.");
-    }
-  };
-
-  // ==========================
-  // 🔹 View user details
-  // ==========================
   const viewUserDetails = (u) => {
     setSelectedUser(u);
     setShowModal(true);
   };
 
-  // ==========================
-  // 🔹 Logout if unauthorized
-  // ==========================
-  useEffect(() => {
-    if (error?.includes("Unauthorized")) {
-      alert("Session expired. Please log in again.");
-      logout();
-    }
-  }, [error, logout]);
+  const visibleList = filteredUsers.filter((u) =>
+    activeTab === "admins" ? u.isAdmin : !u.isAdmin
+  );
 
-  // ==========================
-  // 🔹 Render
-  // ==========================
-  if (loading) return <div className="loading">Loading users...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (loading)
+    return (
+      <div className="user-loading">
+        <div className="skeleton-table" />
+      </div>
+    );
 
   return (
     <div className="user-management">
-      <h2>👥 User Management</h2>
+      <div className="user-header">
+        <h2>👥 User & Admin Management</h2>
+        <input
+          type="text"
+          placeholder="Search by name or email..."
+          className="user-search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* Tabs */}
+      <div className="user-tabs">
+        <button
+          className={activeTab === "users" ? "tab active" : "tab"}
+          onClick={() => setActiveTab("users")}
+        >
+          Users ({users.filter((u) => !u.isAdmin).length})
+        </button>
+        <button
+          className={activeTab === "admins" ? "tab active" : "tab"}
+          onClick={() => setActiveTab("admins")}
+        >
+          Admins ({users.filter((u) => u.isAdmin).length})
+        </button>
+      </div>
 
       <div className="users-container">
         <table className="users-table">
@@ -158,48 +121,44 @@ const UserManagement = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Created</th>
+              <th>Joined</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {users.length > 0 ? (
-              users.map((u) => (
+            {visibleList.length > 0 ? (
+              visibleList.map((u) => (
                 <tr key={u._id}>
-                  <td>
-                    {[u.firstName, u.lastName].filter(Boolean).join(" ") ||
-                      "Unnamed"}
-                  </td>
+                  <td>{`${u.firstName || ""} ${u.lastName || ""}`.trim() || "Unnamed"}</td>
                   <td>{u.email}</td>
-                  <td>{u.isAdmin ? "Admin" : "User"}</td>
+                  <td>
+                    <span className={`role-badge ${u.isAdmin ? "admin-role" : "user-role"}`}>
+                      {u.isAdmin ? "Admin" : "User"}
+                    </span>
+                  </td>
                   <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="actions">
-                    <button
-                      className="btn-view"
-                      onClick={() => viewUserDetails(u)}
-                    >
+                    <button className="btn-view" onClick={() => viewUserDetails(u)}>
                       View
                     </button>
-
-                    {!u.isAdmin ? (
+                    {u.isAdmin ? (
                       <button
-                        className="btn-make-admin"
-                        onClick={() => handleMakeAdmin(u._id)}
+                        className="btn-remove-admin"
+                        onClick={() => handleAction(u._id, "removeAdmin")}
                       >
-                        Make Admin
+                        Demote
                       </button>
                     ) : (
                       <button
-                        className="btn-remove-admin"
-                        onClick={() => handleRemoveAdmin(u._id)}
+                        className="btn-make-admin"
+                        onClick={() => handleAction(u._id, "makeAdmin")}
                       >
-                        Remove Admin
+                        Promote
                       </button>
                     )}
-
                     <button
                       className="btn-delete"
-                      onClick={() => handleDeleteUser(u._id)}
+                      onClick={() => handleAction(u._id, "delete")}
                     >
                       Delete
                     </button>
@@ -209,7 +168,7 @@ const UserManagement = () => {
             ) : (
               <tr>
                 <td colSpan="5" className="no-users">
-                  No users found.
+                  No {activeTab === "admins" ? "admins" : "users"} found.
                 </td>
               </tr>
             )}
@@ -217,46 +176,39 @@ const UserManagement = () => {
         </table>
       </div>
 
-      {/* ======================
-          🔹 User Detail Modal
-      ====================== */}
+      {/* Modal */}
       {showModal && selectedUser && (
-        <div className="user-modal">
-          <div className="modal-content">
+        <div className="user-modal fade-in">
+          <div className="modal-content slide-up">
             <div className="modal-header">
-              <h3>User Details</h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-              >
+              <h3>👤 User Details</h3>
+              <button className="close-btn" onClick={() => setShowModal(false)}>
                 ×
               </button>
             </div>
-
             <div className="modal-body">
               <p>
-                <strong>ID:</strong> {selectedUser._id}
-              </p>
-              <p>
-                <strong>Name:</strong>{" "}
-                {[selectedUser.firstName, selectedUser.lastName]
-                  .filter(Boolean)
-                  .join(" ")}
+                <strong>Name:</strong> {selectedUser.firstName} {selectedUser.lastName}
               </p>
               <p>
                 <strong>Email:</strong> {selectedUser.email}
               </p>
               <p>
                 <strong>Role:</strong>{" "}
-                {selectedUser.isAdmin ? "Admin" : "User"}
+                <span className={`role-badge ${selectedUser.isAdmin ? "admin-role" : "user-role"}`}>
+                  {selectedUser.isAdmin ? "Admin" : "User"}
+                </span>
               </p>
               <p>
-                <strong>Created:</strong>{" "}
+                <strong>Joined:</strong>{" "}
                 {new Date(selectedUser.createdAt).toLocaleString()}
               </p>
               <p>
-                <strong>Updated:</strong>{" "}
+                <strong>Last Updated:</strong>{" "}
                 {new Date(selectedUser.updatedAt).toLocaleString()}
+              </p>
+              <p>
+                <strong>ID:</strong> {selectedUser._id}
               </p>
             </div>
           </div>

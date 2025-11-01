@@ -263,6 +263,94 @@ router.get("/users", protect, admin, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
+// ============================================================
+// 🟢 Promote User to Admin
+// ============================================================
+router.put("/users/:id/make-admin", protect, admin, async (req, res) => {
+  try {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser)
+      return res.status(404).json({ message: "User not found" });
+
+    if (targetUser.isAdmin)
+      return res.status(400).json({ message: "User is already an admin" });
+
+    targetUser.isAdmin = true;
+    targetUser.role = "admin";
+    await targetUser.save();
+
+    res.json({
+      message: `✅ ${targetUser.firstName || targetUser.email} promoted to admin.`,
+      user: targetUser,
+    });
+  } catch (err) {
+    console.error("❌ Error promoting user:", err);
+    res.status(500).json({ message: "Failed to promote user" });
+  }
+});
+
+
+// ============================================================
+// 🔻 Demote (Remove Admin Privileges)
+// ============================================================
+router.put("/users/:id/remove-admin", protect, admin, async (req, res) => {
+  try {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser)
+      return res.status(404).json({ message: "User not found" });
+
+    if (!targetUser.isAdmin)
+      return res.status(400).json({ message: "User is not an admin" });
+
+    // 🛡️ Prevent demoting yourself
+    if (targetUser._id.toString() === req.user._id.toString()) {
+      return res
+        .status(400)
+        .json({ message: "You cannot demote your own account." });
+    }
+
+    targetUser.isAdmin = false;
+    targetUser.role = "user";
+    await targetUser.save();
+
+    res.json({
+      message: `⚠️ ${targetUser.firstName || targetUser.email} demoted to regular user.`,
+      user: targetUser,
+    });
+  } catch (err) {
+    console.error("❌ Error demoting admin:", err);
+    res.status(500).json({ message: "Failed to demote admin" });
+  }
+});
+
+
+// ============================================================
+// ❌ Delete User (Admin Only)
+// ============================================================
+router.delete("/users/:id", protect, admin, async (req, res) => {
+  try {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser)
+      return res.status(404).json({ message: "User not found" });
+
+    // 🛡️ Prevent deleting self
+    if (targetUser._id.toString() === req.user._id.toString()) {
+      return res
+        .status(400)
+        .json({ message: "You cannot delete your own account." });
+    }
+
+    await targetUser.deleteOne();
+
+    res.json({
+      message: `🗑️ User ${targetUser.email} deleted successfully.`,
+    });
+  } catch (err) {
+    console.error("❌ Error deleting user:", err);
+    res.status(500).json({ message: "Failed to delete user" });
+  }
+});
+
 
 // GET ALL ORDERS
 router.get("/orders", protect, admin, async (req, res) => {

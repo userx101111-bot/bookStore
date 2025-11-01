@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./OverviewPage.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const OverviewPage = () => {
   const [data, setData] = useState(null);
@@ -22,66 +22,82 @@ const OverviewPage = () => {
         setLoading(false);
       }
     };
-
     fetchOverview();
   }, []);
 
-  if (loading) return <div className="overview-loading">Loading dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="overview-loading">
+        <div className="skeleton-cards">
+          <div className="skeleton-card" />
+          <div className="skeleton-card" />
+          <div className="skeleton-card" />
+          <div className="skeleton-card" />
+        </div>
+      </div>
+    );
+  }
+
   if (!data) return <div className="overview-error">Failed to load overview data</div>;
 
   return (
     <div className="overview-page">
-      <h1 className="overview-title">📊 Store Overview</h1>
+      <h1 className="overview-title">📊 Dashboard Overview</h1>
 
-      {/* Summary Cards */}
+      {/* KPI Cards */}
       <div className="overview-cards">
-        <div className="overview-card">
-          <h3>Total Sales</h3>
-          <p className="card-value">₱{data.totalSales.toLocaleString()}</p>
+        <div className="overview-card gradient-blue">
+          <div className="card-label">Total Sales</div>
+          <div className="card-value">₱{data.totalSales.toLocaleString()}</div>
+          <div className="card-sub">Overall revenue</div>
         </div>
-        <div className="overview-card">
-          <h3>Total Orders</h3>
-          <p className="card-value">{data.totalOrders}</p>
+
+        <div className="overview-card gradient-green">
+          <div className="card-label">Orders</div>
+          <div className="card-value">{data.totalOrders}</div>
+          <div className="card-sub">Completed orders</div>
         </div>
-        <div className="overview-card">
-          <h3>Total Customers</h3>
-          <p className="card-value">{data.totalCustomers}</p>
+
+        <div className="overview-card gradient-purple">
+          <div className="card-label">Customers</div>
+          <div className="card-value">{data.totalCustomers}</div>
+          <div className="card-sub">Total users</div>
         </div>
-        <div className="overview-card">
-          <h3>Avg. Order Value</h3>
-          <p className="card-value">₱{data.averageOrderValue.toFixed(2)}</p>
+
+        <div className="overview-card gradient-orange">
+          <div className="card-label">Avg. Order</div>
+          <div className="card-value">₱{data.averageOrderValue.toFixed(2)}</div>
+          <div className="card-sub">Per transaction</div>
         </div>
       </div>
 
-      {/* Sales Over Time */}
-      <div className="chart-section">
-        <h2>Sales (Last 14 Days)</h2>
-        <div className="chart">
-          <table className="chart-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Revenue (₱)</th>
-                <th>Orders</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.salesOverTime.map((item) => (
-                <tr key={item._id}>
-                  <td>{item._id}</td>
-                  <td>{item.revenue.toLocaleString()}</td>
-                  <td>{item.orders}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Sales Trend */}
+      <section className="chart-section">
+        <div className="section-header">
+          <h2>📈 Sales (Last 14 Days)</h2>
         </div>
-      </div>
+        <div className="chart-bars">
+          {data.salesOverTime.map((day) => (
+            <div key={day._id} className="chart-bar">
+              <div
+                className="chart-fill"
+                style={{
+                  height: `${Math.min(day.revenue / 100, 100)}%`,
+                }}
+                title={`₱${day.revenue.toLocaleString()} on ${day._id}`}
+              />
+              <span className="chart-label">{day._id.slice(5)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Best Sellers */}
-      <div className="best-sellers">
-        <h2>🏆 Best-Selling Products</h2>
-        <table>
+      <section className="table-section">
+        <div className="section-header">
+          <h2>🏆 Best-Selling Products</h2>
+        </div>
+        <table className="modern-table">
           <thead>
             <tr>
               <th>Product</th>
@@ -94,13 +110,7 @@ const OverviewPage = () => {
             {data.bestSellers.map((p) => (
               <tr key={p._id}>
                 <td className="product-cell">
-                  {p.image && (
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className="product-image"
-                    />
-                  )}
+                  {p.image && <img src={p.image} alt={p.name} className="product-image" />}
                   {p.name}
                 </td>
                 <td>{p.totalSold}</td>
@@ -110,12 +120,14 @@ const OverviewPage = () => {
             ))}
           </tbody>
         </table>
-      </div>
+      </section>
 
       {/* Recent Orders */}
-      <div className="recent-orders">
-        <h2>🧾 Recent Orders</h2>
-        <table>
+      <section className="table-section">
+        <div className="section-header">
+          <h2>🧾 Recent Orders</h2>
+        </div>
+        <table className="modern-table">
           <thead>
             <tr>
               <th>Customer</th>
@@ -132,7 +144,7 @@ const OverviewPage = () => {
                 <td>₱{o.total.toLocaleString()}</td>
                 <td>{o.paymentMethod}</td>
                 <td>
-                  <span className={`status-badge ${o.status}`}>
+                  <span className={`status-badge modern ${o.status}`}>
                     {o.status}
                   </span>
                 </td>
@@ -141,7 +153,7 @@ const OverviewPage = () => {
             ))}
           </tbody>
         </table>
-      </div>
+      </section>
     </div>
   );
 };
