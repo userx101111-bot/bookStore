@@ -561,3 +561,39 @@ select {
 .select-all-label input {
   transform: scale(1.1);
 }
+
+.alert-block.cancel {
+  background: #ffe6e6;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+.alert-block.return {
+  background: #fff8e1;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+.btn-small {
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-small.danger {
+  background: #dc3545;
+  color: #fff;
+}
+
+.btn-small.success {
+  background: #28a745;
+  color: #fff;
+}
+
+.btn-small.secondary {
+  background: #ccc;
+  color: #222;
+}

@@ -2,60 +2,87 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: 'User',
-    },
-orderItems: [
-  {
-    product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    variantId: { type: mongoose.Schema.Types.ObjectId, required: false },
-    name: { type: String, required: true },
-    format: { type: String, required: false },
-    originalPrice: { type: Number, required: true },
-    discountedPrice: { type: Number, required: true },
-    qty: { type: Number, required: true },
-    itemTotal: { type: Number, required: true },
-    image: { type: String, required: true },
-  },
-],
+    user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    orderItems: [
+      {
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+        variantId: { type: mongoose.Schema.Types.ObjectId },
+        name: { type: String, required: true },
+        format: String,
+        originalPrice: Number,
+        discountedPrice: Number,
+        qty: Number,
+        itemTotal: Number,
+        image: String,
+      },
+    ],
 
-shippingAddress: {
-  houseNumber: { type: String },
-  street: { type: String, required: true },
-  barangay: { type: String },
-  city: { type: String, required: true },
-  region: { type: String, required: true }, 
-  postalCode: { type: String },
-  country: { type: String, default: "Philippines" },
-},
-name: { type: String, required: true },
-    phone: { type: String, required: true },
+    shippingAddress: {
+      houseNumber: String,
+      street: { type: String, required: true },
+      barangay: String,
+      city: { type: String, required: true },
+      region: { type: String, required: true },
+      postalCode: String,
+      country: { type: String, default: "Philippines" },
+    },
+    name: String,
+    phone: String,
+
     paymentMethod: {
       type: String,
-      required: true,
       enum: ['cash on delivery', 'PayPal'],
       default: 'cash on delivery',
     },
+
     paymentResult: {
-      id: { type: String },
-      status: { type: String },
-      update_time: { type: String },
-      email_address: { type: String },
+      id: String,
+      status: String,
+      update_time: String,
+      email_address: String,
     },
+
     itemsPrice: { type: Number, default: 0.0 },
     taxPrice: { type: Number, default: 0.0 },
     shippingPrice: { type: Number, default: 0.0 },
-    totalPrice: { type: Number, required: true, default: 0.0 },
+    totalPrice: { type: Number, required: true },
     isPaid: { type: Boolean, default: false },
-    paidAt: { type: Date },
+    paidAt: Date,
+
     status: {
       type: String,
-      enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
+      enum: [
+        'pending',
+        'processing',
+        'shipped',
+        'delivered',
+        'cancelled',
+        'refunded',
+        'return_requested',
+        'return_approved',
+        'return_rejected',
+      ],
       default: 'pending',
     },
-    deliveredAt: { type: Date },
+
+    deliveredAt: Date,
+
+    // 🆕 NEW — Cancel and Return requests
+    cancelRequest: {
+      requested: { type: Boolean, default: false },
+      reason: String,
+      requestedAt: Date,
+      handled: { type: Boolean, default: false },
+      handledAt: Date,
+    },
+
+    returnRequest: {
+      requested: { type: Boolean, default: false },
+      reason: String,
+      requestedAt: Date,
+      status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+      handledAt: Date,
+    },
   },
   { timestamps: true }
 );

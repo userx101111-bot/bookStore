@@ -1,3 +1,4 @@
+// src/pages/MyPurchases.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useUser } from "../contexts/UserContext";
@@ -7,6 +8,10 @@ const MyPurchases = () => {
   const { getToken } = useUser();
   const [orders, setOrders] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [requestType, setRequestType] = useState(null);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -59,6 +64,60 @@ const MyPurchases = () => {
     return `${addr.houseNumber ? addr.houseNumber + " " : ""}${addr.street || ""}, ${
       addr.barangay || ""
     }, ${addr.city || ""}, ${addr.region || ""}, ${addr.postalCode || ""}`;
+  };
+
+  const openRequestModal = (orderId, type) => {
+    setSelectedOrderId(orderId);
+    setRequestType(type);
+    setReason("");
+    setShowModal(true);
+  };
+
+  const handleSubmitRequest = async () => {
+    const token = getToken();
+    if (!reason.trim()) {
+      alert("Please enter a reason.");
+      return;
+    }
+
+    try {
+      const endpoint =
+        requestType === "cancel"
+          ? `/api/orders/${selectedOrderId}/request-cancel`
+          : `/api/orders/${selectedOrderId}/request-return`;
+
+      await axios.post(
+        `https://bookstore-yl7q.onrender.com${endpoint}`,
+        { reason },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert(
+        requestType === "cancel"
+          ? "✅ Cancellation request sent!"
+          : "♻ Return request sent!"
+      );
+
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === selectedOrderId
+            ? {
+                ...o,
+                [`${requestType}Request`]: {
+                  requested: true,
+                  requestedAt: new Date(),
+                  reason,
+                },
+              }
+            : o
+        )
+      );
+    } catch (err) {
+      console.error("❌ Request failed:", err);
+      alert("Failed to send request.");
+    } finally {
+      setShowModal(false);
+    }
   };
 
   return (
@@ -153,11 +212,78 @@ const MyPurchases = () => {
                         🎉 You saved ₱{totalSaved.toFixed(2)} on this order!
                       </div>
                     )}
+
+                    {/* Customer Actions */}
+                    <div className="order-actions">
+                      {["pending", "processing"].includes(order.status) &&
+                        !order.cancelRequest?.requested && (
+                          <button
+                            className="action-btn cancel"
+                            onClick={() =>
+                              openRequestModal(order._id, "cancel")
+                            }
+                          >
+                            Request Cancel
+                          </button>
+                        )}
+
+                      {order.status === "delivered" &&
+                        !order.returnRequest?.requested && (
+                          <button
+                            className="action-btn return"
+                            onClick={() =>
+                              openRequestModal(order._id, "return")
+                            }
+                          >
+                            Request Return
+                          </button>
+                        )}
+
+                      {order.cancelRequest?.requested && (
+                        <p className="info-text">
+                          ❗ Cancel requested on{" "}
+                          {new Date(
+                            order.cancelRequest.requestedAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                      {order.returnRequest?.requested && (
+                        <p className="info-text">
+                          ♻ Return requested on{" "}
+                          {new Date(
+                            order.returnRequest.requestedAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>
+              {requestType === "cancel" ? "Cancel Order" : "Return Request"}
+            </h3>
+            <textarea
+              placeholder="Enter your reason..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <div className="modal-actions">
+              <button className="btn-primary" onClick={handleSubmitRequest}>
+                Submit
+              </button>
+              <button className="btn-ghost" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

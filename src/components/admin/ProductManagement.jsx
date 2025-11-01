@@ -271,21 +271,30 @@ const handleInputChange = async (e) => {
     });
   }, []);
 
-  const handleVariantAlbumImages = useCallback((index, files) => {
-    if (!files || files.length === 0) return;
-    setFormData((prev) => {
-      const updated = [...prev.variants];
-      const newImages = Array.from(files).map((file) => ({
+const handleVariantAlbumImages = useCallback((index, files) => {
+  if (!files || files.length === 0) return;
+
+  setFormData((prev) => {
+    const updated = [...prev.variants];
+    const existing = updated[index].albumImages || [];
+
+    const newImages = Array.from(files)
+      .filter(
+        (file) =>
+          !existing.some(
+            (img) => img.file?.name === file.name && img.file?.size === file.size
+          )
+      )
+      .map((file) => ({
         file,
         preview: URL.createObjectURL(file),
       }));
-      updated[index].albumImages = [
-        ...(updated[index].albumImages || []),
-        ...newImages,
-      ];
-      return { ...prev, variants: updated };
-    });
-  }, []);
+
+    updated[index].albumImages = [...existing, ...newImages];
+    return { ...prev, variants: updated };
+  });
+}, []);
+
 
   const removeAlbumImage = (variantIndex, imageIndex) => {
     setFormData((prev) => {

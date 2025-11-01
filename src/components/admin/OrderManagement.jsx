@@ -101,12 +101,58 @@ const OrderManagement = () => {
       );
       if (!res.ok) throw new Error("Failed to update order status");
       const updated = await res.json();
-      setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status: updated.status, deliveredAt: updated.deliveredAt || o.deliveredAt } : o)));
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId
+            ? { ...o, status: updated.status, deliveredAt: updated.deliveredAt || o.deliveredAt }
+            : o
+        )
+      );
     } catch (err) {
       console.error("❌ Update failed:", err);
       alert("Failed to update order status.");
     }
   };
+
+  // 🆕 ✅ MOVE THESE INSIDE HERE
+  const handleApproveCancel = async (orderId) => {
+    if (!window.confirm("Approve this cancellation?")) return;
+    try {
+      const res = await fetchWithAuth(
+        `${API_URL}/api/orders/${orderId}/approve-cancel`,
+        { method: "PUT" },
+        user.token
+      );
+      if (!res.ok) throw new Error("Failed");
+      alert("✅ Order cancelled.");
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to approve cancellation.");
+    }
+  };
+
+  const handleReturnAction = async (orderId, action) => {
+    if (!window.confirm(`Confirm to ${action} return request?`)) return;
+    try {
+      const res = await fetchWithAuth(
+        `${API_URL}/api/orders/${orderId}/handle-return`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        },
+        user.token
+      );
+      if (!res.ok) throw new Error("Failed");
+      alert(`Return ${action}d successfully.`);
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to handle return.");
+    }
+  };
+  // ✅ END OF NEWLY MOVED FUNCTIONS
 
   // ------------------------------------------------------------
   // Bulk status update (multiple PUTs using your endpoint)
@@ -438,7 +484,43 @@ const OrderManagement = () => {
               <p><strong>Order ID:</strong> {selectedOrder._id}</p>
               <p><strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
               <p><strong>Status:</strong> <span className={`status-badge ${selectedOrder.status}`}>{humanize(selectedOrder.status)}</span></p>
+{/* 🆕 Show cancel and return requests (new code) */}
+{selectedOrder.cancelRequest?.requested && (
+  <div className="alert-block cancel">
+    ❗ <b>Cancellation Requested</b><br />
+    Reason: {selectedOrder.cancelRequest.reason}<br />
+    Date: {new Date(selectedOrder.cancelRequest.requestedAt).toLocaleString()}
+    <br />
+    <button
+      className="btn-small danger"
+      onClick={() => handleApproveCancel(selectedOrder._id)}
+    >
+      Approve Cancel
+    </button>
+  </div>
+)}
 
+{selectedOrder.returnRequest?.requested && (
+  <div className="alert-block return">
+    ♻ <b>Return Requested</b><br />
+    Reason: {selectedOrder.returnRequest.reason}<br />
+    Date: {new Date(selectedOrder.returnRequest.requestedAt).toLocaleString()}
+    <br />
+    <button
+      className="btn-small success"
+      onClick={() => handleReturnAction(selectedOrder._id, "approve")}
+    >
+      Approve Return
+    </button>
+    <button
+      className="btn-small secondary"
+      style={{ marginLeft: "8px" }}
+      onClick={() => handleReturnAction(selectedOrder._id, "reject")}
+    >
+      Reject
+    </button>
+  </div>
+)}
               <hr />
 
               <h4>👤 Customer</h4>

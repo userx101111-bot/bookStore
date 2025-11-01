@@ -186,5 +186,121 @@ router.get('/', protect, admin, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch all orders', error: error.message });
   }
 });
+// ============================================================
+// 🟡 Request Cancel Order (User)
+// ============================================================
+router.post("/:id/request-cancel", protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.user.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: "Not authorized" });
+
+    // Only allow cancel if not shipped or delivered
+    if (["shipped", "delivered", "cancelled"].includes(order.status))
+      return res.status(400).json({ message: "Order cannot be cancelled at this stage" });
+
+    order.cancelRequest = {
+      requested: true,
+      reason: req.body.reason || "No reason provided",
+      requestedAt: new Date(),
+    };
+
+    await order.save();
+    res.json({ message: "Cancel request submitted", order });
+  } catch (error) {
+    console.error("❌ Cancel request error:", error.message);
+    res.status(500).json({ message: "Failed to request cancel" });
+  }
+});
+
+
+// ============================================================
+// 🟢 Request Return Order (User)
+// ============================================================
+router.post("/:id/request-return", protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.user.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: "Not authorized" });
+
+    // Only allow return if delivered
+    if (order.status !== "delivered")
+      return res.status(400).json({ message: "Order not yet delivered" });
+
+    order.returnRequest = {
+      requested: true,
+      reason: req.body.reason || "No reason provided",
+      requestedAt: new Date(),
+      status: "pending",
+    };
+
+    await order.save();
+    res.json({ message: "Return request submitted", order });
+  } catch (error) {
+    console.error("❌ Return request error:", error.message);
+    res.status(500).json({ message: "Failed to request return" });
+  }
+});
+
+
+// ============================================================
+// 🔵 Admin: Approve or Reject Return
+// ============================================================
+router.put("/:id/handle-return", protect, admin, async (req, res) => {
+  try {
+    const { action } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (!order.returnRequest?.requested)
+      return res.status(400).json({ message: "No return request to handle" });
+
+    if (action === "approve") {
+      order.returnRequest.status = "approved";
+      order.status = "refunded";
+    } else if (action === "reject") {
+      order.returnRequest.status = "rejected";
+    } else {
+      return res.status(400).json({ message: "Invalid action" });
+    }
+
+    order.returnRequest.handledAt = new Date();
+    await order.save();
+
+    res.json({ message: `Return ${action}d`, order });
+  } catch (error) {
+    console.error("❌ Handle return error:", error.message);
+    res.status(500).json({ message: "Failed to handle return" });
+  }
+});
+
+
+// ============================================================
+// 🔴 Admin: Approve Cancel Request
+// ============================================================
+router.put("/:id/approve-cancel", protect, admin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (!order.cancelRequest?.requested)
+      return res.status(400).json({ message: "No cancel request to approve" });
+
+    order.status = "cancelled";
+    order.cancelRequest.handled = true;
+    order.cancelRequest.handledAt = new Date();
+
+    await order.save();
+    res.json({ message: "Order cancelled successfully", order });
+  } catch (error) {
+    console.error("❌ Approve cancel error:", error.message);
+    res.status(500).json({ message: "Failed to approve cancel request" });
+  }
+});
+
 
 module.exports = router;
