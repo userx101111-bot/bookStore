@@ -198,6 +198,11 @@ const renderStatusBadge = (status) => {
                               <strong>Address:</strong> {formatAddress(addr)}
                               <br />
                               <strong>Phone:</strong> {order.phone || "N/A"}
+                              <br />
+                                <strong>Payment Method:</strong>{" "}
+                                {order.paymentMethod
+                                  ? order.paymentMethod.charAt(0).toUpperCase() + order.paymentMethod.slice(1)
+                                  : "N/A"}
                             </p>
                           </div>
 
