@@ -48,26 +48,38 @@ const UserManagement = () => {
   }, [search, users]);
 
   // 🔧 Promote/Demote/Delete
-  const handleAction = async (userId, action) => {
-    let confirmMsg = "";
-    if (action === "makeAdmin") confirmMsg = "Promote this user to admin?";
-    if (action === "removeAdmin") confirmMsg = "Remove this admin role?";
-    if (action === "delete") confirmMsg = "Delete this account permanently?";
-    if (!window.confirm(confirmMsg)) return;
+const handleAction = async (userId, action) => {
+  let confirmMsg = "";
+  if (action === "makeAdmin") confirmMsg = "Promote this user to admin?";
+  if (action === "removeAdmin") confirmMsg = "Remove this admin role?";
+  if (action === "delete") confirmMsg = "Delete this account permanently?";
+  if (!window.confirm(confirmMsg)) return;
 
-    let method = "PUT";
-    let url = `${API_URL}/api/admin/users/${userId}`;
+  let method = "PUT";
+  let url = `${API_URL}/api/admin/users/${userId}`;
 
-    if (action === "makeAdmin") url += "/make-admin";
-    if (action === "removeAdmin") url += "/remove-admin";
-    if (action === "delete") {
-      url = `${API_URL}/api/admin/users/${userId}`;
-      method = "DELETE";
+  if (action === "makeAdmin") url += "/make-admin";
+  if (action === "removeAdmin") url += "/remove-admin";
+  if (action === "delete") {
+    url = `${API_URL}/api/admin/users/${userId}`;
+    method = "DELETE";
+  }
+
+  const res = await fetchWithAuth(url, { method }, user.token);
+  if (res.ok) {
+    await fetchUsers(); // refresh table
+    // 🟢 If the admin promoted themselves, refresh their user context
+    if (userId === user._id && action === "makeAdmin") {
+      const refresh = await fetchWithAuth(`${API_URL}/api/auth/me`, {}, user.token);
+      if (refresh.ok) {
+        const updated = await refresh.json();
+        localStorage.setItem("user", JSON.stringify(updated)); // refresh local cache
+        window.location.reload(); // reload to re-run isAdmin()
+      }
     }
+  }
+};
 
-    const res = await fetchWithAuth(url, { method }, user.token);
-    if (res.ok) fetchUsers();
-  };
 
   const viewUserDetails = (u) => {
     setSelectedUser(u);

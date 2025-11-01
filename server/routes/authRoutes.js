@@ -387,5 +387,32 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// ==========================================================
+// ✅ GET CURRENT USER (Auth Refresh) 
+// ==========================================================
+const { protect } = require("../middleware/authMiddleware");
+
+router.get("/me", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select(
+      "_id firstName lastName email role loginMethod phone createdAt isAdmin"
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // generate a fresh JWT reflecting any role changes
+    const newToken = jwt.sign(
+      { id: user._id, isAdmin: user.role === "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    res.json({ ...user.toObject(), token: newToken });
+  } catch (err) {
+    console.error("❌ Error refreshing user:", err);
+    res.status(500).json({ message: "Failed to refresh user info" });
+  }
+});
+
+
 // ✅ Final export
 module.exports = router;

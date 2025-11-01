@@ -612,3 +612,23 @@ body {
   font-size: 1.05rem;
 }
 
+/* ============================================================
+   🧹 Fix: Remove unwanted blue left line on section headings
+   ============================================================ */
+
+.section-heading,
+.section-heading::before,
+.section-heading::after {
+  border-left: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.section-heading:focus,
+.section-heading:focus-visible,
+.section-heading:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border-left: none !important;
+}
