@@ -87,7 +87,7 @@ if (paymentMethod === "paypal" || paymentMethod === "wallet") {
 }
 
 const orderData = {
-  userId: user._id || user.id,
+  user: user._id || user.id,
   name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
   phone: user.phone || user.address?.telephone || "",
   orderItems: cartItems.map((item) => ({
@@ -206,7 +206,7 @@ if (paymentMethod === "paypal" || paymentMethod === "wallet") {
 }
 
 const orderData = {
-  userId: user._id || user.id,
+  user: user._id || user.id,
   name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
   phone: user.phone || user.address?.telephone || "",
   orderItems: cartItems.map((item) => ({

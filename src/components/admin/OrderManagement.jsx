@@ -467,12 +467,14 @@ const handleReturnAction = async (orderId, action) => {
                         <input type="checkbox" checked={selectedIds.has(order._id)} onChange={() => toggleSelect(order._id)} aria-label={`Select ${order._id}`} />
                       </td>
                       <td className="oid">{order._id}</td>
-                      <td>
-                        {order.user?.email
-                          ? `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim()
-                          : order.name || "Guest"}
-                        <div className="muted small">{order.user?.email || "-"}</div>
-                      </td>
+<td>
+{order.user && typeof order.user === "object"
+  ? `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim()
+  : order.shippingAddress?.name || order.name || "Guest"}
+  <div className="muted small">
+    {order.user?.email || "Deleted User"}
+  </div>
+</td>
                       <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td className="bold">₱{Number(order.totalPrice || 0).toFixed(2)}</td>
                       <td>
@@ -519,8 +521,12 @@ const handleReturnAction = async (orderId, action) => {
 
                 <div className="card-body">
                   <div>
-                    <div className="bold">{order.user?.firstName || order.name || "Guest"}</div>
-                    <div className="muted small">{order.user?.email || "-"}</div>
+<div className="bold">
+  {order.user
+    ? `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim()
+    : order.name || "Guest"}
+</div>
+<div className="muted small">{order.user?.email || "Deleted User"}</div>
                   </div>
                   <div className="price">₱{Number(order.totalPrice || 0).toFixed(2)}</div>
                 </div>
@@ -587,8 +593,19 @@ const handleReturnAction = async (orderId, action) => {
               <hr />
 
               <h4>👤 Customer</h4>
-              <p><strong>Name:</strong> {selectedOrder.name || `${selectedOrder.user?.firstName || ""} ${selectedOrder.user?.lastName || ""}`.trim() || "N/A"}</p>
-              <p><strong>Phone:</strong> {selectedOrder.phone || selectedOrder.shippingAddress?.phone || selectedOrder.user?.phone || "N/A"}</p>
+<p>
+  <strong>Name:</strong>{" "}
+{selectedOrder.user && typeof selectedOrder.user === "object"
+  ? `${selectedOrder.user.firstName || ""} ${selectedOrder.user.lastName || ""}`.trim()
+  : selectedOrder.shippingAddress?.name || selectedOrder.name || "Guest"}
+</p>
+<p>
+  <strong>Phone:</strong>{" "}
+  {selectedOrder.phone ||
+    selectedOrder.shippingAddress?.phone ||
+    selectedOrder.user?.phone ||
+    "N/A"}
+</p>
 
               <hr />
 
