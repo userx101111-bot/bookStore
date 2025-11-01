@@ -11,6 +11,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 router.post('/', protect, async (req, res) => {
   try {
     const {
+      user: userIdFromBody,
       orderItems,
       shippingAddress,
       paymentMethod,
@@ -25,21 +26,23 @@ router.post('/', protect, async (req, res) => {
       phone,
     } = req.body;
 
-    // ✅ Validation — make sure orderItems exist
+    const userId = req.user?._id || userIdFromBody;
+    if (!userId) {
+      return res.status(400).json({ message: "User ID missing or invalid" });
+    }
+
     if (!orderItems || !orderItems.length) {
       return res.status(400).json({ message: "No order items provided" });
     }
 
-    // ✅ Validation — check each item for required fields
     orderItems.forEach((item) => {
       if (!item.product || !item.name || !item.qty) {
         throw new Error("Order item missing required fields");
       }
     });
 
-    // ✅ Create the order object
     const order = new Order({
-      user: req.user._id,
+      user: userId,
       orderItems,
       shippingAddress,
       name,
@@ -58,10 +61,14 @@ router.post('/', protect, async (req, res) => {
     const createdOrder = await order.save();
     res.status(201).json(createdOrder);
   } catch (error) {
-    console.error("❌ Create order error:", error.message);
-    res.status(500).json({ message: "Failed to create order", error: error.message });
+    console.error("❌ Create order error:", error);
+    res.status(500).json({
+      message: "Failed to create order",
+      error: error.message,
+    });
   }
 });
+
 
 
 // ============================================================
