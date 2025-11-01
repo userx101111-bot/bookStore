@@ -9,10 +9,10 @@ import ProductManagement from './admin/ProductManagement';
 import CategoryManagement from './admin/CategoryManagement'; // existing import
 import './AdminDashboard.css';
 import BannerManagement from './admin/BannerManagement';
-import AdminOverview from './admin/AdminOverview';
 import StaticPageManagement from "./admin/StaticPageManagement";
 import FeaturedManagement from './admin/FeaturedManagement'; // NEW
 import VoucherManagement from "./admin/VoucherManagement";
+import OverviewPage from "./admin/OverviewPage";
 
 const AdminDashboard = () => {
   const { isAdmin, logout } = useUser();
@@ -63,7 +63,8 @@ const AdminDashboard = () => {
       <div className="admin-content">
         <Routes>
           <Route index element={<div>Welcome to Admin Dashboard</div>} />
-          <Route path="overview" element={<AdminOverview />} />
+<Route index element={<OverviewPage />} />
+<Route path="overview" element={<OverviewPage />} />
           <Route path="products" element={<ProductManagement />} />
           <Route path="categories" element={<CategoryManagement />} />
           <Route path="featured" element={<FeaturedManagement />} /> {/* NEW */}
@@ -72,6 +73,7 @@ const AdminDashboard = () => {
           <Route path="vouchers" element={<VoucherManagement />} />
           <Route path="banners" element={<BannerManagement />} />
           <Route path="static-pages" element={<StaticPageManagement />} />
+          
         </Routes>
       </div>
     </div>

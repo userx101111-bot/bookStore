@@ -113,6 +113,7 @@ app.use("/api/vouchers", require("./routes/voucherRoutes"));
 
 // 🛡️ Admin routes (protected)
 app.use("/api/admin", protect, admin, require("./routes/adminRoutes"));
+app.use("/api/admin/overview", require("./routes/adminOverviewRoutes"));
 
 // ============================================================
 // 🧠 HEALTH CHECK

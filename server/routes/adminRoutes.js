@@ -49,6 +49,8 @@ const sanitizeAlbumImages = (images = []) => {
     .filter(Boolean);
 };
 
+
+
 // CREATE PRODUCT
 router.post("/products", protect, admin, upload.any(), async (req, res) => {
   try {
