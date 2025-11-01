@@ -349,4 +349,42 @@ if (order.isPaid) {
 });
 
 
+// ============================================================
+// 🟢 Revert Cancel Request (User changed mind)
+// ============================================================
+router.post("/:id/revert-cancel", protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // ✅ Only the order owner can revert
+    if (order.user.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: "Not authorized" });
+
+    // ❌ Cannot revert if order already cancelled or delivered
+    if (["cancelled", "delivered"].includes(order.status))
+      return res.status(400).json({ message: "Order cannot be continued at this stage" });
+
+    // ❌ No cancel request to revert
+    if (!order.cancelRequest?.requested)
+      return res.status(400).json({ message: "No cancel request to revert" });
+
+    // ✅ Clear the cancel request
+    order.cancelRequest = {
+      requested: false,
+      reason: "",
+      requestedAt: null,
+      handled: false,
+      handledAt: null,
+    };
+
+    await order.save();
+    res.json({ message: "Cancel request withdrawn. Order will continue.", order });
+  } catch (error) {
+    console.error("❌ Revert cancel error:", error.message);
+    res.status(500).json({ message: "Failed to revert cancel request" });
+  }
+});
+
+
 module.exports = router;

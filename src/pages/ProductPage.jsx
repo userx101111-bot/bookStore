@@ -131,6 +131,8 @@ const ProductPage = () => {
   const [showMiniCart, setShowMiniCart] = useState(false);
   const [miniCartData, setMiniCartData] = useState(null);
   const [cartLoading, setCartLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+const [selectedQuantity, setSelectedQuantity] = useState(1);
 
   const handleAddToCart = async () => {
     if (!selectedVariant) return;
@@ -453,16 +455,13 @@ const ProductPage = () => {
             </button>
 
             {!variantOutOfStock && computedStatus !== "Inactive" && (
-              <button
-                className="sign-in-button"
-                onClick={() => {
-                  // Keep Buy Now behavior (navigate to checkout or cart) — unchanged
-                  // If you want direct checkout with single item, implement later.
-                  navigate("/cart");
-                }}
-              >
-                Buy Now
-              </button>
+<button
+  className="sign-in-button"
+  disabled={variantOutOfStock || computedStatus === "Inactive"}
+  onClick={() => setShowConfirmModal(true)}
+>
+  Buy Now
+</button>
             )}
           </div>
         </div>
@@ -567,8 +566,95 @@ const ProductPage = () => {
             </button>
           </div>
         </div>
+        
       )}
+      {/* ============================================================ */}
+{/* 🧾 Confirmation Modal Before Checkout */}
+{/* ============================================================ */}
+{showConfirmModal && selectedVariant && (
+  <div className="confirm-modal-overlay">
+    <div className="confirm-modal">
+      <h3>Confirm Purchase</h3>
+
+      <div className="confirm-modal-body">
+        <img
+          src={selectedVariant.mainImage || product.image || "/assets/placeholder-image.png"}
+          alt={product.name}
+          className="confirm-product-image"
+        />
+
+        <div className="confirm-product-details">
+          <h4>{product.name}</h4>
+          <p>Format: <strong>{selectedVariant.format}</strong></p>
+          <p>Price: ₱{discountedPrice.toFixed(2)}</p>
+
+          <div className="quantity-control">
+            <button
+              onClick={() => setSelectedQuantity((q) => Math.max(1, q - 1))}
+            >
+              −
+            </button>
+            <span>{selectedQuantity}</span>
+            <button
+              onClick={() =>
+                setSelectedQuantity((q) =>
+                  Math.min(selectedVariant.countInStock || 99, q + 1)
+                )
+              }
+            >
+              +
+            </button>
+          </div>
+
+          <p className="total-line">
+            Total: <strong>₱{(discountedPrice * selectedQuantity).toFixed(2)}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div className="confirm-modal-actions">
+        <button
+          className="btn-cancel"
+          onClick={() => setShowConfirmModal(false)}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="btn-confirm"
+          onClick={() => {
+            setShowConfirmModal(false);
+            navigate("/checkout", {
+              state: {
+                cartItems: [
+                  {
+                    id: selectedVariant._id,
+                    productId: product._id,
+                    name: product.name,
+                    format: selectedVariant.format,
+                    image:
+                      selectedVariant.mainImage ||
+                      product.image ||
+                      "/assets/placeholder-image.png",
+                    price: selectedVariant.price,
+                    final_price: discountedPrice,
+                    quantity: selectedQuantity,
+                  },
+                ],
+              },
+            });
+          }}
+        >
+          Confirm
+        </button>
+      </div>
     </div>
+  </div>
+)}
+
+    </div>
+
+    
   );
 };
 

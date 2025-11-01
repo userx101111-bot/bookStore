@@ -113,6 +113,38 @@ const renderStatusBadge = (status) => {
       setShowModal(false);
     }
   };
+const handleContinueOrder = async (orderId) => {
+  const token = getToken();
+  if (!window.confirm("Are you sure you want to continue this order?")) return;
+
+  try {
+    await axios.post(
+      `https://bookstore-yl7q.onrender.com/api/orders/${orderId}/revert-cancel`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert("✅ Your cancel request has been withdrawn. Order will continue.");
+
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === orderId
+          ? {
+              ...o,
+              cancelRequest: {
+                requested: false,
+                reverted: true, // 👈 Add this line
+              },
+            }
+          : o
+      )
+    );
+  } catch (err) {
+    console.error("❌ Failed to continue order:", err);
+    alert("Failed to continue order. Please try again.");
+  }
+};
+
 
   return (
     <div className="app" style={{ minHeight: "100vh" }}>
@@ -172,6 +204,20 @@ const renderStatusBadge = (status) => {
                         className="order-header-modern"
                         onClick={() => toggleExpand(order._id)}
                       >
+                        {/* 🧾 Compact summary when collapsed */}
+{!expanded && (
+  <div className="order-compact-summary">
+    <p>
+      <strong>Items:</strong> {order.orderItems?.length || 0} item(s)
+      {" • "}
+      <strong>Payment:</strong>{" "}
+      {order.paymentMethod
+        ? order.paymentMethod.charAt(0).toUpperCase() +
+          order.paymentMethod.slice(1)
+        : "N/A"}
+    </p>
+  </div>
+)}
                         <div className="order-info">
                           <div className="order-id">
                             Order #{order._id.slice(-6)}
@@ -256,17 +302,56 @@ const renderStatusBadge = (status) => {
 
 
                           <div className="order-actions">
-                            {["pending", "processing"].includes(order.status) &&
-                              !order.cancelRequest?.requested && (
-                                <button
-                                  className="action-btn cancel"
-                                  onClick={() =>
-                                    openRequestModal(order._id, "cancel")
-                                  }
-                                >
-                                  Request Cancel
-                                </button>
-                              )}
+{/* ✅ Cancel or Continue logic */}
+{["pending", "processing"].includes(order.status) && (
+  <>
+    {/* 🟡 No cancel yet */}
+    {!order.cancelRequest?.requested && !order.cancelRequest?.reverted && (
+      <button
+        className="action-btn cancel"
+        onClick={() => openRequestModal(order._id, "cancel")}
+      >
+        Request Cancel
+      </button>
+    )}
+
+    {/* 🔵 Cancel request pending */}
+    {order.cancelRequest?.requested && !order.cancelRequest?.reverted && (
+      <div className="cancel-status-box">
+        🕓 <strong>Cancel Request Pending</strong>
+        <br />
+        <small>
+          Requested on{" "}
+          {new Date(order.cancelRequest.requestedAt).toLocaleString()}
+        </small>
+        {order.cancelRequest.reason && (
+          <>
+            <br />
+            <small>
+              <strong>Reason:</strong> {order.cancelRequest.reason}
+            </small>
+          </>
+        )}
+        <br />
+        <button
+          className="action-btn continue"
+          onClick={() => handleContinueOrder(order._id)}
+        >
+          Continue Order
+        </button>
+      </div>
+    )}
+
+    {/* ✅ Successfully reverted */}
+    {order.cancelRequest?.reverted && (
+      <p className="info-text success">
+        ✅ You decided to continue with this order.
+      </p>
+    )}
+  </>
+)}
+
+
 
                             {order.status === "delivered" &&
                               !order.returnRequest?.requested && (

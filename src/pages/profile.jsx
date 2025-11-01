@@ -113,6 +113,8 @@ const Profile = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hoveredOrder, setHoveredOrder] = useState(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   const [securityStep, setSecurityStep] = useState(null);
   const [passwordInput, setPasswordInput] = useState("");
@@ -187,6 +189,12 @@ const Profile = () => {
     };
     fetchOrders();
   }, [user]);
+
+  const formatAddress = (addr = {}) =>
+  `${addr.houseNumber ? addr.houseNumber + " " : ""}${addr.street || ""}, ${
+    addr.barangay || ""
+  }, ${addr.city || ""}, ${addr.region || ""}, ${addr.postalCode || ""}`;
+
 
   // ============================================================
   // Security Step Handler
@@ -636,31 +644,164 @@ const Profile = () => {
                 <p className="error-message">{error}</p>
               ) : orders.length ? (
                 <div className="order-grid">
-                  {orders.map((o) => (
-                    <div key={o._id} className="order-card">
-                      <div className="order-header">
-                        <span>Order #{o._id.slice(0, 8)}</span>
-                        <span className="order-date">
-                          {new Date(o.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="order-items">
-                        {o.orderItems.map((i, idx) => (
-                          <div key={idx} className="order-item">
-                            <img src={i.image} alt={i.name} />
-                            <div>
-                              <p>{i.name}</p>
-                              <p>Qty: {i.qty}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="order-footer">
-                        <p>Status: {o.status}</p>
-                        <p>Total: ₱{o.totalPrice.toFixed(2)}</p>
-                      </div>
-                    </div>
-                  ))}
+{orders.map((o) => (
+  <div key={o._id} className="order-card">
+    {/* 🆔 Header */}
+    <div className="order-header">
+      <div>
+        <strong>Order #{o._id.slice(-6)}</strong>
+        <div className="order-date">{new Date(o.createdAt).toLocaleString()}</div>
+      </div>
+      <div className="order-status">
+        <span
+          className="status-badge"
+          style={{
+            backgroundColor:
+              o.status === "processing"
+                ? "#4da6ff1a"
+                : o.status === "pending"
+                ? "#ffb84d1a"
+                : o.status === "delivered"
+                ? "#28a7451a"
+                : o.status === "cancelled"
+                ? "#dc35451a"
+                : "#6c757d1a",
+            color:
+              o.status === "processing"
+                ? "#4da6ff"
+                : o.status === "pending"
+                ? "#ffb84d"
+                : o.status === "delivered"
+                ? "#28a745"
+                : o.status === "cancelled"
+                ? "#dc3545"
+                : "#6c757d",
+          }}
+        >
+          {o.status.charAt(0).toUpperCase() + o.status.slice(1)}
+        </span>
+      </div>
+    </div>
+
+    {/* 🛍 Product Summary */}
+    <div className="order-products">
+      {o.orderItems.map((i, idx) => (
+        <div key={idx} className="order-product-line">
+          {/* 🖼 Hover only triggers here */}
+          <img
+            src={i.image}
+            alt={i.name}
+            onMouseEnter={(e) => {
+              setHoveredOrder(o);
+              setHoverPosition({ x: e.clientX, y: e.clientY });
+            }}
+            onMouseLeave={() => setHoveredOrder(null)}
+          />
+          <div>
+            <p
+              className="product-name"
+              onMouseEnter={(e) => {
+                setHoveredOrder(o);
+                setHoverPosition({ x: e.clientX, y: e.clientY });
+              }}
+              onMouseLeave={() => setHoveredOrder(null)}
+            >
+              {i.name}
+            </p>
+            <p className="variant">{i.format || "—"} • Qty: {i.qty}</p>
+          </div>
+          <div className="price">
+            ₱{(i.discountedPrice ?? i.originalPrice).toFixed(2)}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* 💳 Footer */}
+    <div className="order-summary-line">
+      <p>
+        <strong>Payment:</strong>{" "}
+        {o.paymentMethod
+          ? o.paymentMethod.charAt(0).toUpperCase() + o.paymentMethod.slice(1)
+          : "N/A"}
+      </p>
+      <p>
+        <strong>Total:</strong> ₱{o.totalPrice.toFixed(2)}
+      </p>
+    </div>
+  </div>
+))}
+
+
+
+{/* 🧾 Order Details Hover Modal */}
+{hoveredOrder && (
+  <div
+    className="order-hover-modal"
+    style={{
+      // 🪄 Appear above and centered on cursor
+      top:
+        hoverPosition.y -
+        450 + // modal height offset so cursor is near bottom
+        (hoverPosition.y < 280 ? 300 - hoverPosition.y : 0), // keep on-screen
+      left:
+        hoverPosition.x -
+        210 + // half of modal width (420px / 2)
+        (hoverPosition.x > window.innerWidth - 220 ? -180 : 0) + // avoid right overflow
+        (hoverPosition.x < 210 ? 210 - hoverPosition.x : 0), // avoid left overflow
+      transform: "translate(0, 0)",
+    }}
+    onMouseEnter={() => setHoveredOrder(hoveredOrder)}
+    onMouseLeave={() => setHoveredOrder(null)}
+  >
+
+    <div className="modal-inner">
+      <h4>Order #{hoveredOrder._id.slice(-6)}</h4>
+      <p>{new Date(hoveredOrder.createdAt).toLocaleString()}</p>
+      <p><strong>Status:</strong> {hoveredOrder.status}</p>
+      <p><strong>Total:</strong> ₱{hoveredOrder.totalPrice.toFixed(2)}</p>
+      <hr />
+      <h5>Shipping Information</h5>
+      <p>
+        <strong>Name:</strong> {hoveredOrder.name || "Customer"}<br />
+        <strong>Address:</strong> {formatAddress(hoveredOrder.shippingAddress)}<br />
+        <strong>Phone:</strong> {hoveredOrder.phone || "N/A"}<br />
+        <strong>Payment Method:</strong>{" "}
+        {hoveredOrder.paymentMethod
+          ? hoveredOrder.paymentMethod.charAt(0).toUpperCase() +
+            hoveredOrder.paymentMethod.slice(1)
+          : "N/A"}
+      </p>
+      <hr />
+      {hoveredOrder.orderItems?.map((item, idx) => (
+        <div key={idx} className="hover-item">
+          <img src={item.image} alt={item.name} />
+          <div>
+            <p>{item.name}</p>
+            <p>{item.format} • Qty: {item.qty}</p>
+            <p>
+              ₱{item.discountedPrice?.toFixed(2) || item.originalPrice?.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      ))}
+      <hr />
+      <h5>💰 Price Summary</h5>
+      <p><strong>Items Total:</strong> ₱
+        {(hoveredOrder.itemsPrice ||
+          hoveredOrder.orderItems?.reduce((s, i) => s + i.itemTotal, 0) || 0).toFixed(2)}
+      </p>
+      <p>
+        <strong>Shipping Fee:</strong>{" "}
+        {hoveredOrder.shippingPrice > 0
+          ? `₱${hoveredOrder.shippingPrice.toFixed(2)}`
+          : "Free Shipping"}
+      </p>
+      <p><strong>Order Total:</strong> ₱{hoveredOrder.totalPrice.toFixed(2)}</p>
+    </div>
+  </div>
+)}
+
                 </div>
               ) : (
                 <p>No orders yet.</p>

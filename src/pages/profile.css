@@ -260,3 +260,232 @@ success-message,
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
+
+/* 🧾 Floating Hover Modal (follows cursor) */
+.order-hover-modal {
+  position: fixed;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  padding: 16px;
+  width: 340px;
+  max-height: 75vh;
+  overflow-y: auto;
+  pointer-events: auto;
+  animation: fadeIn 0.15s ease;
+  transform: translate(0, 0);
+  transition: top 0.05s linear, left 0.05s linear;
+}
+
+.order-hover-modal .modal-inner {
+  font-size: 0.9rem;
+  color: #222;
+}
+
+.order-hover-modal h4 {
+  margin-top: 0;
+  margin-bottom: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.order-hover-modal hr {
+  margin: 8px 0;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+.hover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hover-item img {
+  width: 45px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.order-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -48%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* 🧾 Profile Orders — Compact Cards */
+.order-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.order-header .order-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.order-products {
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  margin: 8px 0;
+  padding: 6px 0;
+}
+
+.order-product-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.order-product-line img {
+  width: 50px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.order-product-line .product-name {
+  font-weight: 600;
+}
+
+.order-product-line .variant {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.order-product-line .price {
+  margin-left: auto;
+  font-weight: bold;
+}
+
+.order-summary-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+/* === Compact Order Cards === */
+.order-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+.order-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.order-products {
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  margin: 8px 0;
+  padding: 6px 0;
+}
+
+.order-product-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.order-product-line img {
+  width: 45px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.order-summary-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+/* === Hover Modal === */
+.order-hover-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  padding: 20px;
+  width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+}
+.order-hover-modal .modal-inner {
+  font-size: 0.9rem;
+}
+.hover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.hover-item img {
+  width: 50px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -48%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
