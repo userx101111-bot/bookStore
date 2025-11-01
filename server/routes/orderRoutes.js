@@ -55,12 +55,10 @@ router.post('/', protect, async (req, res) => {
       isPaid: isPaid || false,
       paidAt: paidAt || null,
       paymentResult: paymentResult || {},
-      status:
-    paymentMethod === "cash on delivery"
-    ? "pending"
-    : isPaid
-    ? "processing"
-    : "pending",
+status:
+  paymentMethod === "cash on delivery"
+    ? "pending"      // COD → pending (shows "To Ship")
+    : "processing",  // Wallet or PayPal → processing
 
     });
 

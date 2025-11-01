@@ -148,7 +148,6 @@ const MyPurchases = () => {
 
             {orders.length === 0 ? (
               <div className="empty-state">
-                <img src="/assets/empty-orders.svg" alt="No orders" />
                 <p>No orders found. Start shopping today!</p>
                 <button
                   className="shop-btn"
