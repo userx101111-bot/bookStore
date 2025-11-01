@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const orderSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+
     orderItems: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -26,6 +27,7 @@ const orderSchema = new mongoose.Schema(
       postalCode: String,
       country: { type: String, default: "Philippines" },
     },
+
     name: String,
     phone: String,
 
@@ -36,7 +38,8 @@ const orderSchema = new mongoose.Schema(
     },
 
     paymentResult: {
-      id: String,
+      id: String, // PayPal order ID or capture ID
+      capture_id: String, // ✅ add this for direct refund lookups
       status: String,
       update_time: String,
       email_address: String,
@@ -67,7 +70,7 @@ const orderSchema = new mongoose.Schema(
 
     deliveredAt: Date,
 
-    // 🆕 NEW — Cancel and Return requests
+    // Cancel and Return requests
     cancelRequest: {
       requested: { type: Boolean, default: false },
       reason: String,
@@ -83,6 +86,18 @@ const orderSchema = new mongoose.Schema(
       status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
       handledAt: Date,
     },
+
+    // 🆕 Refund Info (NEW SECTION)
+    refundResult: {
+      id: String, // PayPal refund ID
+      status: String, // Example: COMPLETED, PENDING, FAILED
+      amount: {
+        value: String,
+        currency_code: String,
+      },
+      update_time: String,
+    },
+    refundedAt: Date,
   },
   { timestamps: true }
 );

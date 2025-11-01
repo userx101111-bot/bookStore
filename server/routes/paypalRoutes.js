@@ -2,8 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const { protect } = require("../middleware/authMiddleware");
 const Order = require("../models/Order");
+const { protect, admin } = require("../middleware/authMiddleware");
 
 // Create PayPal order
 router.post("/create-order", protect, async (req, res) => {
@@ -59,6 +59,38 @@ router.post("/capture/:orderId", protect, async (req, res) => {
   } catch (err) {
     console.error("❌ PayPal capture failed:", err.message);
     res.status(500).json({ message: "Failed to capture PayPal order" });
+  }
+});
+// Refund a PayPal payment (admin/manual)
+
+
+router.post("/refund/:captureId", protect, admin, async (req, res) => {
+  try {
+    const { captureId } = req.params;
+    const { amount } = req.body; // Optional: support partial refunds
+
+    const { refundPayPalPayment } = require("../utils/paypalRefund");
+    const refundData = await refundPayPalPayment(captureId, amount);
+
+    // Optionally update your Order model
+    const order = await Order.findOne({ "paymentResult.capture_id": captureId });
+    if (order) {
+      order.status = "refunded";
+      order.refundResult = refundData;
+      order.refundedAt = new Date();
+      await order.save();
+    }
+
+    res.json({
+      message: "Refund processed successfully",
+      refund: refundData,
+    });
+  } catch (err) {
+    console.error("❌ PayPal refund failed:", err.response?.data || err.message);
+    res.status(500).json({
+      message: "Failed to process refund",
+      error: err.response?.data || err.message,
+    });
   }
 });
 

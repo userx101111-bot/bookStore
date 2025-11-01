@@ -114,23 +114,35 @@ const OrderManagement = () => {
     }
   };
 
-  // 🆕 ✅ MOVE THESE INSIDE HERE
-  const handleApproveCancel = async (orderId) => {
-    if (!window.confirm("Approve this cancellation?")) return;
-    try {
-      const res = await fetchWithAuth(
-        `${API_URL}/api/orders/${orderId}/approve-cancel`,
-        { method: "PUT" },
+const handleApproveCancel = async (orderId) => {
+  if (!window.confirm("Approve this cancellation and refund (if paid)?")) return;
+  try {
+    const res = await fetchWithAuth(
+      `${API_URL}/api/orders/${orderId}/approve-cancel`,
+      { method: "PUT" },
+      user.token
+    );
+
+    // If backend doesn’t handle refund internally, do it manually:
+    const captureId = orders.find(o => o._id === orderId)?.paymentResult?.capture_id;
+    if (selectedOrder?.isPaid && selectedOrder?.paymentMethod === "PayPal" && captureId) {
+      await fetchWithAuth(
+        `${API_URL}/api/paypal/refund/${captureId}`,
+        { method: "POST" },
         user.token
       );
-      if (!res.ok) throw new Error("Failed");
+      alert("💰 PayPal refund processed successfully.");
+    } else {
       alert("✅ Order cancelled.");
-      fetchOrders();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to approve cancellation.");
     }
-  };
+
+    fetchOrders();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to approve cancellation.");
+  }
+};
+
 
   const handleReturnAction = async (orderId, action) => {
     if (!window.confirm(`Confirm to ${action} return request?`)) return;
