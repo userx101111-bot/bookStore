@@ -274,6 +274,32 @@ router.get("/orders", protect, admin, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch orders" });
   }
 });
+
+// ============================================================
+// 🟢 UPDATE ORDER STATUS (Admin)
+// ============================================================
+router.put("/orders/:id/status", protect, admin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ message: "Status is required" });
+
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.status = status;
+    if (status === "delivered") {
+      order.deliveredAt = Date.now();
+    }
+
+    const updatedOrder = await order.save();
+    res.json(updatedOrder);
+  } catch (error) {
+    console.error("❌ Error updating order status:", error);
+    res.status(500).json({ message: "Failed to update order status", error: error.message });
+  }
+});
+
+
 // ============================================================
 // 🧩 AUTO-UNLINK ALL VOUCHERS WHEN PROMO UNCHECKED
 // ============================================================

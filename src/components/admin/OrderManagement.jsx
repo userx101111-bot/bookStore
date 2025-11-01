@@ -1,55 +1,95 @@
-//src/components/admin/OrderManagement.jsx
+// src/components/admin/OrderManagement.jsx
 // ============================================================
-// ✅ OrderManagement.jsx (Fixed with Token Header + Admin Auth)
+// ✅ OrderManagement.jsx — Updated for New Order Model
 // ============================================================
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useUser } from "../../contexts/UserContext";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
-import "../AdminDashboard.css";
+import "./OrderManagement.css";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://bookstore-yl7q.onrender.com";
+
+const STATUS_ORDER = [
+  "pending",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "refunded",
+];
+
+const humanize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "Unknown");
 
 const OrderManagement = () => {
   const { user } = useUser();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // UI state
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("createdAt_desc");
+  const [page, setPage] = useState(1);
+  const perPage = 12;
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
-  // ============================================================
-  // 🔹 Fetch all orders (admin protected)
-  // ============================================================
+  const searchTimer = useRef(null);
+
+  // ------------------------------------------------------------
+  // Fetch orders
+  // ------------------------------------------------------------
   const fetchOrders = async () => {
     try {
-      if (!user?.token) {
-        console.warn("⚠️ No token available yet, skipping fetch...");
-        return;
-      }
+      if (!user?.token) return;
       setLoading(true);
-      const res = await fetchWithAuth(
-        `${API_URL}/api/admin/orders`,
-        {},
-        user.token
-      );
-
+      const res = await fetchWithAuth(`${API_URL}/api/admin/orders`, {}, user.token);
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
-      setOrders(data);
+      // normalize critical fields
+      const normalized = (data || []).map((o) => ({
+        ...o,
+        createdAt: o.createdAt ? new Date(o.createdAt) : new Date(),
+        totalPrice: Number(o.totalPrice || 0),
+      }));
+      setOrders(normalized);
+      setError(null);
     } catch (err) {
+      setError(err.message || "Unknown error");
       console.error("❌ Error fetching orders:", err);
-      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // ============================================================
-  // 🔹 Update order status
-  // ============================================================
+  useEffect(() => {
+    if (user?.token) fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.token]);
+
+  // ------------------------------------------------------------
+  // Debounce search input
+  // ------------------------------------------------------------
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedQuery(query.trim().toLowerCase());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [query]);
+
+  // ------------------------------------------------------------
+  // Update single order status (reuses your endpoint)
+  // ------------------------------------------------------------
   const updateOrderStatus = async (orderId, status) => {
     try {
+      if (!user?.token) return;
       const res = await fetchWithAuth(
         `${API_URL}/api/admin/orders/${orderId}/status`,
         {
@@ -59,180 +99,411 @@ const OrderManagement = () => {
         },
         user.token
       );
-
       if (!res.ok) throw new Error("Failed to update order status");
-
-      setOrders((prev) =>
-        prev.map((order) =>
-          order._id === orderId ? { ...order, status } : order
-        )
-      );
+      const updated = await res.json();
+      setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status: updated.status, deliveredAt: updated.deliveredAt || o.deliveredAt } : o)));
     } catch (err) {
       console.error("❌ Update failed:", err);
       alert("Failed to update order status.");
     }
   };
 
-  // ============================================================
-  // 🔹 View order details (opens modal)
-  // ============================================================
+  // ------------------------------------------------------------
+  // Bulk status update (multiple PUTs using your endpoint)
+  // ------------------------------------------------------------
+  const applyBulkStatus = async (status) => {
+    if (selectedIds.size === 0) return alert("Select at least one order.");
+    if (!confirm(`Set status "${status}" for ${selectedIds.size} orders?`)) return;
+    setBulkUpdating(true);
+    try {
+      const promises = Array.from(selectedIds).map((id) =>
+        fetchWithAuth(`${API_URL}/api/admin/orders/${id}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        }, user.token)
+      );
+      const results = await Promise.all(promises);
+      const failed = results.filter((r) => !r.ok).length;
+      if (failed) throw new Error(`${failed} updates failed`);
+      setOrders((prev) => prev.map((o) => (selectedIds.has(o._id) ? { ...o, status } : o)));
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error("Bulk update error:", err);
+      alert("Bulk update encountered an error. See console.");
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // ------------------------------------------------------------
+  // CSV export
+  // ------------------------------------------------------------
+  const exportCSV = (list) => {
+    const header = ["Order ID", "Customer", "Email", "Date", "Status", "Payment", "Total"];
+    const rows = list.map((o) => [
+      o._id,
+      o.user ? `${o.user.firstName || ""} ${o.user.lastName || ""}`.trim() : (o.name || "Guest"),
+      o.user?.email || "",
+      new Date(o.createdAt).toLocaleString(),
+      o.status,
+      o.isPaid ? "Paid" : "Unpaid",
+      Number(o.totalPrice || 0).toFixed(2),
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `orders_export_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ------------------------------------------------------------
+  // Table filtering & sorting & pagination (client-side)
+  // ------------------------------------------------------------
+  const filtered = useMemo(() => {
+    let list = [...orders];
+    if (statusFilter !== "all") {
+      list = list.filter((o) => (o.status || "").toLowerCase() === statusFilter);
+    }
+    if (debouncedQuery) {
+      list = list.filter((o) => {
+        const id = (o._id || "").toLowerCase();
+        const email = (o.user?.email || "").toLowerCase();
+        const name = `${o.user?.firstName || ""} ${o.user?.lastName || ""}`.toLowerCase();
+        return id.includes(debouncedQuery) || email.includes(debouncedQuery) || name.includes(debouncedQuery);
+      });
+    }
+    // sort
+    const [field, dir] = sortBy.split("_");
+    list.sort((a, b) => {
+      let av = a[field], bv = b[field];
+      if (field === "createdAt") {
+        av = new Date(av).getTime();
+        bv = new Date(bv).getTime();
+      }
+      if (av < bv) return dir === "asc" ? -1 : 1;
+      if (av > bv) return dir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [orders, debouncedQuery, statusFilter, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [totalPages, page]);
+
+  // ------------------------------------------------------------
+  // Selection helpers
+  // ------------------------------------------------------------
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllOnPage = () => {
+    if (pageItems.length === 0) return;
+    const allSelected = pageItems.every((p) => selectedIds.has(p._id));
+    if (allSelected) {
+      // deselect page
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageItems.forEach((p) => next.delete(p._id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageItems.forEach((p) => next.add(p._id));
+        return next;
+      });
+    }
+  };
+
+  // ------------------------------------------------------------
+  // View order details
+  // ------------------------------------------------------------
   const viewOrderDetails = (order) => {
     setSelectedOrder(order);
     setShowModal(true);
   };
 
-  // ============================================================
-  // 🔹 Lifecycle: fetch when user token ready
-  // ============================================================
-  useEffect(() => {
-    if (user?.token) {
-      fetchOrders();
-    }
-  }, [user]);
-
-  // ============================================================
-  // 🔹 Render Loading/Error
-  // ============================================================
+  // ------------------------------------------------------------
+  // Render
+  // ------------------------------------------------------------
   if (loading) return <div className="loading">Loading orders...</div>;
   if (error) return <div className="error">Error: {error}</div>;
 
-  // ============================================================
-  // 🔹 Render
-  // ============================================================
   return (
-    <div className="admin-container">
-      <h2>📦 Order Management</h2>
+    <div className="om-root">
+      <header className="om-header">
+        <div>
+          <h2>📦 Order Management</h2>
+          <div className="muted">Admin dashboard — manage orders</div>
+        </div>
 
-      {/* === Orders Table === */}
-      {orders.length === 0 ? (
-        <div className="no-orders">No orders found.</div>
-      ) : (
-        <table className="orders-table">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Total (₱)</th>
-              <th>Status</th>
-              <th>Payment</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order._id}>
-                <td>{order._id}</td>
-                <td>{order.user?.email || "Guest"}</td>
-                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
-                <td>{order.totalPrice.toFixed(2)}</td>
-                <td>
-                  <span
-                    className={`status-badge ${
-                      order.status === "Delivered"
-                        ? "delivered"
-                        : order.status === "Processing"
-                        ? "processing"
-                        : "pending"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </td>
-                <td>{order.isPaid ? "✅ Paid" : "❌ Unpaid"}</td>
-                <td className="actions">
-                  <button
-                    className="btn-view"
-                    onClick={() => viewOrderDetails(order)}
-                  >
-                    View
-                  </button>
+        <div className="om-controls">
+          <div className="search-wrap">
+            <svg className="icon" viewBox="0 0 24 24" aria-hidden><path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/><circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.6" fill="none"/></svg>
+            <input aria-label="Search orders" placeholder="Search order ID, email or name..." value={query} onChange={(e) => setQuery(e.target.value)} />
+            {query && <button className="clear" onClick={() => setQuery("")} aria-label="Clear search">×</button>}
+          </div>
 
-                  {/* === Status Actions === */}
-                  {order.status !== "Delivered" && (
-                    <>
-                      <button
-                        className="btn-processing"
-                        onClick={() =>
-                          updateOrderStatus(order._id, "Processing")
-                        }
-                        disabled={order.status === "Processing"}
-                      >
-                        Processing
-                      </button>
+          <div className="filters-row">
+            <div className="chip-row" role="tablist" aria-label="Order status filters">
+              <button className={`chip ${statusFilter === "all" ? "active" : ""}`} onClick={() => setStatusFilter("all")}>All</button>
+              {STATUS_ORDER.map((s) => (
+                <button key={s} className={`chip ${statusFilter === s ? "active" : ""}`} onClick={() => setStatusFilter(s)}>
+                  {humanize(s)}
+                </button>
+              ))}
+            </div>
 
-                      <button
-                        className="btn-deliver"
-                        onClick={() =>
-                          updateOrderStatus(order._id, "Delivered")
-                        }
-                      >
-                        Mark as Delivered
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
+            <div className="select-row">
+              <label className="small-label">Sort</label>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <option value="createdAt_desc">Newest</option>
+                <option value="createdAt_asc">Oldest</option>
+                <option value="totalPrice_desc">Total (High → Low)</option>
+                <option value="totalPrice_asc">Total (Low → High)</option>
+              </select>
+
+              <button className="btn-ghost" onClick={() => exportCSV(filtered)}>Export CSV</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section className="panel">
+          <div className="panel-header">
+<div className="bulk">
+  <label className="select-all-label">
+    <input
+      type="checkbox"
+      checked={pageItems.length > 0 && pageItems.every(p => selectedIds.has(p._id))}
+      onChange={toggleSelectAllOnPage}
+    />
+    Select all
+  </label>
+
+  <span className="bulk-info">
+    {selectedIds.size ? `${selectedIds.size} selected` : `${filtered.length} orders`}
+  </span>
+
+  <div className="bulk-actions">
+    <select id="bulkStatus" defaultValue="">
+      <option value="">Bulk actions</option>
+      <option value="processing">Set Processing</option>
+      <option value="shipped">Set Shipped</option>
+      <option value="delivered">Set Delivered</option>
+    </select>
+    <button
+      className="btn-primary"
+      onClick={() => {
+        const sel = document.getElementById("bulkStatus").value;
+        if (!sel) return alert("Choose an action");
+        applyBulkStatus(sel);
+      }}
+      disabled={bulkUpdating || selectedIds.size === 0}
+    >
+      {bulkUpdating ? "Working..." : "Apply"}
+    </button>
+  </div>
+</div>
+
+
+            <div className="page-controls">
+              <div className="muted">Page</div>
+              <div className="pager">
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>‹</button>
+                <span>{page} / {totalPages}</span>
+                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>›</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="responsive-table">
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Total (₱)</th>
+                  <th>Status</th>
+                  <th>Payment</th>
+                  <th className="actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.length === 0 ? (
+                  <tr><td colSpan="8" className="empty">No orders found.</td></tr>
+                ) : (
+                  pageItems.map((order) => (
+                    <tr key={order._id}>
+                      <td>
+                        <input type="checkbox" checked={selectedIds.has(order._id)} onChange={() => toggleSelect(order._id)} aria-label={`Select ${order._id}`} />
+                      </td>
+                      <td className="oid">{order._id}</td>
+                      <td>
+                        {order.user?.email
+                          ? `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim()
+                          : order.name || "Guest"}
+                        <div className="muted small">{order.user?.email || "-"}</div>
+                      </td>
+                      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="bold">₱{Number(order.totalPrice || 0).toFixed(2)}</td>
+                      <td>
+                        <span className={`status-badge ${order.status}`}>{humanize(order.status)}</span>
+                      </td>
+                      <td>{order.isPaid ? "✅ Paid" : "❌ Unpaid"}</td>
+<td className="actions">
+  <div className="row-actions">
+    <button className="btn-view" onClick={() => viewOrderDetails(order)}>View</button>
+
+    <select
+      className="status-dropdown"
+      value={order.status}
+      onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+      disabled={["cancelled", "refunded", "delivered"].includes(order.status)}
+    >
+      {STATUS_ORDER.map((statusOpt) => (
+        <option key={statusOpt} value={statusOpt}>
+          {humanize(statusOpt)}
+        </option>
+      ))}
+    </select>
+  </div>
+</td>
+
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards (shown via CSS at small breakpoints) */}
+          <div className="card-grid">
+            {pageItems.map((order) => (
+              <article key={order._id} className="order-card">
+                <header className="card-top">
+                  <div>
+                    <div className="oid card-id">{order._id.slice(0, 8)}…</div>
+                    <div className="muted small">{new Date(order.createdAt).toLocaleString()}</div>
+                  </div>
+                  <div><span className={`status-badge ${order.status}`}>{humanize(order.status)}</span></div>
+                </header>
+
+                <div className="card-body">
+                  <div>
+                    <div className="bold">{order.user?.firstName || order.name || "Guest"}</div>
+                    <div className="muted small">{order.user?.email || "-"}</div>
+                  </div>
+                  <div className="price">₱{Number(order.totalPrice || 0).toFixed(2)}</div>
+                </div>
+
+                <footer className="card-footer">
+                  <button className="btn-view btn-block" onClick={() => viewOrderDetails(order)}>View</button>
+                </footer>
+              </article>
             ))}
-          </tbody>
-        </table>
-      )}
+          </div>
+        </section>
+      </main>
 
-      {/* === Order Detail Modal === */}
+      {/* Order details modal */}
       {showModal && selectedOrder && (
-        <div className="order-modal">
+        <div className="order-modal" role="dialog" aria-modal="true" aria-label="Order details">
           <div className="modal-content">
             <div className="modal-header">
               <h3>Order Details</h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-              >
-                ×
-              </button>
+              <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             </div>
 
             <div className="modal-body">
-              <p>
-                <strong>Order ID:</strong> {selectedOrder._id}
-              </p>
-              <p>
-                <strong>Customer:</strong>{" "}
-                {selectedOrder.user?.email || "Guest"}
-              </p>
-              <p>
-                <strong>Date:</strong>{" "}
-                {new Date(selectedOrder.createdAt).toLocaleString()}
-              </p>
-              <p>
-                <strong>Total:</strong> ₱{selectedOrder.totalPrice.toFixed(2)}
-              </p>
-              <p>
-                <strong>Status:</strong> {selectedOrder.status}
-              </p>
-              <p>
-                <strong>Payment:</strong>{" "}
-                {selectedOrder.isPaid ? "Paid" : "Not Paid"}
-              </p>
+              <p><strong>Order ID:</strong> {selectedOrder._id}</p>
+              <p><strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+              <p><strong>Status:</strong> <span className={`status-badge ${selectedOrder.status}`}>{humanize(selectedOrder.status)}</span></p>
 
               <hr />
-              <h4>📚 Ordered Items:</h4>
-              <ul>
-                {selectedOrder.orderItems.map((item, idx) => (
-                  <li key={idx}>
-                    {item.name} (x{item.qty}) — ₱{item.price.toFixed(2)}
-                  </li>
-                ))}
-              </ul>
+
+              <h4>👤 Customer</h4>
+              <p><strong>Name:</strong> {selectedOrder.name || `${selectedOrder.user?.firstName || ""} ${selectedOrder.user?.lastName || ""}`.trim() || "N/A"}</p>
+              <p><strong>Phone:</strong> {selectedOrder.phone || selectedOrder.shippingAddress?.phone || selectedOrder.user?.phone || "N/A"}</p>
 
               <hr />
-              <h4>📍 Shipping Address:</h4>
-              <p>
-                {selectedOrder.shippingAddress?.address},{" "}
-                {selectedOrder.shippingAddress?.city},{" "}
-                {selectedOrder.shippingAddress?.postalCode},{" "}
-                {selectedOrder.shippingAddress?.country}
-              </p>
+
+              <h4>📚 Ordered Items</h4>
+              {selectedOrder.orderItems && selectedOrder.orderItems.length > 0 ? (
+                <ul className="order-items-list">
+                  {selectedOrder.orderItems.map((item, idx) => (
+                    <li key={idx} className="order-item" style={{ display: "flex", gap: 12, alignItems: "flex-start", borderBottom: "1px solid #eee", padding: "12px 0" }}>
+                      <img src={item.image} alt={item.name} style={{ width: 65, height: 85, objectFit: "cover", borderRadius: 6, border: "1px solid #ddd", flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontWeight: 600 }}>{item.name} <span style={{ color: "#666", fontWeight: 400 }}>({item.format || "Standard"})</span></p>
+                        {item.originalPrice !== item.discountedPrice ? (
+                          <p style={{ margin: "4px 0" }}>
+                            <span style={{ textDecoration: "line-through", color: "#999", marginRight: 5 }}>₱{item.originalPrice.toFixed(2)}</span>
+                            <span style={{ color: "green", fontWeight: 600 }}>₱{item.discountedPrice.toFixed(2)}</span> each
+                          </p>
+                        ) : (
+                          <p style={{ margin: "4px 0", color: "#333" }}>₱{item.discountedPrice.toFixed(2)} each</p>
+                        )}
+                        <p style={{ margin: "2px 0", color: "#555" }}>Quantity: {item.qty}</p>
+                        <p style={{ margin: "2px 0", fontWeight: 600 }}>Item Total: ₱{item.itemTotal.toFixed(2)}</p>
+                        <p style={{ margin: "2px 0", fontSize: "0.8em", color: "#888" }}>Product: <span style={{ color: "#555" }}>{typeof item.product === "object" ? item.product.name || item.product._id || item.product.id : item.name || item.product}</span></p>
+                        <p style={{ margin: "2px 0", fontSize: "0.8em", color: "#888" }}>Product ID: <span style={{ color: "#555" }}>{typeof item.product === "object" ? item.product._id || item.product.id : item.product}</span></p>
+                        <p style={{ margin: "2px 0", fontSize: "0.8em", color: "#888" }}>Variant ID: <span style={{ color: "#555" }}>{typeof item.variantId === "object" ? item.variantId._id || item.variantId.id : item.variantId}</span></p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No items found.</p>
+              )}
+
+              <hr />
+
+              <h4>💰 Price Breakdown</h4>
+              <p>Items Subtotal: ₱{selectedOrder.itemsPrice?.toFixed(2) || "0.00"}</p>
+              {selectedOrder.shippingPrice > 0 && <p>Shipping Fee: ₱{selectedOrder.shippingPrice.toFixed(2)}</p>}
+              <hr style={{ margin: "8px 0" }} />
+              <p style={{ fontWeight: "bold", fontSize: "1.1em" }}>Total: ₱{selectedOrder.totalPrice?.toFixed(2) || "0.00"}</p>
+
+              <hr />
+
+              <h4>💳 Payment Details</h4>
+              <p><strong>Method:</strong> {selectedOrder.paymentMethod ? selectedOrder.paymentMethod.split(" ").map(w => w[0].toUpperCase() + w.slice(1)).join(" ") : "—"}</p>
+              <p><strong>Status:</strong> {selectedOrder.isPaid ? "Paid ✅" : "Unpaid ❌"}</p>
+              <p><strong>Paid At:</strong> {selectedOrder.paidAt ? new Date(selectedOrder.paidAt).toLocaleString() : "—"}</p>
+
+              <hr />
+
+              <h4>📍 Shipping Address</h4>
+              <p>{[selectedOrder.shippingAddress?.houseNumber, selectedOrder.shippingAddress?.street, selectedOrder.shippingAddress?.barangay, selectedOrder.shippingAddress?.city, selectedOrder.shippingAddress?.region, selectedOrder.shippingAddress?.postalCode, selectedOrder.shippingAddress?.country].filter(Boolean).join(", ") || selectedOrder.shippingAddress?.name || "N/A"}</p>
+
+              <div className="modal-actions">
+                <div className="status-actions">
+                  {selectedOrder.status === "pending" && <button className="btn-processing" onClick={() => { updateOrderStatus(selectedOrder._id, "processing"); setShowModal(false); }}>Processing</button>}
+                  {selectedOrder.status === "processing" && <button className="btn-ship" onClick={() => { updateOrderStatus(selectedOrder._id, "shipped"); setShowModal(false); }}>Mark Shipped</button>}
+                  {selectedOrder.status === "shipped" && <button className="btn-deliver" onClick={() => { updateOrderStatus(selectedOrder._id, "delivered"); setShowModal(false); }}>Mark Delivered</button>}
+                </div>
+                <button className="btn-ghost" onClick={() => setShowModal(false)}>Close</button>
+              </div>
             </div>
           </div>
         </div>
