@@ -83,9 +83,15 @@ const Checkout = () => {
 
       const orderData = {
         userId: user._id || user.id,
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
+        phone: user.phone || user.address?.telephone || "",
 orderItems: cartItems.map((item) => ({
-  product: item.productId || item.id,
-  variantId: item.variantId || item.variant_id || null,
+product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
+variantId:
+  item.variantId ||
+  item.variant_id ||
+  (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
+
   name: item.name,
   format: item.format || item.variant_format || "Standard",
   originalPrice: item.originalPrice || item.price || 0,
@@ -109,10 +115,6 @@ shippingAddress: {
   postalCode: user.address.zip || user.address.postalCode || "",
   country: user.address.country || "Philippines",
 },
-
-
-
-
         paymentMethod,
         itemsPrice: merchandiseSubTotal,
         shippingPrice: shipping,
@@ -155,9 +157,15 @@ shippingAddress: {
     try {
       const orderData = {
         userId: user._id || user.id,
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
+        phone: user.phone || user.address?.telephone || "",
 orderItems: cartItems.map((item) => ({
-  product: item.productId || item.id,
-  variantId: item.variantId || item.variant_id || null,
+product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
+variantId:
+  item.variantId ||
+  item.variant_id ||
+  (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
+
   name: item.name,
   format: item.format || item.variant_format || "Standard",
   originalPrice: item.originalPrice || item.price || 0,

@@ -350,8 +350,8 @@ const Profile = () => {
             <Link to="/profile" className="menu-item active">
               <FaUser /> Profile
             </Link>
-            <Link to="/payments" className="menu-item">
-              <FaCreditCard /> Payments
+            <Link to="/my-purchases" className="menu-item">
+              <FaCreditCard /> My Purchases
             </Link>
             <Link to="/address" className="menu-item">
               <FaMapMarkerAlt /> Address

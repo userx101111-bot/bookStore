@@ -19,6 +19,8 @@ router.post('/', protect, async (req, res) => {
       isPaid,
       paidAt,
       paymentResult,
+      name,
+      phone,
     } = req.body;
 
     // ✅ Validation — make sure orderItems exist
@@ -38,6 +40,8 @@ router.post('/', protect, async (req, res) => {
       user: req.user._id,
       orderItems,
       shippingAddress,
+      name,
+      phone,
       paymentMethod,
       itemsPrice,
       taxPrice,

@@ -12,8 +12,6 @@ import Homepage from './pages/homepage';
 import Profile from './pages/profile';
 import ProductPage from './pages/ProductPage';
 import Address from './pages/address';
-import Wishlist from './pages/wishlist';
-import Payment from './pages/payment';
 import Checkout from './pages/checkOut';
 import Cart from './pages/Cart';
 import AboutFAQs from './pages/AboutFAQs';
@@ -139,22 +137,6 @@ const AppLayout = () => {
           element={
             <ProtectedRoute>
               <Address />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/wishlist"
-          element={
-            <ProtectedRoute>
-              <Wishlist />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/payments"
-          element={
-            <ProtectedRoute>
-              <Payment />
             </ProtectedRoute>
           }
         />

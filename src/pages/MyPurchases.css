@@ -1,0 +1,155 @@
+.purchases-container {
+  padding: 20px;
+}
+
+.order-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.order-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  font-size: 14px;
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.order-item img {
+  width: 70px;
+  height: 90px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-total {
+  font-weight: bold;
+}
+
+.purchases-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.order-card {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.order-header {
+  background: #f7f7f7;
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.order-items {
+  padding: 10px 16px;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.order-item:last-child {
+  border-bottom: none;
+}
+
+.item-image {
+  width: 70px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.item-info {
+  flex-grow: 1;
+}
+
+.item-info h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.old-price {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.new-price {
+  color: #d9534f;
+  font-weight: bold;
+}
+
+.item-total {
+  font-weight: bold;
+  color: #333;
+  min-width: 100px;
+  text-align: right;
+}
+
+.order-savings {
+  background: #e8f9e8;
+  color: #1e7d1e;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-top: 1px solid #d2e7d2;
+  text-align: right;
+}
+
+.shipto-section {
+  background: #fafafa;
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+.shipto-section h4 {
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.shipto-section p {
+  margin: 0;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}

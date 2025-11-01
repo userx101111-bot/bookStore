@@ -30,7 +30,8 @@ shippingAddress: {
   postalCode: { type: String },
   country: { type: String, default: "Philippines" },
 },
-
+name: { type: String, required: true },
+    phone: { type: String, required: true },
     paymentMethod: {
       type: String,
       required: true,
@@ -51,7 +52,7 @@ shippingAddress: {
     paidAt: { type: Date },
     status: {
       type: String,
-      enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+      enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
       default: 'pending',
     },
     deliveredAt: { type: Date },
