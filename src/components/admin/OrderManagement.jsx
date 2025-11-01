@@ -117,43 +117,52 @@ const OrderManagement = () => {
   };
 
 const handleApproveCancel = async (orderId) => {
+  // Confirm admin action
   if (!window.confirm("Approve this cancellation and refund (if paid)?")) return;
+
   try {
+    // ✅ Step 1: Approve cancellation in backend
     const res = await fetchWithAuth(
       `${API_URL}/api/orders/${orderId}/approve-cancel`,
       { method: "PUT" },
       user.token
     );
 
-    // If backend doesn’t handle refund internally, do it manually:
-    const captureId = orders.find(o => o._id === orderId)?.paymentResult?.capture_id;
-if (selectedOrder?.isPaid) {
-  const userId = selectedOrder.user?._id || selectedOrder.userId;
-  const amount = selectedOrder.totalPrice;
+    if (!res.ok) throw new Error("Failed to approve cancellation request.");
 
-  await fetchWithAuth(
-    `${API_URL}/api/users/${userId}/wallet/add`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount,
-        description: `Refund for cancelled order ${selectedOrder._id}`,
-      }),
-    },
-    user.token
-  );
+    // ✅ Step 2: Refund logic (if paid)
+    const targetOrder = orders.find((o) => o._id === orderId);
+    if (targetOrder?.isPaid) {
+      const userId = targetOrder.user?._id || targetOrder.userId;
+      const amount = targetOrder.totalPrice || 0;
 
-  alert(`💰 ₱${amount.toFixed(2)} credited to wallet.`);
-} else {
-  alert("✅ Order cancelled (unpaid order).");
-}
+      await fetchWithAuth(
+        `${API_URL}/api/users/${userId}/wallet/add`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount,
+            description: `Refund for cancelled order ${targetOrder._id}`,
+          }),
+        },
+        user.token
+      );
 
+      alert(`💰 ₱${amount.toFixed(2)} credited to wallet.`);
+    } else {
+      alert("✅ Order cancelled (unpaid order).");
+    }
 
-    fetchOrders();
+    // ✅ Step 3: Close modal before refetching orders
+    setShowModal(false);
+    setSelectedOrder(null);
+
+    // ✅ Step 4: Refresh the order list
+    await fetchOrders();
   } catch (err) {
-    console.error(err);
-    alert("Failed to approve cancellation.");
+    console.error("❌ Failed to approve cancellation:", err);
+    alert("Failed to approve cancellation. Please check console for details.");
   }
 };
 

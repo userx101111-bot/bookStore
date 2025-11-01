@@ -423,11 +423,9 @@ const orderData = {
       />
       <span className="method-label">Wallet Coins</span>
     </div>
-    {user?.wallet?.balance !== undefined && (
-      <span className="wallet-balance">
-        ₱{user.wallet.balance.toFixed(2)} available
-      </span>
-    )}
+<span className="wallet-balance">
+  ₱{Number(user?.wallet?.balance || 0).toFixed(2)} available
+</span>
   </label>
 </div>
 

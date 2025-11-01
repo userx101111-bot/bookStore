@@ -28,11 +28,20 @@ const computeDiscount = (price, voucher) => {
 /**
  * Helper: repopulate and return full cart
  */
+
 const getPopulatedCart = async (userId) => {
-  return await Cart.findOne({ user: userId })
+  const cart = await Cart.findOne({ user: userId })
     .populate("items.product", "name author mainImage image slug")
     .populate("items.applied_voucher", "name discount_type discount_value");
+
+  if (cart && cart.items?.length > 0) {
+    // ✅ Sort newest-first before returning
+    cart.items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  return cart;
 };
+
 
 
 /**

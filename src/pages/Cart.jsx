@@ -33,7 +33,7 @@ const Cart = () => {
 
       // Default: check all items
       const initialChecks = {};
-      cart.forEach((i) => (initialChecks[i.id] = true));
+      cart.forEach((i) => (initialChecks[i.id] = false));
       setCheckedItems(initialChecks);
     };
     if (cart.length > 0) loadImages();
@@ -139,7 +139,9 @@ const Cart = () => {
               </label>
             </div>
 
-            {cartWithImages.map((item) => (
+{[...cartWithImages]
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  .map((item) => (
               <div key={item.id} className="cart-card">
                 <div className="checkbox-area">
                   <input

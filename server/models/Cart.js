@@ -11,6 +11,7 @@ const cartItemSchema = new mongoose.Schema({
   quantity: { type: Number, required: true, min: 1 },
   subtotal: { type: Number, required: true },
   applied_voucher: { type: mongoose.Schema.Types.ObjectId, ref: "Voucher", default: null },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const cartSchema = new mongoose.Schema({
