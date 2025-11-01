@@ -132,19 +132,20 @@ const orderData = {
             return;
           }
 
-          await axios.put(
-            `${API_URL}/api/users/${user._id}/wallet/deduct`,
-            {
-              amount: totalPayment,
-              description: `Payment for order on ${new Date().toLocaleString()}`,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${user.token}`,
-              },
-            }
-          );
+await axios.put(
+  `${API_URL}/api/wallet/${user._id}/deduct`,
+  {
+    amount: totalPayment,
+    description: `Payment for order on ${new Date().toLocaleString()}`,
+  },
+  {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${user.token}`,
+    },
+  }
+);
+
 
           orderData.isPaid = true;
           orderData.paidAt = new Date();

@@ -10,6 +10,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 // ============================================================
 router.post('/', protect, async (req, res) => {
   try {
+    console.log("🧾 Create order payload:", req.body);
     const {
       user: userIdFromBody,
       orderItems,
