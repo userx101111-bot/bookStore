@@ -56,7 +56,7 @@ router.post('/', protect, async (req, res) => {
       paidAt: paidAt || null,
       paymentResult: paymentResult || {},
       status:
-        ["wallet", "paypal", "gcash"].includes(paymentMethod?.toLowerCase())
+        ["wallet", "paypal"].includes(paymentMethod?.toLowerCase())
           ? "processing"
           : "pending",
 
