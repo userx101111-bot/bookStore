@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import { FaUser, FaCheckCircle, FaCreditCard, FaMapMarkerAlt } from "react-icons/fa";
 import { useUser } from "../contexts/UserContext";
 import LogoutButton from "../components/LogoutButton";
-import "./profile.css";
 import "./MyPurchases.css";
 
 const MyPurchases = () => {
@@ -202,40 +201,54 @@ const renderStatusBadge = (status) => {
                             </p>
                           </div>
 
-                          <div className="order-items-modern">
-                            {order.orderItems?.map((item) => (
-                              <div key={item._id} className="item-row">
-                                <img
-                                  src={item.image}
-                                  alt={item.name}
-                                  className="item-thumb"
-                                />
-                                <div className="item-info-modern">
-                                  <h5>{item.name}</h5>
-                                  <p>
-                                    {item.format} • Qty: {item.qty}
-                                  </p>
-                                  <p>
-                                    <span className="old-price">
-                                      ₱{item.originalPrice.toFixed(2)}
-                                    </span>{" "}
-                                    <span className="new-price">
-                                      ₱{item.discountedPrice.toFixed(2)}
-                                    </span>
-                                  </p>
-                                </div>
-                                <div className="item-total-modern">
-                                  ₱{item.itemTotal.toFixed(2)}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+<div className="order-items-modern">
+  {order.orderItems?.map((item) => (
+    <div key={item._id} className="item-row">
+      <img
+        src={item.image}
+        alt={item.name}
+        className="item-thumb"
+      />
+      <div className="item-info-modern">
+        <h5>{item.name}</h5>
+        <p>{item.format} • Qty: {item.qty}</p>
+        <p>
+          <span className="old-price">₱{item.originalPrice.toFixed(2)}</span>{" "}
+          <span className="new-price">₱{item.discountedPrice.toFixed(2)}</span>
+        </p>
+      </div>
+      <div className="item-total-modern">
+        ₱{item.itemTotal.toFixed(2)}
+      </div>
+    </div>
+  ))}
+</div>
 
-                          {totalSaved > 0 && (
-                            <div className="order-savings-modern">
-                              🎉 You saved ₱{totalSaved.toFixed(2)} on this order!
-                            </div>
-                          )}
+{/* ✅ NEW PRICE SUMMARY SECTION */}
+<div className="order-summary-modern">
+  <h4>💰 Price Summary</h4>
+  <p>
+    <strong>Items Total:</strong> ₱
+    {order.itemsPrice?.toFixed(2) || order.orderItems?.reduce((sum, i) => sum + i.itemTotal, 0).toFixed(2)}
+  </p>
+  <p>
+    <strong>Shipping Fee:</strong>{" "}
+    {order.shippingPrice && order.shippingPrice > 0
+      ? `₱${order.shippingPrice.toFixed(2)}`
+      : "Free Shipping"}
+  </p>
+  <hr />
+  <p style={{ fontWeight: "bold", fontSize: "1.1em" }}>
+    <strong>Order Total:</strong> ₱{order.totalPrice?.toFixed(2)}
+  </p>
+</div>
+
+{totalSaved > 0 && (
+  <div className="order-savings-modern">
+    🎉 You saved ₱{totalSaved.toFixed(2)} on this order!
+  </div>
+)}
+
 
                           <div className="order-actions">
                             {["pending", "processing"].includes(order.status) &&

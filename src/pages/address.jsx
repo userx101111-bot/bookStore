@@ -18,6 +18,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "./address.css";
 import { useUser } from "../contexts/UserContext";
+import LogoutButton from "../components/LogoutButton";
 
 const markerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
@@ -227,10 +228,14 @@ const Address = () => {
             <h2>{user?.firstName || user?.name || "Guest"}</h2>
           </div>
           <nav className="menu-list">
+            <LogoutButton />
             <Link to="/profile" className="menu-item"><FaUser /> Profile</Link>
                         <Link to="/my-purchases" className="menu-item">
                           <FaCreditCard /> My Purchases
                         </Link>
+            <Link to="/wallet" className="menu-item">
+              <FaCreditCard /> My Wallet
+            </Link>
             <Link to="/address" className="menu-item active"><FaMapMarkerAlt /> Address</Link>
           </nav>
         </aside>
