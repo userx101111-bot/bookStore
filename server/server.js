@@ -105,6 +105,8 @@ app.use("/api/users", require("./routes/accountRoutes"));
 app.use("/api/static-pages", require("./routes/staticPageRoutes"));
 app.use("/api/cart", require("./routes/cartRoutes"));
 app.use("/api/paypal", require("./routes/paypalRoutes"));
+app.use("/api/wallet", require("./routes/walletRoutes"));
+
 
 // 🧾 ✅ VOUCHER ROUTES — THIS WAS MISSING
 app.use("/api/vouchers", require("./routes/voucherRoutes"));

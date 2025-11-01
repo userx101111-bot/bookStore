@@ -27,6 +27,7 @@ import FeaturedPage from "./pages/FeaturedPage";
 import './styles/Responsive.css';
 import './App.css';
 import MyPurchases from "./pages/MyPurchases";
+import Wallet from "./pages/Wallet";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
@@ -145,6 +146,14 @@ const AppLayout = () => {
           element={
             <ProtectedRoute>
               <MyPurchases />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wallet"
+          element={
+            <ProtectedRoute>
+              <Wallet />
             </ProtectedRoute>
           }
         />

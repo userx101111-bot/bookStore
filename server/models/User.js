@@ -21,27 +21,62 @@ const userSchema = new mongoose.Schema(
     firstName: String,
     lastName: String,
     email: { type: String, required: true, unique: true },
-
-    passwordManual: { type: String },
-    passwordGoogle: { type: String },
-    googleId: { type: String },
-
+    passwordManual: String,
+    passwordGoogle: String,
+    googleId: String,
     loginMethod: {
       type: [String],
       enum: ["email", "google"],
       default: ["email"],
     },
-
     phone: String,
     role: { type: String, enum: ["user", "admin"], default: "user" },
     isActive: { type: Boolean, default: true },
 
-    // ✅ Add this
+    // ✅ Address info
     address: { type: addressSchema, default: {} },
+
+    // 🪙 WALLET SYSTEM
+    wallet: {
+      balance: { type: Number, default: 0 },
+      transactions: [
+        {
+          type: {
+            type: String,
+            enum: ["credit", "debit"],
+            required: true,
+          },
+          amount: { type: Number, required: true },
+          description: String,
+          createdAt: { type: Date, default: Date.now },
+        },
+      ],
+    },
   },
   { timestamps: true }
 );
 
+// ✅ Wallet helper methods
+userSchema.methods.addWalletCredit = async function (amount, description = "") {
+  this.wallet.balance += amount;
+  this.wallet.transactions.push({
+    type: "credit",
+    amount,
+    description,
+  });
+  await this.save();
+};
+
+userSchema.methods.deductWalletBalance = async function (amount, description = "") {
+  if (this.wallet.balance < amount) throw new Error("Insufficient wallet balance");
+  this.wallet.balance -= amount;
+  this.wallet.transactions.push({
+    type: "debit",
+    amount,
+    description,
+  });
+  await this.save();
+};
 // ============================================================
 // Virtuals
 // ============================================================

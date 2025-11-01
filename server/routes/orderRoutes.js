@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
+const User = require('../models/User');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 
@@ -260,10 +261,19 @@ router.put("/:id/handle-return", protect, admin, async (req, res) => {
     if (!order.returnRequest?.requested)
       return res.status(400).json({ message: "No return request to handle" });
 
-    if (action === "approve") {
-      order.returnRequest.status = "approved";
-      order.status = "refunded";
-    } else if (action === "reject") {
+if (action === "approve") {
+  order.returnRequest.status = "approved";
+  order.status = "refunded";
+
+  // 💰 Refund to wallet
+  if (order.isPaid) {
+    const user = await User.findById(order.user);
+    if (user) {
+      await user.addWalletCredit(order.totalPrice, `Refund for returned order ${order._id}`);
+    }
+  }
+}
+ else if (action === "reject") {
       order.returnRequest.status = "rejected";
     } else {
       return res.status(400).json({ message: "Invalid action" });
@@ -291,9 +301,18 @@ router.put("/:id/approve-cancel", protect, admin, async (req, res) => {
     if (!order.cancelRequest?.requested)
       return res.status(400).json({ message: "No cancel request to approve" });
 
-    order.status = "cancelled";
-    order.cancelRequest.handled = true;
-    order.cancelRequest.handledAt = new Date();
+order.status = "cancelled";
+order.cancelRequest.handled = true;
+order.cancelRequest.handledAt = new Date();
+
+// 💰 Credit wallet refund if paid
+if (order.isPaid) {
+  const user = await User.findById(order.user);
+  if (user) {
+    await user.addWalletCredit(order.totalPrice, `Refund for cancelled order ${order._id}`);
+  }
+}
+
 
     await order.save();
     res.json({ message: "Order cancelled successfully", order });

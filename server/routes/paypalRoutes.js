@@ -1,11 +1,14 @@
-// server/routes/paypalRoutes.js
+// ============================================================
+// server/routes/paypalRoutes.js (CLEANED UP FOR WALLET SYSTEM)
+// ============================================================
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const Order = require("../models/Order");
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
-// Create PayPal order
+// ============================================================
+// 💳 Create PayPal order (still needed for PayPal checkout)
+// ============================================================
 router.post("/create-order", protect, async (req, res) => {
   try {
     const { total } = req.body;
@@ -37,10 +40,13 @@ router.post("/create-order", protect, async (req, res) => {
   }
 });
 
-// Capture PayPal order after success
+// ============================================================
+// 💰 Capture PayPal order (on payment success)
+// ============================================================
 router.post("/capture/:orderId", protect, async (req, res) => {
   try {
     const { orderId } = req.params;
+
     const response = await axios.post(
       `${process.env.PAYPAL_API_URL}/v2/checkout/orders/${orderId}/capture`,
       {},
@@ -61,37 +67,6 @@ router.post("/capture/:orderId", protect, async (req, res) => {
     res.status(500).json({ message: "Failed to capture PayPal order" });
   }
 });
-// Refund a PayPal payment (admin/manual)
 
-
-router.post("/refund/:captureId", protect, admin, async (req, res) => {
-  try {
-    const { captureId } = req.params;
-    const { amount } = req.body; // Optional: support partial refunds
-
-    const { refundPayPalPayment } = require("../utils/paypalRefund");
-    const refundData = await refundPayPalPayment(captureId, amount);
-
-    // Optionally update your Order model
-    const order = await Order.findOne({ "paymentResult.capture_id": captureId });
-    if (order) {
-      order.status = "refunded";
-      order.refundResult = refundData;
-      order.refundedAt = new Date();
-      await order.save();
-    }
-
-    res.json({
-      message: "Refund processed successfully",
-      refund: refundData,
-    });
-  } catch (err) {
-    console.error("❌ PayPal refund failed:", err.response?.data || err.message);
-    res.status(500).json({
-      message: "Failed to process refund",
-      error: err.response?.data || err.message,
-    });
-  }
-});
 
 module.exports = router;

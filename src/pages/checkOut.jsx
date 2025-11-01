@@ -6,6 +6,8 @@ import "./checkOut.css";
 import { useCart } from "../contexts/CartContext";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://bookstore-yl7q.onrender.com";
+
 const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -14,7 +16,6 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { clearCart } = useCart();
-
   const [paymentMethod, setPaymentMethod] = useState("cash on delivery");
 
   // 🧠 Load cart + user
@@ -31,19 +32,17 @@ const Checkout = () => {
   }, [location]);
 
   // 🧮 Totals
-  const merchandiseSubTotal = cartItems.reduce(
-    (sum, item) => sum + (item.originalPrice || item.price) * item.quantity,
+  const originalSubTotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const discountTotal = cartItems.reduce(
-    (sum, item) =>
-      sum +
-      ((item.originalPrice ? item.originalPrice - item.price : 0) *
-        item.quantity),
+  const discountedSubTotal = cartItems.reduce(
+    (sum, item) => sum + (item.final_price || item.price) * item.quantity,
     0
   );
+  const discountTotal = originalSubTotal - discountedSubTotal;
   const shipping = 100;
-  const totalPayment = merchandiseSubTotal - discountTotal + shipping;
+  const totalPayment = discountedSubTotal + shipping;
   const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   // 🏠 Prepare address safely
@@ -57,7 +56,7 @@ const Checkout = () => {
         }, ${address.zip || address.postalCode || ""}`
       : "No address provided";
 
-  // 🚀 Handle COD Checkout
+  // 🚀 Handle Checkout (COD / Wallet)
   const handleCheckout = async () => {
     if (!user || !user.token) {
       alert("Please log in to complete your purchase.");
@@ -85,43 +84,71 @@ const Checkout = () => {
         userId: user._id || user.id,
         name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
         phone: user.phone || user.address?.telephone || "",
-orderItems: cartItems.map((item) => ({
-product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
-variantId:
-  item.variantId ||
-  item.variant_id ||
-  (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
-
-  name: item.name,
-  format: item.format || item.variant_format || "Standard",
-  originalPrice: item.originalPrice || item.price || 0,
-  discountedPrice:
-    item.discount_value && item.discount_value > 0
-      ? item.final_price || item.price
-      : item.price,
-  qty: item.quantity,
-  itemTotal:
-    ((item.discount_value && item.discount_value > 0
-      ? item.final_price || item.price
-      : item.price) * item.quantity),
-  image: item.image,
-})),
-shippingAddress: {
-  houseNumber: user.address.houseNumber || "",
-  street: user.address.street || "",
-  barangay: user.address.barangay || "",
-  city: user.address.city || "",
-  region: user.address.region || user.address.state || user.address.province || "",
-  postalCode: user.address.zip || user.address.postalCode || "",
-  country: user.address.country || "Philippines",
-},
+        orderItems: cartItems.map((item) => ({
+          product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
+          variantId:
+            item.variantId ||
+            item.variant_id ||
+            (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
+          name: item.name,
+          format: item.format || item.variant_format || "Standard",
+          originalPrice: item.price || 0,
+          discountedPrice: item.final_price || item.price,
+          qty: item.quantity,
+          itemTotal: (item.final_price || item.price) * item.quantity,
+          image: item.image,
+        })),
+        shippingAddress: {
+          houseNumber: user.address.houseNumber || "",
+          street: user.address.street || "",
+          barangay: user.address.barangay || "",
+          city: user.address.city || "",
+          region: user.address.region || user.address.state || user.address.province || "",
+          postalCode: user.address.zip || user.address.postalCode || "",
+          country: user.address.country || "Philippines",
+        },
         paymentMethod,
-        itemsPrice: merchandiseSubTotal,
+        itemsPrice: discountedSubTotal,
         shippingPrice: shipping,
         taxPrice: 0,
         totalPrice: totalPayment,
         status: "pending",
       };
+
+      // 🪙 Handle Wallet Payment
+      if (paymentMethod === "wallet") {
+        try {
+          const walletBalance = user?.wallet?.balance || 0;
+          if (walletBalance < totalPayment) {
+            alert("❌ Insufficient wallet balance.");
+            setLoading(false);
+            return;
+          }
+
+          await axios.put(
+            `${API_URL}/api/users/${user._id}/wallet/deduct`,
+            {
+              amount: totalPayment,
+              description: `Payment for order on ${new Date().toLocaleString()}`,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${user.token}`,
+              },
+            }
+          );
+
+          orderData.isPaid = true;
+          orderData.paidAt = new Date();
+          orderData.paymentMethod = "Wallet";
+        } catch (err) {
+          console.error("❌ Wallet deduction failed:", err);
+          alert("Wallet payment failed. Please try another method.");
+          setLoading(false);
+          return;
+        }
+      }
 
       const config = {
         headers: {
@@ -130,22 +157,32 @@ shippingAddress: {
         },
       };
 
-      const response = await axios.post(
-        `https://bookstore-yl7q.onrender.com/api/orders`,
-        orderData,
-        config
-      );
+      const response = await axios.post(`${API_URL}/api/orders`, orderData, config);
 
       if (response.data) {
         localStorage.removeItem("cart");
         clearCart();
+
+        // 🧾 Refresh wallet balance (optional)
+        if (paymentMethod === "wallet") {
+          try {
+            const walletRes = await axios.get(`${API_URL}/api/wallet`, {
+              headers: { Authorization: `Bearer ${user.token}` },
+            });
+            const updatedUser = { ...user, wallet: walletRes.data };
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+            setUser(updatedUser);
+          } catch (err) {
+            console.warn("⚠️ Failed to refresh wallet balance:", err.message);
+          }
+        }
+
         navigate("/my-purchases");
       }
     } catch (error) {
       console.error("Checkout error:", error);
       setError(
-        error.response?.data?.message ||
-          "Failed to process your order. Please try again."
+        error.response?.data?.message || "Failed to process your order. Please try again."
       );
     } finally {
       setLoading(false);
@@ -159,40 +196,31 @@ shippingAddress: {
         userId: user._id || user.id,
         name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
         phone: user.phone || user.address?.telephone || "",
-orderItems: cartItems.map((item) => ({
-product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
-variantId:
-  item.variantId ||
-  item.variant_id ||
-  (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
-
-  name: item.name,
-  format: item.format || item.variant_format || "Standard",
-  originalPrice: item.originalPrice || item.price || 0,
-  discountedPrice:
-    item.discount_value && item.discount_value > 0
-      ? item.final_price || item.price
-      : item.price,
-  qty: item.quantity,
-  itemTotal:
-    ((item.discount_value && item.discount_value > 0
-      ? item.final_price || item.price
-      : item.price) * item.quantity),
-  image: item.image,
-})),
-shippingAddress: {
-  houseNumber: user.address.houseNumber || "",
-  street: user.address.street || "",
-  barangay: user.address.barangay || "",
-  city: user.address.city || "",
-  region: user.address.region || user.address.state || user.address.province || "",
-  postalCode: user.address.zip || user.address.postalCode || "",
-  country: user.address.country || "Philippines",
-},
-
-
+        orderItems: cartItems.map((item) => ({
+          product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
+          variantId:
+            item.variantId ||
+            item.variant_id ||
+            (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
+          name: item.name,
+          format: item.format || item.variant_format || "Standard",
+          originalPrice: item.price || 0,
+          discountedPrice: item.final_price || item.price,
+          qty: item.quantity,
+          itemTotal: (item.final_price || item.price) * item.quantity,
+          image: item.image,
+        })),
+        shippingAddress: {
+          houseNumber: user.address.houseNumber || "",
+          street: user.address.street || "",
+          barangay: user.address.barangay || "",
+          city: user.address.city || "",
+          region: user.address.region || user.address.state || user.address.province || "",
+          postalCode: user.address.zip || user.address.postalCode || "",
+          country: user.address.country || "Philippines",
+        },
         paymentMethod: "PayPal",
-        itemsPrice: merchandiseSubTotal,
+        itemsPrice: discountedSubTotal,
         shippingPrice: shipping,
         taxPrice: 0,
         totalPrice: totalPayment,
@@ -214,14 +242,13 @@ shippingAddress: {
       };
 
       const { data: createdOrder } = await axios.post(
-        `https://bookstore-yl7q.onrender.com/api/orders`,
+        `${API_URL}/api/orders`,
         orderData,
         config
       );
 
-      // ✅ Mark as paid in backend (optional double-save)
       await axios.put(
-        `https://bookstore-yl7q.onrender.com/api/orders/${createdOrder._id}/pay`,
+        `${API_URL}/api/orders/${createdOrder._id}/pay`,
         { paymentResult: orderData.paymentResult },
         config
       );
@@ -260,20 +287,22 @@ shippingAddress: {
                   <td className="tdnameprice">
                     <strong>{item.name}</strong>
                     <p className="variant">Format: {item.format || "—"}</p>
-                    <p className="price">₱{item.price.toFixed(2)}</p>
+                    {item.final_price < item.price ? (
+                      <p className="price">
+                        <span className="old-price">₱{item.price.toFixed(2)}</span>
+                        <span className="new-price">₱{item.final_price.toFixed(2)}</span>
+                      </p>
+                    ) : (
+                      <p className="price">₱{item.price.toFixed(2)}</p>
+                    )}
                   </td>
-                  <td>
-                    <span>x{item.quantity}</span>
-                  </td>
-                  <td>₱{(item.price * item.quantity).toFixed(2)}</td>
+                  <td>x{item.quantity}</td>
+                  <td>₱{((item.final_price || item.price) * item.quantity).toFixed(2)}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td
-                  colSpan="4"
-                  style={{ textAlign: "center", padding: "20px" }}
-                >
+                <td colSpan="4" style={{ textAlign: "center", padding: "20px" }}>
                   No items in cart.
                 </td>
               </tr>
@@ -292,8 +321,7 @@ shippingAddress: {
                   <>
                     <strong>Name:</strong> {user.firstName} {user.lastName}
                     <br />
-                    <strong>Phone:</strong>{" "}
-                    {user.phone || user.address?.telephone || "No phone"}
+                    <strong>Phone:</strong> {user.phone || user.address?.telephone || "No phone"}
                     <br />
                     <strong>Address:</strong> {fullAddress}
                     <br />
@@ -324,8 +352,14 @@ shippingAddress: {
             </div>
             <div className="paymentDetailRow">
               <span>Subtotal:</span>
-              <span>₱{merchandiseSubTotal.toFixed(2)}</span>
+              <span>₱{originalSubTotal.toFixed(2)}</span>
             </div>
+            {discountTotal > 0 && (
+              <div className="paymentDetailRow">
+                <span>Discount:</span>
+                <span>-₱{discountTotal.toFixed(2)}</span>
+              </div>
+            )}
             <div className="paymentDetailRow">
               <span>Shipping:</span>
               <span>₱{shipping.toFixed(2)}</span>
@@ -363,6 +397,20 @@ shippingAddress: {
                     className="paypal-logo"
                   />
                 </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="wallet"
+                    checked={paymentMethod === "wallet"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <span className="method-label">Wallet Coins</span>
+                  {user?.wallet?.balance !== undefined && (
+                    <span className="wallet-balance">
+                      (Balance: ₱{user.wallet.balance.toFixed(2)})
+                    </span>
+                  )}
+                </label>
               </div>
             </div>
 
@@ -379,25 +427,24 @@ shippingAddress: {
 
               {paymentMethod === "paypal" ? (
                 <div style={{ width: "100%", marginTop: "10px" }}>
-<PayPalScriptProvider
-  options={{
-    "client-id": "AdhQtb5SkntTJOPADCLRicbNxnshl3fzbIC2K_kz7t_92uS9PU17whoivVnhJe0EQimCF2dIsKX4VU4G",
-    currency: "PHP",
-  }}
->
+                  <PayPalScriptProvider
+                    options={{
+                      "client-id":
+                        "AdhQtb5SkntTJOPADCLRicbNxnshl3fzbIC2K_kz7t_92uS9PU17whoivVnhJe0EQimCF2dIsKX4VU4G",
+                      currency: "PHP",
+                    }}
+                  >
                     <PayPalButtons
                       style={{ layout: "vertical" }}
-                      createOrder={(data, actions) => {
-                        return actions.order.create({
+                      createOrder={(data, actions) =>
+                        actions.order.create({
                           purchase_units: [
                             {
-                              amount: {
-                                value: totalPayment.toFixed(2),
-                              },
+                              amount: { value: totalPayment.toFixed(2) },
                             },
                           ],
-                        });
-                      }}
+                        })
+                      }
                       onApprove={async (data, actions) => {
                         const details = await actions.order.capture();
                         handlePayPalSuccess(details, data);
@@ -415,7 +462,11 @@ shippingAddress: {
                   className="checkout"
                   disabled={loading}
                 >
-                  {loading ? "Processing..." : "Checkout"}
+                  {loading
+                    ? "Processing..."
+                    : paymentMethod === "wallet"
+                    ? "Pay with Wallet"
+                    : "Checkout"}
                 </button>
               )}
             </div>

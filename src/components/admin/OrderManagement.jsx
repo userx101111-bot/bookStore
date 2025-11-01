@@ -125,16 +125,28 @@ const handleApproveCancel = async (orderId) => {
 
     // If backend doesn’t handle refund internally, do it manually:
     const captureId = orders.find(o => o._id === orderId)?.paymentResult?.capture_id;
-    if (selectedOrder?.isPaid && selectedOrder?.paymentMethod === "PayPal" && captureId) {
-      await fetchWithAuth(
-        `${API_URL}/api/paypal/refund/${captureId}`,
-        { method: "POST" },
-        user.token
-      );
-      alert("💰 PayPal refund processed successfully.");
-    } else {
-      alert("✅ Order cancelled.");
-    }
+if (selectedOrder?.isPaid) {
+  const userId = selectedOrder.user?._id || selectedOrder.userId;
+  const amount = selectedOrder.totalPrice;
+
+  await fetchWithAuth(
+    `${API_URL}/api/users/${userId}/wallet/add`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount,
+        description: `Refund for cancelled order ${selectedOrder._id}`,
+      }),
+    },
+    user.token
+  );
+
+  alert(`💰 ₱${amount.toFixed(2)} credited to wallet.`);
+} else {
+  alert("✅ Order cancelled (unpaid order).");
+}
+
 
     fetchOrders();
   } catch (err) {
@@ -144,26 +156,54 @@ const handleApproveCancel = async (orderId) => {
 };
 
 
-  const handleReturnAction = async (orderId, action) => {
-    if (!window.confirm(`Confirm to ${action} return request?`)) return;
-    try {
-      const res = await fetchWithAuth(
-        `${API_URL}/api/orders/${orderId}/handle-return`,
+const handleReturnAction = async (orderId, action) => {
+  if (!window.confirm(`Confirm to ${action} return request?`)) return;
+
+  try {
+    // Step 1: Approve or reject return in backend
+    const res = await fetchWithAuth(
+      `${API_URL}/api/orders/${orderId}/handle-return`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      },
+      user.token
+    );
+
+    if (!res.ok) throw new Error("Failed to update return status");
+
+    // Step 2: If approved and order is paid — credit wallet
+    if (action === "approve" && selectedOrder?.isPaid) {
+      const userId = selectedOrder.user?._id || selectedOrder.userId;
+      const amount = selectedOrder.totalPrice;
+
+      await fetchWithAuth(
+        `${API_URL}/api/users/${userId}/wallet/add`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action }),
+          body: JSON.stringify({
+            amount,
+            description: `Refund for returned order ${selectedOrder._id}`,
+          }),
         },
         user.token
       );
-      if (!res.ok) throw new Error("Failed");
+
+      alert(`💰 ₱${amount.toFixed(2)} credited to wallet.`);
+    } else {
       alert(`Return ${action}d successfully.`);
-      fetchOrders();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to handle return.");
     }
-  };
+
+    // Step 3: Refresh orders after update
+    fetchOrders();
+  } catch (err) {
+    console.error("❌ Return handling error:", err);
+    alert("Failed to handle return. Please check console for details.");
+  }
+};
+
   // ✅ END OF NEWLY MOVED FUNCTIONS
 
   // ------------------------------------------------------------
