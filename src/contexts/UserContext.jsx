@@ -28,6 +28,7 @@ export const UserProvider = ({ children }) => {
       phone,
       address,
       token,
+      wallet, // ✅ include wallet
     } = data;
 
     return {
@@ -41,6 +42,7 @@ export const UserProvider = ({ children }) => {
       createdAt,
       phone,
       address,
+      wallet: wallet || { balance: 0, transactions: [] }, // ✅ safe fallback
       token,
       isGuest: false,
     };
@@ -113,30 +115,62 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // 🪙 ADDED: Refresh wallet balance from backend
+  const refreshWallet = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch("https://bookstore-yl7q.onrender.com/api/wallet", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        console.error("❌ Wallet fetch failed:", res.status);
+        return;
+      }
+
+      const wallet = await res.json();
+      setUser((prev) => {
+        const updated = { ...prev, wallet };
+        localStorage.setItem("user", JSON.stringify(updated));
+        return updated;
+      });
+
+      console.log("💰 Wallet refreshed:", wallet);
+    } catch (err) {
+      console.error("❌ Failed to refresh wallet:", err);
+    }
+  };
+  // 🪙 END ADDED
+
   /**
    * 🟢 Login handler
    */
-const login = async (userData) => {
-  try {
-    if (!userData) return;
-    const cleanUser = sanitizeUserData(userData);
+  const login = async (userData) => {
+    try {
+      if (!userData) return;
+      const cleanUser = sanitizeUserData(userData);
 
-    if (userData.token) localStorage.setItem("token", userData.token);
-    localStorage.setItem("user", JSON.stringify(cleanUser));
+      if (userData.token) localStorage.setItem("token", userData.token);
+      localStorage.setItem("user", JSON.stringify(cleanUser));
 
-    setUser(cleanUser);
-    setIsGuest(false);
-    console.log("🟢 User logged in:", cleanUser);
+      setUser(cleanUser);
+      setIsGuest(false);
+      console.log("🟢 User logged in:", cleanUser);
 
-    // ✅ Auto-refresh if missing key data (phone or createdAt)
-    if (!cleanUser.phone || !cleanUser.createdAt) {
-      console.log("🔁 Auto-refreshing user after login (missing fields)...");
-      await refreshUser();
+      // ✅ Auto-refresh if missing key data
+      if (!cleanUser.phone || !cleanUser.createdAt) {
+        console.log("🔁 Auto-refreshing user after login (missing fields)...");
+        await refreshUser();
+      }
+
+      // 🪙 ADDED: Also refresh wallet after login
+      await refreshWallet();
+    } catch (err) {
+      console.error("❌ Error saving user data:", err);
     }
-  } catch (err) {
-    console.error("❌ Error saving user data:", err);
-  }
-};
+  };
 
   /**
    * 🟢 Update user locally (used after address or profile update)
@@ -202,6 +236,9 @@ const login = async (userData) => {
           console.log("🔄 Missing fields detected — refreshing user...");
           refreshUser();
         }
+
+        // 🪙 ADDED: Refresh wallet when user is loaded
+        refreshWallet();
       } else {
         setUser({ isGuest: true });
         setIsGuest(true);
@@ -226,11 +263,12 @@ const login = async (userData) => {
         loading,
         login,
         logout,
-        updateUser, // ✅ Added for updating address/profile
+        updateUser, // ✅ for updating address/profile
         continueAsGuest,
         getToken,
         isAdmin,
         refreshUser,
+        refreshWallet, // 🪙 ADDED export
       }}
     >
       {children}

@@ -55,7 +55,13 @@ router.post('/', protect, async (req, res) => {
       isPaid: isPaid || false,
       paidAt: paidAt || null,
       paymentResult: paymentResult || {},
-      status: isPaid ? "processing" : "pending",
+      status:
+    paymentMethod === "cash on delivery"
+    ? "pending"
+    : isPaid
+    ? "processing"
+    : "pending",
+
     });
 
     const createdOrder = await order.save();

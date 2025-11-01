@@ -1,11 +1,15 @@
 // src/pages/MyPurchases.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
+import { FaUser, FaCheckCircle, FaCreditCard, FaMapMarkerAlt } from "react-icons/fa";
 import { useUser } from "../contexts/UserContext";
+import LogoutButton from "../components/LogoutButton";
+import "./profile.css";
 import "./MyPurchases.css";
 
 const MyPurchases = () => {
-  const { getToken } = useUser();
+  const { getToken, user } = useUser();
   const [orders, setOrders] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -29,9 +33,7 @@ const MyPurchases = () => {
     fetchOrders();
   }, [getToken]);
 
-  const toggleExpand = (id) => {
-    setExpandedOrder(expandedOrder === id ? null : id);
-  };
+  const toggleExpand = (id) => setExpandedOrder(expandedOrder === id ? null : id);
 
   const renderStatusBadge = (status) => {
     const map = {
@@ -44,10 +46,7 @@ const MyPurchases = () => {
     };
     const { label, color } = map[status] || { label: status, color: "#888" };
     return (
-      <span
-        className="status-badge"
-        style={{ backgroundColor: `${color}1a`, color }}
-      >
+      <span className="status-badge" style={{ backgroundColor: `${color}1a`, color }}>
         {label}
       </span>
     );
@@ -59,12 +58,10 @@ const MyPurchases = () => {
       return sum + (saved > 0 ? saved : 0);
     }, 0);
 
-  const formatAddress = (addr = {}) => {
-    if (!addr) return "No address provided";
-    return `${addr.houseNumber ? addr.houseNumber + " " : ""}${addr.street || ""}, ${
+  const formatAddress = (addr = {}) =>
+    `${addr.houseNumber ? addr.houseNumber + " " : ""}${addr.street || ""}, ${
       addr.barangay || ""
     }, ${addr.city || ""}, ${addr.region || ""}, ${addr.postalCode || ""}`;
-  };
 
   const openRequestModal = (orderId, type) => {
     setSelectedOrderId(orderId);
@@ -75,10 +72,7 @@ const MyPurchases = () => {
 
   const handleSubmitRequest = async () => {
     const token = getToken();
-    if (!reason.trim()) {
-      alert("Please enter a reason.");
-      return;
-    }
+    if (!reason.trim()) return alert("Please enter a reason.");
 
     try {
       const endpoint =
@@ -121,171 +115,208 @@ const MyPurchases = () => {
   };
 
   return (
-    <div className="purchases-container-modern">
-      <h2 className="page-title">🛍 My Purchases</h2>
+    <div className="app" style={{ minHeight: "100vh" }}>
+      <div className="profile-main" style={{ minHeight: "calc(100vh - 150px)" }}>
+        {/* Sidebar copied from Profile.jsx */}
+        <aside className="sidebar">
+          <div className="profile-info">
+            <div className="avatar-placeholder">👤</div>
+            <h2>{user?.firstName || user?.name || "Guest"}</h2>
+          </div>
 
-      {orders.length === 0 ? (
-        <div className="empty-state">
-          <img src="/assets/empty-orders.svg" alt="No orders" />
-          <p>No orders found. Start shopping today!</p>
-          <button
-            className="shop-btn"
-            onClick={() => (window.location.href = "/")}
-          >
-            Continue Shopping
-          </button>
-        </div>
-      ) : (
-        <div className="orders-grid">
-          {orders.map((order) => {
-            const totalSaved = calculateTotalSaved(order.orderItems);
-            const addr = order.shippingAddress || {};
-            const expanded = expandedOrder === order._id;
+          <nav className="menu-list">
+            <LogoutButton />
+            <Link to="/profile" className="menu-item">
+              <FaUser /> Profile
+            </Link>
+            <Link to="/my-purchases" className="menu-item active">
+              <FaCheckCircle /> My Purchases
+            </Link>
+            <Link to="/wallet" className="menu-item">
+              <FaCreditCard /> My Wallet
+            </Link>
+            <Link to="/address" className="menu-item">
+              <FaMapMarkerAlt /> Address
+            </Link>
+          </nav>
+        </aside>
 
-            return (
-              <div
-                key={order._id}
-                className={`order-card-modern ${expanded ? "expanded" : ""}`}
-              >
-                <div
-                  className="order-header-modern"
-                  onClick={() => toggleExpand(order._id)}
+        {/* Main Content */}
+        <div className="main-content">
+          <div className="profile-details">
+            <h2>🛍 My Purchases</h2>
+
+            {orders.length === 0 ? (
+              <div className="empty-state">
+                <img src="/assets/empty-orders.svg" alt="No orders" />
+                <p>No orders found. Start shopping today!</p>
+                <button
+                  className="shop-btn"
+                  onClick={() => (window.location.href = "/")}
                 >
-                  <div className="order-info">
-                    <div className="order-id">Order #{order._id.slice(-6)}</div>
-                    <div className="order-date">
-                      {new Date(order.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="order-status">
-                    {renderStatusBadge(order.status)}
-                    <div className="order-total">
-                      ₱{order.totalPrice.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
+                  Continue Shopping
+                </button>
+              </div>
+            ) : (
+              <div className="orders-grid">
+                {orders.map((order) => {
+                  const totalSaved = calculateTotalSaved(order.orderItems);
+                  const addr = order.shippingAddress || {};
+                  const expanded = expandedOrder === order._id;
 
-                {expanded && (
-                  <div className="order-details">
-                    <div className="shipping-info">
-                      <h4>Shipping Information</h4>
-                      <p>
-                        <strong>Name:</strong> {order.name || "Customer"}
-                        <br />
-                        <strong>Address:</strong> {formatAddress(addr)}
-                        <br />
-                        <strong>Phone:</strong> {order.phone || "N/A"}
-                      </p>
-                    </div>
-
-                    <div className="order-items-modern">
-                      {order.orderItems?.map((item) => (
-                        <div key={item._id} className="item-row">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="item-thumb"
-                          />
-                          <div className="item-info-modern">
-                            <h5>{item.name}</h5>
-                            <p>
-                              {item.format} • Qty: {item.qty}
-                            </p>
-                            <p>
-                              <span className="old-price">
-                                ₱{item.originalPrice.toFixed(2)}
-                              </span>{" "}
-                              <span className="new-price">
-                                ₱{item.discountedPrice.toFixed(2)}
-                              </span>
-                            </p>
+                  return (
+                    <div
+                      key={order._id}
+                      className={`order-card-modern ${expanded ? "expanded" : ""}`}
+                    >
+                      <div
+                        className="order-header-modern"
+                        onClick={() => toggleExpand(order._id)}
+                      >
+                        <div className="order-info">
+                          <div className="order-id">
+                            Order #{order._id.slice(-6)}
                           </div>
-                          <div className="item-total-modern">
-                            ₱{item.itemTotal.toFixed(2)}
+                          <div className="order-date">
+                            {new Date(order.createdAt).toLocaleString()}
                           </div>
                         </div>
-                      ))}
-                    </div>
-
-                    {totalSaved > 0 && (
-                      <div className="order-savings-modern">
-                        🎉 You saved ₱{totalSaved.toFixed(2)} on this order!
+                        <div className="order-status">
+                          {renderStatusBadge(order.status)}
+                          <div className="order-total">
+                            ₱{order.totalPrice.toFixed(2)}
+                          </div>
+                        </div>
                       </div>
-                    )}
 
-                    {/* Customer Actions */}
-                    <div className="order-actions">
-                      {["pending", "processing"].includes(order.status) &&
-                        !order.cancelRequest?.requested && (
-                          <button
-                            className="action-btn cancel"
-                            onClick={() =>
-                              openRequestModal(order._id, "cancel")
-                            }
-                          >
-                            Request Cancel
-                          </button>
-                        )}
+                      {expanded && (
+                        <div className="order-details">
+                          <div className="shipping-info">
+                            <h4>Shipping Information</h4>
+                            <p>
+                              <strong>Name:</strong> {order.name || "Customer"}
+                              <br />
+                              <strong>Address:</strong> {formatAddress(addr)}
+                              <br />
+                              <strong>Phone:</strong> {order.phone || "N/A"}
+                            </p>
+                          </div>
 
-                      {order.status === "delivered" &&
-                        !order.returnRequest?.requested && (
-                          <button
-                            className="action-btn return"
-                            onClick={() =>
-                              openRequestModal(order._id, "return")
-                            }
-                          >
-                            Request Return
-                          </button>
-                        )}
+                          <div className="order-items-modern">
+                            {order.orderItems?.map((item) => (
+                              <div key={item._id} className="item-row">
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="item-thumb"
+                                />
+                                <div className="item-info-modern">
+                                  <h5>{item.name}</h5>
+                                  <p>
+                                    {item.format} • Qty: {item.qty}
+                                  </p>
+                                  <p>
+                                    <span className="old-price">
+                                      ₱{item.originalPrice.toFixed(2)}
+                                    </span>{" "}
+                                    <span className="new-price">
+                                      ₱{item.discountedPrice.toFixed(2)}
+                                    </span>
+                                  </p>
+                                </div>
+                                <div className="item-total-modern">
+                                  ₱{item.itemTotal.toFixed(2)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
 
-                      {order.cancelRequest?.requested && (
-                        <p className="info-text">
-                          ❗ Cancel requested on{" "}
-                          {new Date(
-                            order.cancelRequest.requestedAt
-                          ).toLocaleString()}
-                        </p>
-                      )}
-                      {order.returnRequest?.requested && (
-                        <p className="info-text">
-                          ♻ Return requested on{" "}
-                          {new Date(
-                            order.returnRequest.requestedAt
-                          ).toLocaleString()}
-                        </p>
+                          {totalSaved > 0 && (
+                            <div className="order-savings-modern">
+                              🎉 You saved ₱{totalSaved.toFixed(2)} on this order!
+                            </div>
+                          )}
+
+                          <div className="order-actions">
+                            {["pending", "processing"].includes(order.status) &&
+                              !order.cancelRequest?.requested && (
+                                <button
+                                  className="action-btn cancel"
+                                  onClick={() =>
+                                    openRequestModal(order._id, "cancel")
+                                  }
+                                >
+                                  Request Cancel
+                                </button>
+                              )}
+
+                            {order.status === "delivered" &&
+                              !order.returnRequest?.requested && (
+                                <button
+                                  className="action-btn return"
+                                  onClick={() =>
+                                    openRequestModal(order._id, "return")
+                                  }
+                                >
+                                  Request Return
+                                </button>
+                              )}
+
+                            {order.cancelRequest?.requested && (
+                              <p className="info-text">
+                                ❗ Cancel requested on{" "}
+                                {new Date(
+                                  order.cancelRequest.requestedAt
+                                ).toLocaleString()}
+                              </p>
+                            )}
+                            {order.returnRequest?.requested && (
+                              <p className="info-text">
+                                ♻ Return requested on{" "}
+                                {new Date(
+                                  order.returnRequest.requestedAt
+                                ).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
 
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>
-              {requestType === "cancel" ? "Cancel Order" : "Return Request"}
-            </h3>
-            <textarea
-              placeholder="Enter your reason..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-            <div className="modal-actions">
-              <button className="btn-primary" onClick={handleSubmitRequest}>
-                Submit
-              </button>
-              <button className="btn-ghost" onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-            </div>
+            {showModal && (
+              <div className="modal-overlay">
+                <div className="modal">
+                  <h3>
+                    {requestType === "cancel"
+                      ? "Cancel Order"
+                      : "Return Request"}
+                  </h3>
+                  <textarea
+                    placeholder="Enter your reason..."
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
+                  <div className="modal-actions">
+                    <button className="btn-primary" onClick={handleSubmitRequest}>
+                      Submit
+                    </button>
+                    <button
+                      className="btn-ghost"
+                      onClick={() => setShowModal(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

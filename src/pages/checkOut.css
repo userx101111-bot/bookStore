@@ -301,14 +301,15 @@
 .payment-method-options {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 12px;
 }
+
 
 .payment-method-options label {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between; /* evenly space content */
   background-color: #f9f9f9;
   border: 2px solid #ddd;
   border-radius: 10px;
@@ -316,7 +317,9 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
+  min-height: 48px; /* consistent height */
 }
+
 
 .payment-method-options label:hover {
   border-color: #0070ba;
@@ -329,7 +332,15 @@
   cursor: pointer;
 }
 
+.payment-method-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+}
+
 /* Highlight selected */
+
 .payment-method-options label:has(input[type="radio"]:checked) {
   border-color: #0070ba;
   background-color: #e9f3ff;
@@ -339,15 +350,16 @@
 
 /* 🪙 COD & PayPal Labels */
 .method-label {
-  flex-grow: 1;
   font-size: 0.95rem;
+  color: #333;
 }
 
 /* 💰 PayPal Logo */
 .paypal-logo {
-  height: 24px;
+  height: 26px;
   width: auto;
   object-fit: contain;
+  margin-left: auto;
 }
 
 /* 🧾 Payment Summary layout tweak */
@@ -368,8 +380,116 @@
   font-weight: bold;
 }
 
-
 .paymentDetailRow.saved {
   color: #16a34a;
   font-weight: 600;
+}
+
+/* ============================================================
+💰 WALLET BUTTON & MODAL (New Section)
+============================================================ */
+.wallet-info-section {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.wallet-button {
+  background-color: #f3f4f6;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  color: #333;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wallet-button:hover {
+  background-color: #e8f7ff;
+  border-color: #00aaff;
+  color: #0077cc;
+}
+
+/* 💬 Wallet Modal */
+.wallet-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.wallet-modal-content {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.wallet-modal-content h4 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.wallet-transactions ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.wallet-transactions li {
+  font-size: 14px;
+  margin: 6px 0;
+  text-align: left;
+}
+
+.wallet-transactions span.credit {
+  color: green;
+  font-weight: bold;
+}
+
+.wallet-transactions span.debit {
+  color: red;
+  font-weight: bold;
+}
+
+.close-wallet {
+  margin-top: 15px;
+  background-color: #0077cc;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.close-wallet:hover {
+  background-color: #005fa3;
+}
+
+/* 🪙 Wallet balance styling inside radio */
+.wallet-balance {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 3px 8px;
+  border-radius: 8px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.paymentDetails .footer {
+  margin-top: 40px; /* creates breathing room above the footer */
 }

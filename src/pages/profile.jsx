@@ -345,18 +345,21 @@ const Profile = () => {
             <div className="avatar-placeholder">👤</div>
             <h2>{user?.firstName || user?.name || "Guest"}</h2>
           </div>
-          <nav className="menu-list">
-            <LogoutButton />
-            <Link to="/profile" className="menu-item active">
-              <FaUser /> Profile
-            </Link>
-            <Link to="/my-purchases" className="menu-item">
-              <FaCreditCard /> My Purchases
-            </Link>
-            <Link to="/address" className="menu-item">
-              <FaMapMarkerAlt /> Address
-            </Link>
-          </nav>
+    <nav className="menu-list">
+      <LogoutButton />
+      <Link to="/profile" className="menu-item active">
+        <FaUser /> Profile
+      </Link>
+      <Link to="/my-purchases" className="menu-item">
+        <FaCheckCircle /> My Purchases
+      </Link>
+      <Link to="/wallet" className="menu-item">
+        <FaCreditCard /> My Wallet
+      </Link>
+      <Link to="/address" className="menu-item">
+        <FaMapMarkerAlt /> Address
+      </Link>
+    </nav>
         </aside>
 
         <div className="main-content">

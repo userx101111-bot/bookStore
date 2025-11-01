@@ -17,6 +17,7 @@ const Checkout = () => {
   const [error, setError] = useState(null);
   const { clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState("cash on delivery");
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   // 🧠 Load cart + user
   useEffect(() => {
@@ -80,40 +81,46 @@ const Checkout = () => {
       setLoading(true);
       setError(null);
 
-      const orderData = {
-        userId: user._id || user.id,
-        name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
-        phone: user.phone || user.address?.telephone || "",
-        orderItems: cartItems.map((item) => ({
-          product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
-          variantId:
-            item.variantId ||
-            item.variant_id ||
-            (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
-          name: item.name,
-          format: item.format || item.variant_format || "Standard",
-          originalPrice: item.price || 0,
-          discountedPrice: item.final_price || item.price,
-          qty: item.quantity,
-          itemTotal: (item.final_price || item.price) * item.quantity,
-          image: item.image,
-        })),
-        shippingAddress: {
-          houseNumber: user.address.houseNumber || "",
-          street: user.address.street || "",
-          barangay: user.address.barangay || "",
-          city: user.address.city || "",
-          region: user.address.region || user.address.state || user.address.province || "",
-          postalCode: user.address.zip || user.address.postalCode || "",
-          country: user.address.country || "Philippines",
-        },
-        paymentMethod,
-        itemsPrice: discountedSubTotal,
-        shippingPrice: shipping,
-        taxPrice: 0,
-        totalPrice: totalPayment,
-        status: "pending",
-      };
+let orderStatus = "pending"; // default for COD
+if (paymentMethod === "paypal" || paymentMethod === "wallet") {
+  orderStatus = "processing"; // payment confirmed
+}
+
+const orderData = {
+  userId: user._id || user.id,
+  name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
+  phone: user.phone || user.address?.telephone || "",
+  orderItems: cartItems.map((item) => ({
+    product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
+    variantId:
+      item.variantId ||
+      item.variant_id ||
+      (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
+    name: item.name,
+    format: item.format || item.variant_format || "Standard",
+    originalPrice: item.price || 0,
+    discountedPrice: item.final_price || item.price,
+    qty: item.quantity,
+    itemTotal: (item.final_price || item.price) * item.quantity,
+    image: item.image,
+  })),
+  shippingAddress: {
+    houseNumber: user.address.houseNumber || "",
+    street: user.address.street || "",
+    barangay: user.address.barangay || "",
+    city: user.address.city || "",
+    region: user.address.region || user.address.state || user.address.province || "",
+    postalCode: user.address.zip || user.address.postalCode || "",
+    country: user.address.country || "Philippines",
+  },
+  paymentMethod,
+  itemsPrice: discountedSubTotal,
+  shippingPrice: shipping,
+  taxPrice: 0,
+  totalPrice: totalPayment,
+  status: orderStatus,
+};
+
 
       // 🪙 Handle Wallet Payment
       if (paymentMethod === "wallet") {
@@ -192,47 +199,45 @@ const Checkout = () => {
   // 🚀 PayPal Success Handler
   const handlePayPalSuccess = async (details, data) => {
     try {
-      const orderData = {
-        userId: user._id || user.id,
-        name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
-        phone: user.phone || user.address?.telephone || "",
-        orderItems: cartItems.map((item) => ({
-          product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
-          variantId:
-            item.variantId ||
-            item.variant_id ||
-            (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
-          name: item.name,
-          format: item.format || item.variant_format || "Standard",
-          originalPrice: item.price || 0,
-          discountedPrice: item.final_price || item.price,
-          qty: item.quantity,
-          itemTotal: (item.final_price || item.price) * item.quantity,
-          image: item.image,
-        })),
-        shippingAddress: {
-          houseNumber: user.address.houseNumber || "",
-          street: user.address.street || "",
-          barangay: user.address.barangay || "",
-          city: user.address.city || "",
-          region: user.address.region || user.address.state || user.address.province || "",
-          postalCode: user.address.zip || user.address.postalCode || "",
-          country: user.address.country || "Philippines",
-        },
-        paymentMethod: "PayPal",
-        itemsPrice: discountedSubTotal,
-        shippingPrice: shipping,
-        taxPrice: 0,
-        totalPrice: totalPayment,
-        isPaid: true,
-        paidAt: new Date(),
-        paymentResult: {
-          id: data.orderID,
-          status: details.status,
-          update_time: details.update_time,
-          email_address: details.payer.email_address,
-        },
-      };
+let orderStatus = "pending"; // default for COD
+if (paymentMethod === "paypal" || paymentMethod === "wallet") {
+  orderStatus = "processing"; // payment confirmed
+}
+
+const orderData = {
+  userId: user._id || user.id,
+  name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User",
+  phone: user.phone || user.address?.telephone || "",
+  orderItems: cartItems.map((item) => ({
+    product: item.productId || item.parentId || item._id || item.id?.split("-")[0],
+    variantId:
+      item.variantId ||
+      item.variant_id ||
+      (item.id && item.id.includes("-") ? item.id.split("-")[1] : null),
+    name: item.name,
+    format: item.format || item.variant_format || "Standard",
+    originalPrice: item.price || 0,
+    discountedPrice: item.final_price || item.price,
+    qty: item.quantity,
+    itemTotal: (item.final_price || item.price) * item.quantity,
+    image: item.image,
+  })),
+  shippingAddress: {
+    houseNumber: user.address.houseNumber || "",
+    street: user.address.street || "",
+    barangay: user.address.barangay || "",
+    city: user.address.city || "",
+    region: user.address.region || user.address.state || user.address.province || "",
+    postalCode: user.address.zip || user.address.postalCode || "",
+    country: user.address.country || "Philippines",
+  },
+  paymentMethod,
+  itemsPrice: discountedSubTotal,
+  shippingPrice: shipping,
+  taxPrice: 0,
+  totalPrice: totalPayment,
+  status: orderStatus,
+};
 
       const config = {
         headers: {
@@ -340,139 +345,194 @@ const Checkout = () => {
                 </Link>
               </div>
             </div>
+                          <h3>Payment Summary</h3>
+
+              <div className="paymentDetailRow">
+                <span>Total Quantity:</span>
+                <span>{totalQuantity} item(s)</span>
+              </div>
+
+              <div className="paymentDetailRow">
+                <span>Subtotal:</span>
+                <span>₱{originalSubTotal.toFixed(2)}</span>
+              </div>
+
+              {discountTotal > 0 && (
+                <div className="paymentDetailRow">
+                  <span>Discount:</span>
+                  <span>-₱{discountTotal.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="paymentDetailRow">
+                <span>Shipping:</span>
+                <span>₱{shipping.toFixed(2)}</span>
+              </div>
+
+              <div className="paymentDetailRow total">
+                <strong>Total Payment:</strong>
+                <strong>₱{totalPayment.toFixed(2)}</strong>
+              </div>
           </div>
 
-          {/* 💳 Payment Summary */}
-          <div className="paymentDetails">
-            <h3>Payment Summary</h3>
-
-            <div className="paymentDetailRow">
-              <span>Total Quantity:</span>
-              <span>{totalQuantity} item(s)</span>
-            </div>
-            <div className="paymentDetailRow">
-              <span>Subtotal:</span>
-              <span>₱{originalSubTotal.toFixed(2)}</span>
-            </div>
-            {discountTotal > 0 && (
+            {/* 💳 Payment Summary */}
+            <div className="paymentDetails">
+              {/* 🏦 Payment Method */}
               <div className="paymentDetailRow">
-                <span>Discount:</span>
-                <span>-₱{discountTotal.toFixed(2)}</span>
+                <h3>Payment Method: </h3>
+<div className="payment-method-options">
+  <label>
+    <div className="payment-method-left">
+      <input
+        type="radio"
+        name="paymentMethod"
+        value="cash on delivery"
+        checked={paymentMethod === "cash on delivery"}
+        onChange={(e) => setPaymentMethod(e.target.value)}
+      />
+      <span className="method-label">Cash on Delivery</span>
+    </div>
+  </label>
+
+  <label>
+    <div className="payment-method-left">
+      <input
+        type="radio"
+        name="paymentMethod"
+        value="paypal"
+        checked={paymentMethod === "paypal"}
+        onChange={(e) => setPaymentMethod(e.target.value)}
+      />
+      <span className="method-label">PayPal</span>
+    </div>
+    <img
+      src="https://www.paypalobjects.com/webstatic/icon/pp258.png"
+      alt="PayPal"
+      className="paypal-logo"
+    />
+  </label>
+
+  <label>
+    <div className="payment-method-left">
+      <input
+        type="radio"
+        name="paymentMethod"
+        value="wallet"
+        checked={paymentMethod === "wallet"}
+        onChange={(e) => setPaymentMethod(e.target.value)}
+      />
+      <span className="method-label">Wallet Coins</span>
+    </div>
+    {user?.wallet?.balance !== undefined && (
+      <span className="wallet-balance">
+        ₱{user.wallet.balance.toFixed(2)} available
+      </span>
+    )}
+  </label>
+</div>
+
               </div>
-            )}
-            <div className="paymentDetailRow">
-              <span>Shipping:</span>
-              <span>₱{shipping.toFixed(2)}</span>
-            </div>
-            <div className="paymentDetailRow total">
-              <strong>Total Payment:</strong>
-              <strong>₱{totalPayment.toFixed(2)}</strong>
-            </div>
 
-            {/* 🏦 Payment Method */}
-            <div className="paymentDetailRow">
-              <span>Payment Method:</span>
-              <div className="payment-method-options">
-                <label>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash on delivery"
-                    checked={paymentMethod === "cash on delivery"}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span className="method-label">Cash on Delivery</span>
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="paypal"
-                    checked={paymentMethod === "paypal"}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <img
-                    src="https://www.paypalobjects.com/webstatic/icon/pp258.png"
-                    alt="PayPal"
-                    className="paypal-logo"
-                  />
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    value="wallet"
-                    checked={paymentMethod === "wallet"}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span className="method-label">Wallet Coins</span>
-                  {user?.wallet?.balance !== undefined && (
-                    <span className="wallet-balance">
-                      (Balance: ₱{user.wallet.balance.toFixed(2)})
-                    </span>
-                  )}
-                </label>
-              </div>
-            </div>
+              {error && <div className="error-message">{error}</div>}
 
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="footer">
-              <button
-                className="cancel"
-                onClick={() => navigate("/cart")}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-
-              {paymentMethod === "paypal" ? (
-                <div style={{ width: "100%", marginTop: "10px" }}>
-                  <PayPalScriptProvider
-                    options={{
-                      "client-id":
-                        "AdhQtb5SkntTJOPADCLRicbNxnshl3fzbIC2K_kz7t_92uS9PU17whoivVnhJe0EQimCF2dIsKX4VU4G",
-                      currency: "PHP",
-                    }}
-                  >
-                    <PayPalButtons
-                      style={{ layout: "vertical" }}
-                      createOrder={(data, actions) =>
-                        actions.order.create({
-                          purchase_units: [
-                            {
-                              amount: { value: totalPayment.toFixed(2) },
-                            },
-                          ],
-                        })
-                      }
-                      onApprove={async (data, actions) => {
-                        const details = await actions.order.capture();
-                        handlePayPalSuccess(details, data);
-                      }}
-                      onError={(err) => {
-                        console.error("PayPal error:", err);
-                        setError("PayPal payment failed.");
-                      }}
-                    />
-                  </PayPalScriptProvider>
-                </div>
-              ) : (
+              <div className="footer">
                 <button
-                  onClick={handleCheckout}
-                  className="checkout"
+                  className="cancel"
+                  onClick={() => navigate("/cart")}
                   disabled={loading}
                 >
-                  {loading
-                    ? "Processing..."
-                    : paymentMethod === "wallet"
-                    ? "Pay with Wallet"
-                    : "Checkout"}
+                  Cancel
                 </button>
-              )}
+
+                {paymentMethod === "paypal" ? (
+                  <div style={{ width: "100%", marginTop: "10px" }}>
+                    <PayPalScriptProvider
+                      options={{
+                        "client-id":
+                          "AdhQtb5SkntTJOPADCLRicbNxnshl3fzbIC2K_kz7t_92uS9PU17whoivVnhJe0EQimCF2dIsKX4VU4G",
+                        currency: "PHP",
+                      }}
+                    >
+                      <PayPalButtons
+                        style={{ layout: "vertical" }}
+                        createOrder={(data, actions) =>
+                          actions.order.create({
+                            purchase_units: [
+                              {
+                                amount: { value: totalPayment.toFixed(2) },
+                              },
+                            ],
+                          })
+                        }
+                        onApprove={async (data, actions) => {
+                          const details = await actions.order.capture();
+                          handlePayPalSuccess(details, data);
+                        }}
+                        onError={(err) => {
+                          console.error("PayPal error:", err);
+                          setError("PayPal payment failed.");
+                        }}
+                      />
+                    </PayPalScriptProvider>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleCheckout}
+                    className="checkout"
+                    disabled={loading}
+                  >
+                    {loading
+                      ? "Processing..."
+                      : paymentMethod === "wallet"
+                      ? "Pay with Wallet"
+                      : "Checkout"}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+
         </div>
       </div>
+
+      {/* 💬 Wallet Modal */}
+      {showWalletModal && (
+        <div className="wallet-modal">
+          <div className="wallet-modal-content">
+            <h4>💰 My Wallet</h4>
+            <p>
+              <strong>Available Balance:</strong> ₱
+              {user.wallet?.balance?.toFixed(2) || 0}
+            </p>
+
+            {user.wallet?.transactions?.length > 0 ? (
+              <div className="wallet-transactions">
+                <h5>Recent Transactions:</h5>
+                <ul>
+                  {user.wallet.transactions
+                    .slice(-5)
+                    .reverse()
+                    .map((tx, i) => (
+                      <li key={i}>
+                        <span className={tx.type}>{tx.type.toUpperCase()}</span>{" "}
+                        ₱{tx.amount.toFixed(2)} —{" "}
+                        {tx.description || "No description"}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ) : (
+              <p>No transactions yet.</p>
+            )}
+
+            <button
+              className="close-wallet"
+              onClick={() => setShowWalletModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
