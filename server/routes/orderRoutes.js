@@ -370,13 +370,14 @@ router.post("/:id/revert-cancel", protect, async (req, res) => {
       return res.status(400).json({ message: "No cancel request to revert" });
 
     // ✅ Clear the cancel request
-    order.cancelRequest = {
-      requested: false,
-      reason: "",
-      requestedAt: null,
-      handled: false,
-      handledAt: null,
-    };
+order.cancelRequest = {
+  requested: false,
+  reason: "",
+  requestedAt: null,
+  handled: false,
+  handledAt: null,
+  revertedAt: new Date(), // ✅ record when user continued
+};
 
     await order.save();
     res.json({ message: "Cancel request withdrawn. Order will continue.", order });

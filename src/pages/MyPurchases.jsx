@@ -126,19 +126,21 @@ const handleContinueOrder = async (orderId) => {
 
     alert("✅ Your cancel request has been withdrawn. Order will continue.");
 
-    setOrders((prev) =>
-      prev.map((o) =>
-        o._id === orderId
-          ? {
-              ...o,
-              cancelRequest: {
-                requested: false,
-                reverted: true, // 👈 Add this line
-              },
-            }
-          : o
-      )
-    );
+setOrders((prev) =>
+  prev.map((o) =>
+    o._id === orderId
+      ? {
+          ...o,
+          cancelRequest: {
+            ...o.cancelRequest,
+            requested: false,
+            revertedAt: new Date(), // ✅ match backend field
+          },
+        }
+      : o
+  )
+);
+
   } catch (err) {
     console.error("❌ Failed to continue order:", err);
     alert("Failed to continue order. Please try again.");
@@ -333,21 +335,26 @@ const handleContinueOrder = async (orderId) => {
           </>
         )}
         <br />
-        <button
-          className="action-btn continue"
-          onClick={() => handleContinueOrder(order._id)}
-        >
-          Continue Order
-        </button>
+<button
+  className="action-btn continue"
+  disabled={order.cancelRequest?.revertedAt}
+  onClick={() => handleContinueOrder(order._id)}
+>
+  Continue Order
+</button>
       </div>
     )}
 
     {/* ✅ Successfully reverted */}
-    {order.cancelRequest?.reverted && (
-      <p className="info-text success">
-        ✅ You decided to continue with this order.
-      </p>
-    )}
+{order.cancelRequest?.revertedAt && (
+  <p className="info-text success">
+    ✅ You decided to continue with this order.<br />
+    <small>
+      Continued on{" "}
+      {new Date(order.cancelRequest.revertedAt).toLocaleString()}.
+    </small>
+  </p>
+)}
   </>
 )}
 

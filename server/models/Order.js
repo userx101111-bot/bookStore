@@ -78,6 +78,7 @@ status: {
       requestedAt: Date,
       handled: { type: Boolean, default: false },
       handledAt: Date,
+      revertedAt: { type: Date, default: null },
     },
 
     returnRequest: {
@@ -100,7 +101,7 @@ status: {
     },
     refundedAt: Date,
   },
-  { timestamps: true }
+  { timestamps: true, minimize: false } 
 );
 
 module.exports = mongoose.model('Order', orderSchema);
