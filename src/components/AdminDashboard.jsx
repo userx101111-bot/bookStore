@@ -10,7 +10,7 @@ import CategoryManagement from './admin/CategoryManagement'; // existing import
 import './AdminDashboard.css';
 import BannerManagement from './admin/BannerManagement';
 import StaticPageManagement from "./admin/StaticPageManagement";
-import FeaturedManagement from './admin/FeaturedManagement'; // NEW
+import FeaturedManagement from './admin/FeaturedManagement'; 
 import VoucherManagement from "./admin/VoucherManagement";
 import OverviewPage from "./admin/OverviewPage";
 
