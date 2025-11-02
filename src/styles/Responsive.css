@@ -1,0 +1,47 @@
+/* src/styles/Responsive.css */
+
+/* Base responsive rules */
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive breakpoints */
+/* Large devices (desktops, less than 1200px) */
+@media (max-width: 1199.98px) {
+  /* Add your large screen adjustments here */
+}
+
+/* Medium devices (tablets, less than 992px) */
+@media (max-width: 991.98px) {
+  /* Add your tablet adjustments here */
+}
+
+/* Small devices (landscape phones, less than 768px) */
+@media (max-width: 767.98px) {
+  /* Add your small screen adjustments here */
+  
+  /* Example responsive container adjustment */
+  .container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+/* Extra small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+  /* Add your mobile phone adjustments here */
+  
+  /* Example text size adjustment */
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+}

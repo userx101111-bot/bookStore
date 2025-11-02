@@ -1,0 +1,69 @@
+/* ============================================================
+   ✅ src/styles/StaticPage.css — For Static Pages
+   ============================================================ */
+
+.static-page.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  background: #fff;
+  color: #111;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.7;
+  min-height: 60vh;
+}
+
+.static-page.container h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 1.5rem;
+  border-bottom: 3px solid #ff4081;
+  padding-bottom: 0.5rem;
+}
+
+.static-page-content {
+  font-size: 1.1rem;
+  color: #333;
+  white-space: pre-line;
+}
+
+/* ✅ Ensure all paragraph and link elements are visible */
+.static-page-content p {
+  margin-bottom: 1rem;
+}
+
+.static-page-content a {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.static-page-content a:hover {
+  color: #0056b3;
+}
+
+/* Lists and formatting */
+.static-page-content ul,
+.static-page-content ol {
+  padding-left: 2rem;
+  margin-bottom: 1rem;
+}
+
+.static-page-content h2,
+.static-page-content h3 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #111;
+}
+
+.static-page-content em {
+  color: #555;
+}
+
+.loading,
+.not-found {
+  text-align: center;
+  padding: 4rem;
+  font-size: 1.5rem;
+  color: #555;
+}

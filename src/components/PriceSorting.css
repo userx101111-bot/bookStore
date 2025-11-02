@@ -1,0 +1,56 @@
+/* src/components/PriceSorting.css */
+.sorting-sidebar {
+  width: 180px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-right: 20px;
+}
+
+.sorting-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: #333;
+}
+
+.sorting-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sort-button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.sort-button:hover {
+  background-color: #f0f0f0;
+}
+
+.sort-button.active {
+  background-color: #fb7070;
+  color: white;
+  border-color: #fb7070;
+}
+
+/* Media query for responsive design */
+@media (max-width: 768px) {
+  .product-layout {
+    flex-direction: column;
+  }
+  
+  .sorting-sidebar {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 20px;
+  }
+}

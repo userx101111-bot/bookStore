@@ -1,0 +1,53 @@
+/* ============================================================
+✅ src/components/RateProductModal.css
+============================================================ */
+.rate-modal {
+  max-width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.rate-modal h3 {
+  margin-top: 0;
+  text-align: center;
+}
+
+.stars {
+  display: flex;
+  justify-content: center;
+  font-size: 28px;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+.star {
+  color: #ccc;
+  margin: 0 4px;
+  transition: color 0.2s ease;
+}
+
+.star.active {
+  color: gold;
+}
+
+.rate-modal textarea {
+  width: 100%;
+  min-height: 80px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  resize: none;
+}
+
+.rate-modal input[type="file"] {
+  display: block;
+  margin: 10px auto;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}

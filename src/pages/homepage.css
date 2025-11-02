@@ -1,0 +1,567 @@
+/* ============================================================
+   homepage.css — Dynamic Category Colors + Pastel Tint Support
+   ============================================================ */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;
+  background-color: #fafafa;
+}
+
+.app {
+  padding-top: 85px;
+}
+
+/* ============================================================
+   🖼️ CAROUSEL / HERO BANNER
+   ============================================================ */
+.carousel-wrapper {
+  position: relative;
+  width: 100%;
+  height: 90vh;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity 1s ease, transform 1.5s ease;
+  pointer-events: none;
+}
+
+.carousel-slide.active {
+  opacity: 1;
+  transform: scale(1);
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.carousel-slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.65),
+    rgba(0, 0, 0, 0.25),
+    rgba(0, 0, 0, 0.05)
+  );
+  z-index: 1;
+}
+
+.carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carousel-content {
+  position: absolute;
+  bottom: 20%;
+  left: 10%;
+  color: #fff;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+  max-width: 500px;
+  z-index: 2;
+}
+
+.carousel-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.carousel-subtitle {
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.carousel-btn {
+  background-color: #000;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1rem;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.carousel-btn:hover {
+  background-color: #222;
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   🧩 FIX — Ensure Featured & Product Sections Are Clickable
+   ============================================================ */
+.featured-wrapper,
+.product-section {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================================
+   🛒 PRODUCT SECTIONS (FEATURED + CATEGORIES)
+   ============================================================ */
+.product-section {
+  padding: 2rem 1rem;
+  text-align: center;
+  margin: 2rem auto;
+  border-radius: 12px;
+  max-width: 1200px;
+  background-color: color-mix(in srgb, var(--section-color, #f4f4f4) 18%, white);
+  color: var(--section-text-color, #111);
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+.section-heading {
+  color: var(--section-text-color, #111);
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 auto 1.2rem;
+  display: inline-block;
+  border-bottom: 3px solid var(--section-text-color, #111);
+  padding-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   🪄 “View All” BUTTON — Dynamic Contrast-Aware
+   ============================================================ */
+.view-all {
+  text-decoration: none;
+  background-color: color-mix(in srgb, var(--section-color, #f4f4f4) 25%, white);
+  color: var(--section-text-color, #111);
+  border: 2px solid color-mix(in srgb, var(--section-text-color, #111) 80%, #000);
+  border-radius: 25px;
+  padding: 8px 20px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  display: inline-block;
+  margin-top: 1rem;
+}
+.view-all:hover {
+  background-color: color-mix(in srgb, var(--section-color, #f4f4f4) 70%, black);
+  color: #fff;
+  border-color: color-mix(in srgb, var(--section-color, #f4f4f4) 80%, black);
+  transform: translateY(-3px);
+}
+
+/* ============================================================
+   🎯 FEATURED HORIZONTAL SCROLL SECTIONS
+   ============================================================ */
+.featured-wrapper {
+  margin-top: 2rem;
+}
+
+.featured.promotions {
+  background: linear-gradient(135deg, #f87171 0%, #fca5a5 100%);
+  color: #fff;
+}
+
+.featured.new-arrivals {
+  background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+  color: #fff;
+}
+
+.featured.popular {
+  background: linear-gradient(135deg, #facc15 0%, #fde68a 100%);
+  color: #000;
+}
+
+/* ============================================================
+   📦 PRODUCT GRID (CATEGORY-BASED)
+   ============================================================ */
+.product-list,
+.product-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+/* ============================================================
+   🧱 PRODUCT CARD — FIXED HEIGHT (prevents stretching)
+   ============================================================ */
+.product-card {
+  flex: 0 0 260px;
+  background: #fff;
+  padding: 1rem;
+  text-align: left;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-bottom: 4px solid var(--section-text-color, #111);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+}
+
+.product-image-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+}
+
+.product-image-wrap img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+}
+
+.product-image-wrap img.fade {
+  opacity: 0;
+}
+
+.product-card:hover .product-image-wrap img {
+  transform: scale(1.02);
+}
+
+.variant-count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.product-name {
+  font-weight: bold;
+  margin-top: 0.8rem;
+  font-size: 1.1rem;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+/* ============================================================
+   💰 FIXED PRICE HEIGHT — Prevent Stretching
+   ============================================================ */
+.price {
+  font-weight: bold;
+  color: var(--section-text-color, #e11d48);
+  margin-top: 6px;
+  font-size: 1rem;
+  min-height: 2.6em; /* ✅ Reserve consistent space */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.price.discounted {
+  justify-content: center;
+}
+
+.price.discounted .original {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 0.85rem;
+  line-height: 1rem;
+}
+
+.price.discounted .discounted {
+  color: #e63946;
+  font-weight: bold;
+  font-size: 1.05rem;
+  line-height: 1rem;
+}
+
+/* ============================================================
+   ⚠️ DISCLAIMER MODAL
+   ============================================================ */
+.disclaimer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.disclaimer-box {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.disclaimer-logo {
+  width: 140px;
+  height: auto;
+  margin: 0 auto 20px;
+  display: block;
+}
+
+.disclaimer-header {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.disclaimer-text {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+.disclaimer-button {
+  padding: 10px 24px;
+  font-size: 16px;
+  background-color: rgb(250, 188, 16);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.disclaimer-button:hover {
+  background-color: #373737;
+}
+
+/* ============================================================
+   🧩 VARIANT BUTTONS
+   ============================================================ */
+.variant-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.variant-btn {
+  flex: 1 1 45%;
+  background-color: #f3f4f6;
+  color: #333;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.variant-btn:hover,
+.variant-btn.active {
+  background-color: var(--section-text-color, #111);
+  color: var(--section-color, #fafafa);
+  border-color: var(--section-text-color, #111);
+  transform: translateY(-2px);
+}
+
+.variant-btn.active {
+  background-color: var(--section-color, #2563eb);
+  color: #fff;
+  border-color: var(--section-color, #2563eb);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Optional: slight elevation for horizontal sections */
+.product-section {
+  position: relative;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.product-section:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+.product-section[data-theme="color"] .product-scroll.modern::-webkit-scrollbar-thumb {
+  background: var(--section-text-color, #555);
+}
+
+
+
+/* ============================================================
+   🧹 Section Heading Cleanup
+   ============================================================ */
+.section-heading,
+.section-heading::before,
+.section-heading::after {
+  border-left: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+
+/* 🍔 Smooth fade-in for Recently Viewed section */
+.recently-viewed {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.recently-viewed.loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   🏷️ BADGE CONTAINER — fixed left/right placement
+   ============================================================ */
+.badge-container {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  z-index: 5;
+  padding: 0 10px;
+}
+
+/* independent left/right zones */
+.badge-left,
+.badge-right {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+}
+
+/* left badge (NEW) */
+.badge-new {
+  background: linear-gradient(135deg, #007bff, #00d4ff);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* right badge (Voucher/Discount) */
+.badge-voucher {
+  background: linear-gradient(135deg, #ff5f6d, #ffc371);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: right;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.badge-new,
+.badge-voucher {
+  backdrop-filter: blur(6px);
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+
+/* ============================================================
+   🧭 PRODUCT SCROLL — Visible Scrollbar + Top Right Buttons
+   ============================================================ */
+.product-scroll.modern {
+  display: flex;
+  gap: 1.2rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  padding: 0 1rem 1rem;
+  -webkit-overflow-scrolling: touch;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+
+/* ✅ Visible Scrollbar Styling */
+.product-scroll.modern::-webkit-scrollbar {
+  height: 10px;
+}
+.product-scroll.modern::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+.product-scroll.modern::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 5px;
+}
+.product-scroll.modern::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+/* ============================================================
+   🎯 SCROLL BUTTONS — TOP RIGHT STYLE
+   ============================================================ */
+.scroll-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.scroll-btn {
+  background: #222;
+  color: #fff;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll-btn:hover {
+  background: #fa7878;
+  transform: scale(1.1);
+}
+
+/* ensure section header aligns properly */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  padding: 0 1.5rem;
+  margin-bottom: 1rem;
+}
+

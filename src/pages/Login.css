@@ -1,0 +1,600 @@
+/* Container for the entire login section */
+.login-container {
+  display: flex;
+  justify-content: center; /* Center children horizontally */
+  align-items: center; /* Center children vertically */
+  min-height: 100vh; /* Full height of the viewport */
+  background-color: #fff;
+}
+
+/* Background logo styling */
+.background-logo {
+  position: fixed; /* Fixed to the viewport, not the parent container */
+  top: 50%; /* Center it vertically */
+  left: -45%; /* Pin it to the far left of the screen */
+  transform: translateY(-50%); /* Vertically center it */
+  width: 90vw; /* Responsive width */
+  height: 100vh; /* Full height of the viewport */
+  opacity: 0.25; /* Set the opacity to make it mildly visible */
+  pointer-events: none;
+  z-index: 0;
+  clip-path: inset(0 0 0 40%); /* Crop the left side of the image */
+}
+
+/* Login box styling */
+.login-box {
+  display: flex;
+  position: relative;
+  z-index: 1;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 30px; /* Increased padding for better spacing */
+  width: 900px; /* Increased width for a larger box */
+  max-width: 1100px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  padding-top: 20px;
+}
+
+/* Form section styling */
+.login-left {
+  flex: 1;
+  padding: 40px;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Title styling */
+.login-left h2 {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 10px;
+  text-align: center; /* Center the text */
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* Logo image styling */
+.logo-image {
+  width: 400px;
+  max-width: 100%;
+  margin-top: -30px; /* Remove gap */
+  padding: 0;
+  z-index: 1;
+  position: relative;
+  display: block;
+}
+
+.slogan-image {
+  width: 260px;
+  margin-top: -40px; /* Pull it up to overlap */
+  max-width: 100%;
+  z-index: 2;
+  position: relative;
+}
+
+/* Input fields and buttons styling */
+input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 18px;
+  margin: 10px 0;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+
+/* Sign-in button styling */
+.sign-in {
+  display: block;
+  width: 100%;
+  max-width: 450px; /* Match this exactly with input */
+  margin: 15px auto; /* Center it */
+  padding: 12px;
+  border-radius: 20px;
+  background-color: #d72638;
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover effects for buttons */
+.sign-in:hover {
+  background-color: #b71c1c; /* Darker shade on hover */
+}
+
+/* Forgot password link styling */
+.forgot {
+  width: 100%;
+  max-width: 400px;
+  text-align: right;
+  font-size: 12px;
+  margin: 0px auto 15px auto; /* Changed from 10px to 5px to move it higher */
+}
+
+
+/* Create account link styling */
+.create-account {
+  display: flex;
+    justify-content: center;
+    gap: 20px; /* This adds space between the links */
+    margin-top: 15px; /* Space above the links */
+}
+
+/* Auth link styling */
+.auth-link {
+    color: #3a7fd5; /* Use your brand color */
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+    color: #2c63a8;
+    text-decoration: underline;
+}
+
+/* Forgot password link hover effect */
+.forgot-password {
+  color: #d72638; /* Red by default */
+}
+
+.forgot-password:hover {
+  color: #000; /* Black on hover */
+}
+
+/* Create account button styling */
+.create-account-btn {
+  color: #000; /* Black by default */
+}
+
+.create-account-btn:hover {
+  color: #d72638; /* Red on hover */
+}
+
+/* Sign-in button hover effect */
+.sign-in:hover,
+.create-account-btn:hover {
+  opacity: 0.9;
+}
+
+/* Input styling for consistent appearance */
+.input-group {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+  border-color: #d72638;
+  outline: none;
+}
+
+/* Password field styling */
+.password-group {
+  position: relative;
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #777;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  outline: none;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+/* Error messages */
+.error {
+  color: #e53935;
+  font-size: 14px;
+  margin-top: 5px;
+  display: block;
+}
+
+.error-message {
+  background-color: rgba(229, 57, 53, 0.1);
+  border-left: 3px solid #e53935;
+  color: #e53935;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Form fields container for better spacing */
+.form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Creates two equal columns */
+  column-gap: 30px; /* Space between columns remains the same */
+  row-gap: 10px;    /* Increased space between rows */
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 10px;
+}
+
+.login-left input[type="tel"],
+.form-fields input[type="tel"] {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 20px; /* Round corners */
+  font-size: 16px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+input[type="tel"]:focus {
+  border-color: #d72638; /* Highlight color when focused */
+  outline: none;
+  box-shadow: 0 0 5px rgba(215, 38, 56, 0.3);
+}
+
+/* Remove browser's default eye icon for password fields */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-contacts-auto-fill-button,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+  height: 0;
+  width: 0;
+  margin: 0;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
+  margin-bottom: 15px;
+  transition: border-color 0.3s;
+  box-sizing: border-box; /* Ensures padding doesn't affect overall width */
+}
+
+/* Media Query for smaller screens (e.g., mobile devices) */
+@media (max-width: 768px) {
+
+  .auth-link, .continue-guest, .sign-in .create-account-link{
+    position: relative;
+    z-index: 10;
+    display: block;
+    padding: 10px;
+    margin: 5px 0;
+    width: 100%;
+    text-align: center;
+  }
+  .background-logo {
+    left: -75%; /* Adjust logo position to fit better on mobile */
+    width: 150vw; /* Adjust width for mobile */
+    height: 100vh; /* Set height to 100% of the viewport height */
+    min-width: 250px; /* Smaller minimum width for mobile */
+    max-width: 150vw; /* Adjust maximum width for smaller screens */
+    opacity: 0.35; /* Slightly higher opacity on mobile for better visibility */
+  }
+
+  .back-to-login, .create-account-link {
+    width: 100%;
+    margin: 15px 0;
+    display: block;
+  }
+
+   .login-left {
+    padding: 20px;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    z-index: 5;
+    overflow: visible;
+  }
+
+  input {
+    max-width: 90%; /* Increase width for smaller screens */
+  }
+
+  .form-input, .password-group {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sign-in {
+    max-width: 90%; /* Increase width for smaller screens */
+  }
+
+  .login-left h2 {
+    font-size: 2em; /* Slightly smaller title on mobile */
+  }
+
+  .login-right {
+    display: none; /* Or adjust as needed */
+  }
+
+  .form-fields {
+    grid-template-columns: 1fr;
+    gap: 15px;
+
+  }
+  .sign-in, .continue-guest {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+}
+
+.continue-guest {
+  margin-top: 10px;
+  width: 100%;
+  padding: 12px;
+  background-color: transparent;
+  border: 1px solid #333;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.continue-guest:hover {
+  background-color: #f5f5f5;
+}
+
+/* Home container styling */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0f0f0;
+  text-align: center;
+}
+
+/* Navigation link styling */
+.nav-link {
+  margin: 10px;
+  text-decoration: none;
+  color: #007bff;
+}
+
+/* Error message styling */
+.error {
+  color: red;
+  font-size: 0.8em;
+}
+
+/* Right section (logo/slogan) */
+.login-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Change from flex-start to center */
+  align-items: center; /* Keep everything centered horizontally */
+  padding: 10px 20px;
+}
+
+/* Make email and password input fields consistent */
+.login-left input[type="email"],
+.login-left input[type="text"],
+.login-left input[type="password"] {
+  width: 100%;
+  max-width: 450px; /* Increase from 300px to make it longer */
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px; /* Consistent rounded corners */
+  font-size: 16px;
+  border-radius: 20px; /* Round corners */
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.login-left input[type="email"]:focus,
+.login-left input[type="text"]:focus,
+.login-left input[type="password"]:focus {
+  border-color: #d72638; /* Highlight color when focused */
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+/* Remove default browser eye icon for password fields */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-contacts-auto-fill-button,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+  height: 0;
+  width: 0;
+  margin: 0;
+}
+
+/* Password field styling */
+.password-group {
+  position: relative;
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #777;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  outline: none;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+/* Add to the bottom of your Login.css */
+
+/* Responsive styles */
+@media (max-width: 991.98px) {
+  .login-box {
+    width: 90%;
+    max-width: 700px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .login-box {
+    flex-direction: column;
+  }
+
+  .login-left, .login-right {
+    width: 100%;
+    padding: 0px;
+  }
+  
+  .login-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .login-left input[type="email"],
+  .login-left input[type="text"],
+  .login-left input[type="password"] {
+    max-width: 100%;
+  }
+  
+  .sign-in {
+    max-width: 100%;
+  }
+  
+  .background-logo {
+    opacity: 0.1;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .login-container {
+    padding: 15px;
+  }
+  
+  .login-left h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+  
+  .forgot-password, .create-account {
+    font-size: 0.9rem;
+  }
+}
+
+.error {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.info {
+  color: #1a73e8; /* Google blue */
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+/* === FIXED PASSWORD FIELDS === */
+.password-field {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.password-field input {
+  width: 100%;
+  padding: 12px 40px 12px 15px; /* ✅ add padding for eye icon */
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.password-field .eye-icon {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  color: #777;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-field .eye-icon:hover {
+  color: #111;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #555;
+  display: flex;
+  align-items: center;
+}
+
+.eye-icon:hover {
+  color: #111;
+}

@@ -1,0 +1,445 @@
+/* src/components/admin/VoucherManagement.css */
+
+/* Form container */
+.voucher-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 2rem;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.voucher-form h4 {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.voucher-form label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #222;
+  display: block;
+}
+
+.voucher-form input,
+.voucher-form textarea,
+.voucher-form select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  background-color: #fafafa;
+  transition: border-color 0.2s ease;
+}
+
+.voucher-form input:focus,
+.voucher-form textarea:focus,
+.voucher-form select:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Full width items like textareas and product lists */
+.voucher-form textarea,
+.voucher-form .product-list,
+.voucher-form .btn-submit,
+.voucher-form .btn-cancel {
+  grid-column: 1 / -1;
+}
+
+/* Buttons */
+.voucher-form .btn-submit {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.8rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.voucher-form .btn-submit:hover {
+  background: #0056b3;
+}
+
+.voucher-form .btn-cancel {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.8rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.voucher-form .btn-cancel:hover {
+  background: #a71d2a;
+}
+
+.voucher-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+}
+/* Product list */
+.product-list {
+  background: #f7f7f7;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+}
+
+.product-list label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* Existing voucher table */
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.products-table th,
+.products-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.products-table th {
+  background: #f1f3f6;
+  font-weight: 700;
+  color: #333;
+}
+
+.products-table tr:hover {
+  background-color: #fafafa;
+}
+
+.products-table button {
+  padding: 0.3rem 0.6rem;
+  margin-right: 0.4rem;
+  border-radius: 0.4rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.products-table button:first-child {
+  background-color: #17a2b8;
+  color: #fff;
+}
+
+.products-table button:last-child {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .voucher-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Scrollable product list inside form */
+.product-list.scrollable {
+  max-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-list.scrollable label {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.product-list.scrollable label:hover {
+  background: #eef6ff;
+  cursor: pointer;
+}
+
+.product-list .index {
+  width: 1.5rem;
+  font-weight: 600;
+}
+
+.product-list .product-name {
+  flex: 1;
+  cursor: pointer;
+}
+
+.linked-info {
+  font-size: 0.8rem;
+  color: #666;
+  margin-left: auto;
+}
+
+/* Linked Voucher Viewer Section */
+.linked-section {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.linked-products,
+.linked-vouchers {
+  flex: 1;
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+}
+
+.linked-products .scrollable {
+  max-height: 300px;
+  overflow-y: auto;
+  border-top: 1px solid #eee;
+  margin-top: 0.5rem;
+}
+
+.product-item {
+  padding: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+
+.product-item:hover {
+  background-color: #f9f9f9;
+}
+
+.product-item.active {
+  background-color: #007bff;
+  color: white;
+  font-weight: 600;
+}
+
+.linked-vouchers ul {
+  list-style: none;
+  padding: 0;
+}
+
+.linked-vouchers li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+/* ========================================= */
+/* ✅ Improved Product / Variant Selector UI */
+/* ========================================= */
+
+.product-selector {
+  grid-column: 1 / -1;
+  background: #f9fafc;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+}
+
+.selector-header {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.selector-header button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.selector-header button:hover {
+  background: #0056b3;
+}
+
+.selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* Product Card */
+.product-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.product-card:hover {
+  border-color: #007bff;
+}
+
+.product-card.selected {
+  border-color: #007bff;
+  background: #f0f7ff;
+}
+
+.product-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.product-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.product-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.tag {
+  background: #28a745;
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.expand-btn:hover {
+  color: #0056b3;
+}
+
+/* Variant Grid */
+.variant-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+}
+
+.variant-box {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f3f4f6;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.variant-box:hover {
+  background: #e8f1ff;
+}
+
+.variant-box.checked {
+  background: #dbe9ff;
+  border-color: #007bff;
+  font-weight: 600;
+  color: #0056b3;
+}
+
+.no-variants {
+  font-size: 0.85rem;
+  color: #777;
+  margin-left: 0.5rem;
+}
+
+/* ========================================= */
+/* ✅ Filter + Search Bar for Product Selector */
+/* ========================================= */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.filter-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.filter-select {
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 0.9rem;
+}
+
+.filter-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.filter-btn:hover {
+  background: #0056b3;
+}
+
+.filter-btn.clear {
+  background: #dc3545;
+}
+
+.filter-btn.clear:hover {
+  background: #a71d2a;
+}
+
+.meta-info {
+  font-size: 0.8rem;
+  color: #666;
+  margin-left: 0.5rem;
+}

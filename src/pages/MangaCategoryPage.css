@@ -1,0 +1,373 @@
+/* ============================================================
+📘 manga-category.css — Styles specific to MangaCategoryPage.jsx
+============================================================ */
+
+/* Root container */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fafafa;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+🛒 PRODUCT SECTIONS (CATEGORY + SUBCATEGORY)
+============================================================ */
+.product-section {
+  background: color-mix(in srgb, var(--section-color, #f4f4f4) 20%, white);
+  color: var(--section-text-color, #111);
+  transition: background-color 0.4s ease, color 0.4s ease;
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+/* Ensure text color matches dynamic theme */
+.product-section .product-name,
+.product-section .price,
+.product-section .variant-btn,
+.product-section .view-all {
+  color: var(--section-text-color, #111);
+}
+
+/* ============================================================
+🧭 CATEGORY HEADING
+============================================================ */
+.section-heading {
+  color: var(--section-text-color, #111);
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.section-heading::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background-color: #ddd;
+  margin-left: 1rem;
+}
+
+/* ============================================================
+📦 PRODUCT GRID + VARIANT CARD
+============================================================ */
+.product-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.product-card {
+  background: white;
+  padding: 1rem;
+  width: 100%;
+  max-width: 280px;
+  border-radius: 8px;
+  border-bottom: 3px solid var(--section-color, #ccc);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.product-card:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.15);
+}
+
+/* ============================================================
+🖼️ PRODUCT IMAGE + VARIANTS
+============================================================ */
+.product-image-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  overflow: hidden;
+}
+
+.product-image-wrap img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: opacity 0.6s ease-in-out, transform 0.4s ease-in-out;
+}
+
+.product-image-wrap img.fade {
+  opacity: 0;
+}
+
+.product-card:hover .product-image-wrap img {
+  transform: scale(1.03);
+}
+
+.variant-count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* ============================================================
+💬 PRODUCT INFO
+============================================================ */
+.product-name {
+  font-weight: bold;
+  margin-top: 0.8rem;
+  font-size: 1.1rem;
+  color: #1a1a1a;
+}
+
+.price {
+  font-weight: bold;
+  margin-top: 6px;
+  font-size: 1rem;
+  color: var(--section-text-color, #e11d48);
+}
+
+/* ============================================================
+🧩 VARIANT BUTTONS
+============================================================ */
+.variant-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.variant-btn {
+  flex: 1 1 auto;
+  background-color: #f3f4f6;
+  color: #333;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.variant-btn:hover,
+.variant-btn.active {
+  background-color: var(--section-color, #2563eb);
+  color: #fff;
+  border-color: var(--section-color, #2563eb);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.variant-btn:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================
+⚙️ SORTING CONTROLS
+============================================================ */
+.sorting-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 1rem 5rem;
+  gap: 10px;
+}
+
+.sorting-controls label {
+  font-weight: 600;
+}
+
+#sort-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* ============================================================
+🔖 SUBCATEGORY NAVIGATION
+============================================================ */
+.subcategory-nav {
+  margin: 20px 5rem;
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.subcategory-nav a {
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--section-color, #f4f4f4) 30%, white);
+  color: var(--section-text-color, #333);
+  border: 1px solid color-mix(in srgb, var(--section-text-color, #333) 20%, #ccc);
+  transition: all 0.25s ease;
+}
+
+.subcategory-nav a:hover {
+  background: var(--section-color, #f4f4f4);
+  color: var(--section-text-color, #111);
+}
+
+.subcategory-nav .active-subcat {
+  background: color-mix(in srgb, var(--section-text-color, #111) 90%, #000);
+  color: var(--section-color, #fafafa);
+  font-weight: bold;
+  border-color: color-mix(in srgb, var(--section-text-color, #111) 80%, #000);
+}
+
+/* ============================================================
+⚠️ LOADING + EMPTY STATE
+============================================================ */
+.no-products {
+  color: #555;
+  font-size: 1rem;
+  font-style: italic;
+  padding: 1rem;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  font-size: 1.5rem;
+  color: #333;
+  font-weight: 500;
+  position: relative;
+}
+
+.loading::after {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid #ccc;
+  border-top-color: #ff4081;
+  animation: spin 1s infinite linear;
+  position: absolute;
+  margin-top: 60px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+📱 RESPONSIVE DESIGN
+============================================================ */
+@media (max-width: 992px) {
+  .product-section {
+    padding: 1.5rem;
+  }
+
+  .product-list {
+    gap: 1rem;
+  }
+
+  .section-heading {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-heading {
+    font-size: 1.4rem;
+  }
+
+  .product-card {
+    max-width: 220px;
+  }
+
+  .subcategory-nav {
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .section-heading {
+    font-size: 1.2rem;
+  }
+
+  .product-card {
+    max-width: 180px;
+  }
+}
+
+/* ============================================================
+🧩 VARIANT BUTTONS — Full standalone styling (Homepage parity)
+============================================================ */
+.variant-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.variant-btn {
+  flex: 1 1 45%;
+  background-color: #f3f4f6;
+  color: #333;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.variant-btn:hover,
+.variant-btn.active {
+  background-color: var(--section-text-color, #111);
+  color: var(--section-color, #fafafa);
+  border-color: var(--section-text-color, #111);
+  transform: translateY(-2px);
+}
+
+.variant-btn.active {
+  background-color: var(--section-color, #2563eb);
+  color: #fff;
+  border-color: var(--section-color, #2563eb);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.variant-btn:active {
+  transform: scale(0.97);
+}
+
+/* ✅ SINGLE VARIANT STYLE (non-clickable, centered) */
+.variant-buttons.single-variant {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.variant-buttons.single-variant .variant-btn {
+  pointer-events: none;
+  opacity: 0.9;
+  cursor: default;
+  transform: none;
+  transition: none;
+  width: 90%;
+  text-align: center;
+  background-color: #f2f2f2;
+  border-color: #ddd;
+  color: #333;
+}
+

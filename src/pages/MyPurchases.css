@@ -1,0 +1,465 @@
+/* ============================================================
+   LAYOUT ALIGNMENT — MATCH PROFILE
+   ============================================================ */
+.purchases-container-modern {
+  width: 100%;
+  color: #333;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #111;
+  border-bottom: 2px solid #e11d48;
+  width: fit-content;
+  padding-bottom: 4px;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  margin-top: 60px;
+  color: #666;
+}
+.empty-state img {
+  width: 200px;
+  opacity: 0.85;
+  margin-bottom: 20px;
+}
+.shop-btn {
+  background: #e11d48;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.1s ease;
+  font-weight: 600;
+}
+.shop-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   ORDER GRID + CARD
+   ============================================================ */
+.orders-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-card-modern {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+}
+.order-card-modern:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.order-header-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.3s;
+}
+.order-card-modern.expanded .order-header-modern {
+  background: #fff4f7;
+}
+
+.order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.order-id {
+  font-weight: 600;
+  font-size: 1rem;
+}
+.order-date {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.order-status {
+  text-align: right;
+}
+.order-total {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-top: 3px;
+  color: #111;
+}
+
+/* ============================================================
+   STATUS BADGES
+   ============================================================ */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+/* ============================================================
+   ORDER DETAILS
+   ============================================================ */
+.order-details {
+  padding: 18px;
+  border-top: 1px solid #eee;
+  animation: expand 0.25s ease;
+  background-color: #fff;
+}
+
+@keyframes expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   SHIPPING INFO
+   ============================================================ */
+.shipping-info {
+  background: #fff8f8;
+  border: 1px solid #f5c2c2;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.shipping-info h4 {
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #e11d48;
+}
+
+/* ============================================================
+   ORDER ITEMS
+   ============================================================ */
+.order-items-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f2f2f2;
+  padding-bottom: 10px;
+}
+.item-thumb {
+  width: 70px;
+  height: 95px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #fafafa;
+}
+.item-info-modern {
+  flex: 1;
+  margin-left: 12px;
+}
+.item-info-modern h5 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.item-info-modern p {
+  color: #555;
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+.old-price {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 0.85rem;
+}
+.new-price {
+  color: #d32f2f;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.item-total-modern {
+  font-weight: 700;
+  color: #111;
+  min-width: 100px;
+  text-align: right;
+}
+
+/* ============================================================
+   SAVINGS & ACTIONS
+   ============================================================ */
+.order-savings-modern {
+  margin-top: 12px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.order-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.action-btn.cancel {
+  background-color: #f44336;
+  color: #fff;
+}
+.action-btn.cancel:hover {
+  background-color: #c62828;
+}
+.action-btn.return {
+  background-color: #4caf50;
+  color: #fff;
+}
+.action-btn.return:hover {
+  background-color: #2e7d32;
+}
+
+.info-text {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal textarea {
+  width: 100%;
+  min-height: 80px;
+  margin: 10px 0;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-primary {
+  background-color: #e11d48;
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.25s ease, transform 0.1s ease;
+}
+.btn-primary:hover {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #aaa;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background-color: #f3f3f3;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 720px) {
+  .order-header-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .item-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .item-total-modern {
+    text-align: left;
+  }
+  .orders-grid {
+    gap: 15px;
+  }
+}
+
+
+.order-summary-modern {
+  margin-top: 16px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+}
+
+.order-summary-modern h4 {
+  margin-bottom: 10px;
+  color: #333;
+  font-weight: 600;
+}
+
+.order-summary-modern p {
+  margin: 4px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 🧾 Compact summary for closed orders */
+.order-compact-summary {
+  padding: 10px 16px;
+  background: #fafafa;
+  border-top: 1px solid #eee;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.order-compact-summary p {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.order-card-modern:not(.expanded):hover .order-compact-summary {
+  background: #f0f8ff;
+}
+
+.cancel-status-box {
+  background: #fff6e6;
+  border: 1px solid #ffd699;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #b36b00;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.cancel-status-box strong {
+  color: #b36b00;
+}
+
+.cancel-status-box small {
+  color: #a17200;
+  font-size: 0.8rem;
+}
+
+.action-btn.continue {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.action-btn.continue:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.info-text.success {
+  color: #28a745;
+  background: #e8f8ec;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 5px;
+  font-size: 0.9rem;
+  border: 1px solid #b8e6c1;
+}
+/* ============================================================
+✅ Rated badge style
+============================================================ */
+.rated-badge {
+  display: inline-block;
+  background: #28a7451a;
+  color: #28a745;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.85em;
+  margin-left: 4px;
+}

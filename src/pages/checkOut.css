@@ -1,0 +1,495 @@
+/* ============================================================
+🧾 Modern Checkout Page Styles
+============================================================ */
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 40px auto;
+  font-family: "Poppins", Arial, sans-serif;
+  color: #222;
+}
+
+.subcontainer {
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px 40px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* --------------------
+🔹 Title
+-------------------- */
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: #222;
+  border-bottom: 2px solid #f2f2f2;
+  padding-bottom: 10px;
+}
+
+/* --------------------
+🛍️ Product Table
+-------------------- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+}
+
+.table thead tr {
+  border-bottom: 2px solid #ddd;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px 10px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #555;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #eee;
+}
+
+.table td {
+  padding: 14px 10px;
+  vertical-align: middle;
+}
+
+.tdimage img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.tdnameprice strong {
+  font-size: 15px;
+  color: #111;
+}
+
+.tdnameprice p {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* --------------------
+👤 Personal Details
+-------------------- */
+.detailsContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.personalDetails,
+.paymentDetails {
+  flex: 1;
+  min-width: 320px;
+  background: #f9fafb;
+  padding: 25px 30px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+
+.personalDetails h3,
+.paymentDetails h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #f2f2f2;
+  padding-bottom: 8px;
+}
+
+.subpersonalDetails {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.subpersonalDetails p {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.arrowWrapper {
+  display: flex;
+  align-items: center;
+}
+
+.arrowButton {
+  color: #666;
+  text-decoration: none;
+  background: #e5e7eb;
+  border-radius: 50%;
+  padding: 6px;
+  transition: all 0.3s ease;
+}
+
+.arrowButton:hover {
+  background: #d1d5db;
+  transform: translateX(2px);
+}
+
+/* --------------------
+💳 Payment Details
+-------------------- */
+.paymentDetailRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: #333;
+}
+
+.paymentDetailRow strong {
+  font-size: 16px;
+}
+
+.paymentDetailRow:last-of-type strong {
+  color: #111;
+}
+
+.paymentDetailRow span:last-child {
+  font-weight: 600;
+}
+
+/* --------------------
+⚠️ Error Message
+-------------------- */
+.error-message {
+  color: #dc2626;
+  background-color: #fee2e2;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+/* --------------------
+🚀 Footer / Checkout Button
+-------------------- */
+.footer {
+  margin-top: 25px;
+  text-align: right;
+}
+
+.checkout {
+  background-color: #e11d48;
+  color: #fff;
+  padding: 12px 26px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.checkout:hover {
+  background-color: #be123c;
+  transform: translateY(-2px);
+}
+
+.checkout:disabled {
+  background-color: #f87171;
+  cursor: not-allowed;
+}
+
+/* --------------------
+📱 Responsive Layout
+-------------------- */
+@media (max-width: 900px) {
+  .subcontainer {
+    padding: 20px;
+  }
+
+  .detailsContainer {
+    flex-direction: column;
+  }
+
+  .personalDetails,
+  .paymentDetails {
+    width: 100%;
+  }
+
+  .footer {
+    text-align: center;
+  }
+
+  .checkout {
+    width: 100%;
+  }
+}
+
+/* --------------------
+❌ Cancel Button
+-------------------- */
+.cancel {
+  background-color: #9ca3af;
+  color: #fff;
+  padding: 12px 26px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+  margin-right: 12px;
+  transition: all 0.3s ease;
+}
+
+.cancel:hover {
+  background-color: #6b7280;
+  transform: translateY(-2px);
+}
+
+/* --------------------
+💰 Price Display (reuse from cart)
+-------------------- */
+.price {
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.price.discounted {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.price .original {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 13px;
+}
+
+.price .discounted {
+  color: #e11d48;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.badge-discount {
+  background-color: #facc15;
+  color: #222;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* --------------------
+💳 Discount Row Styling
+-------------------- */
+.paymentDetailRow.discount {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+
+/* 🏦 Payment Method Section */
+.payment-method-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+
+.payment-method-options label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* evenly space content */
+  background-color: #f9f9f9;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  min-height: 48px; /* consistent height */
+}
+
+
+.payment-method-options label:hover {
+  border-color: #0070ba;
+  background-color: #f0f8ff;
+}
+
+.payment-method-options input[type="radio"] {
+  accent-color: #0070ba;
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.payment-method-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+}
+
+/* Highlight selected */
+
+.payment-method-options label:has(input[type="radio"]:checked) {
+  border-color: #0070ba;
+  background-color: #e9f3ff;
+  color: #004b9b;
+  font-weight: 600;
+}
+
+/* 🪙 COD & PayPal Labels */
+.method-label {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* 💰 PayPal Logo */
+.paypal-logo {
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+  margin-left: auto;
+}
+
+/* 🧾 Payment Summary layout tweak */
+.paymentDetailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.paymentDetailRow.total {
+  margin-top: 15px;
+  border-top: 2px solid #ddd;
+  padding-top: 10px;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.paymentDetailRow.saved {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+/* ============================================================
+💰 WALLET BUTTON & MODAL (New Section)
+============================================================ */
+.wallet-info-section {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.wallet-button {
+  background-color: #f3f4f6;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  color: #333;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wallet-button:hover {
+  background-color: #e8f7ff;
+  border-color: #00aaff;
+  color: #0077cc;
+}
+
+/* 💬 Wallet Modal */
+.wallet-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.wallet-modal-content {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.wallet-modal-content h4 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.wallet-transactions ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.wallet-transactions li {
+  font-size: 14px;
+  margin: 6px 0;
+  text-align: left;
+}
+
+.wallet-transactions span.credit {
+  color: green;
+  font-weight: bold;
+}
+
+.wallet-transactions span.debit {
+  color: red;
+  font-weight: bold;
+}
+
+.close-wallet {
+  margin-top: 15px;
+  background-color: #0077cc;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.close-wallet:hover {
+  background-color: #005fa3;
+}
+
+/* 🪙 Wallet balance styling inside radio */
+.wallet-balance {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 3px 8px;
+  border-radius: 8px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.paymentDetails .footer {
+  margin-top: 40px; /* creates breathing room above the footer */
+}
