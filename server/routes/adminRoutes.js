@@ -10,6 +10,7 @@ const Voucher = require("../models/Voucher");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const { protect, admin } = require("../middleware/authMiddleware");
+const { notifyVariantLow } = require("../utils/notifyLowStock");
 
 
 // CLOUDINARY CONFIG
@@ -560,6 +561,7 @@ router.patch("/inventory/:productId/:variantId/update-stock", protect, admin, as
   try {
     const { countInStock } = req.body;
     const { productId, variantId } = req.params;
+    const threshold = parseInt(process.env.LOW_STOCK_THRESHOLD || "5", 10);
 
     if (countInStock === undefined || countInStock < 0)
       return res.status(400).json({ message: "Invalid stock count" });
@@ -570,7 +572,11 @@ router.patch("/inventory/:productId/:variantId/update-stock", protect, admin, as
     const variant = product.variants.id(variantId);
     if (!variant) return res.status(404).json({ message: "Variant not found" });
 
-    variant.countInStock = countInStock;
+    const prevCount = variant.countInStock || 0;
+    const newCount = Number(countInStock);
+
+    // Update variant stock
+    variant.countInStock = newCount;
 
     // Auto-update product status
     const totalStock = product.variants.reduce(
@@ -580,6 +586,23 @@ router.patch("/inventory/:productId/:variantId/update-stock", protect, admin, as
     product.status = totalStock > 0 ? "Active" : "Out of Stock";
 
     await product.save();
+
+    // ⚡ Notify if stock just dropped below or at threshold
+    if (prevCount > threshold && newCount <= threshold) {
+      try {
+        await notifyVariantLow({
+          productId: product._id.toString(),
+          productName: product.name,
+          variantId: variant._id.toString(),
+          variantFormat: variant.format,
+          prevCount,
+          newCount,
+          category: product.category,
+        });
+      } catch (notifyErr) {
+        console.error("⚠️ Low stock notify error:", notifyErr);
+      }
+    }
 
     res.json({
       message: `✅ Stock updated for ${product.name} (${variant.format})`,
