@@ -2,8 +2,8 @@
 const Product = require("../models/Product");
 const sendEmail = require("./sendEmail");
 
-const LOW_STOCK_THRESHOLD = parseInt(process.env.LOW_STOCK_THRESHOLD || "5", 10);
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
+const LOW_STOCK_THRESHOLD = 5;
+const ADMIN_EMAIL = "qjmmolediana@tip.edu.ph";
 
 /**
  * Batch: find all variants with countInStock <= threshold and email a list.

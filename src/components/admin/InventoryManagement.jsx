@@ -133,89 +133,94 @@ const InventoryManagement = () => {
 
         <div className="inventory-table-body">
           <table className="inventory-table">
-            <tbody>
-              {filteredInventory.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="no-data">
-                    No products found.
-                  </td>
-                </tr>
-              )}
+<tbody>
+  {filteredInventory.length === 0 && (
+    <tr>
+      <td colSpan="6" className="no-data">
+        No products found.
+      </td>
+    </tr>
+  )}
 
-              {filteredInventory.map((product) => {
-                const totalStock = product.variants.reduce(
-                  (sum, v) => sum + v.countInStock,
-                  0
-                );
-                const isLow = totalStock <= LOW_STOCK_THRESHOLD;
+  {filteredInventory.map((product) => {
+    const totalStock = product.variants.reduce(
+      (sum, v) => sum + v.countInStock,
+      0
+    );
+    const isLow = totalStock <= LOW_STOCK_THRESHOLD;
 
-                return (
-                  <motion.Fragment
-                    key={product.productId}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <tr className={`product-row ${isLow ? "low-stock" : ""}`}>
-                      <td>
-                        <strong>{product.name}</strong>
-                        {isLow && <span className="tag-warning">Low Stock</span>}
-                      </td>
-                      <td>{product.category}</td>
-                      <td className="muted">All Variants</td>
-                      <td className="bold">{totalStock}</td>
-                      <td></td>
-                      <td>
-                        <span
-                          className={`status ${
-                            totalStock <= 0
-                              ? "out"
-                              : totalStock <= LOW_STOCK_THRESHOLD
-                              ? "low"
-                              : "active"
-                          }`}
-                        >
-                          {product.status}
-                        </span>
-                      </td>
-                    </tr>
+    return (
+      <React.Fragment key={product.productId}>
+        <motion.tr
+          className={`product-row ${isLow ? "low-stock" : ""}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <td>
+            <strong>{product.name}</strong>
+            {isLow && <span className="tag-warning">Low Stock</span>}
+          </td>
+          <td>{product.category}</td>
+          <td className="muted">All Variants</td>
+          <td className="bold">{totalStock}</td>
+          <td></td>
+          <td>
+            <span
+              className={`status ${
+                totalStock <= 0
+                  ? "out"
+                  : totalStock <= LOW_STOCK_THRESHOLD
+                  ? "low"
+                  : "active"
+              }`}
+            >
+              {product.status}
+            </span>
+          </td>
+        </motion.tr>
 
-                    {product.variants.map((v, idx) => (
-                      <tr
-                        key={v.variantId}
-                        className={`variant-row ${
-                          v.countInStock <= 0
-                            ? "variant-out"
-                            : v.countInStock <= LOW_STOCK_THRESHOLD
-                            ? "variant-low"
-                            : ""
-                        }`}
-                      >
-                        <td className="muted">{idx === 0 ? "—" : ""}</td>
-                        <td></td>
-                        <td>{v.format || "Standard"}</td>
-                        <td className="bold">{v.countInStock}</td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            defaultValue={v.countInStock}
-                            onBlur={(e) =>
-                              handleUpdateStock(
-                                product.productId,
-                                v.variantId,
-                                e.target.value
-                              )
-                            }
-                            disabled={updating}
-                          />
-                        </td>
-                        <td></td>
-                      </tr>
-                    ))}
-                  </motion.Fragment>
-                );
-              })}
-            </tbody>
+        {product.variants.map((v, idx) => (
+          <motion.tr
+            key={v.variantId}
+            className={`variant-row ${
+              v.countInStock <= 0
+                ? "variant-out"
+                : v.countInStock <= LOW_STOCK_THRESHOLD
+                ? "variant-low"
+                : ""
+            }`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <td className="muted">{idx === 0 ? "—" : ""}</td>
+            <td></td>
+            <td>{v.format || "Standard"}</td>
+            <td className="bold">{v.countInStock}</td>
+            <td>
+              <input
+                type="number"
+                min="0"
+                defaultValue={v.countInStock}
+                onBlur={(e) =>
+                  handleUpdateStock(
+                    product.productId,
+                    v.variantId,
+                    e.target.value
+                  )
+                }
+                disabled={updating}
+              />
+            </td>
+            <td></td>
+          </motion.tr>
+        ))}
+      </React.Fragment>
+    );
+  })}
+</tbody>
+
           </table>
         </div>
       </div>
