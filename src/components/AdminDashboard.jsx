@@ -13,6 +13,7 @@ import StaticPageManagement from "./admin/StaticPageManagement";
 import FeaturedManagement from './admin/FeaturedManagement'; 
 import VoucherManagement from "./admin/VoucherManagement";
 import OverviewPage from "./admin/OverviewPage";
+import InventoryManagement from "./admin/InventoryManagement";
 
 const AdminDashboard = () => {
   const { isAdmin, logout } = useUser();
@@ -41,6 +42,7 @@ const AdminDashboard = () => {
         <nav>
           <ul>
             <li><Link to="/admin/overview">Overview</Link></li>
+            <li><Link to="/admin/inventory">Inventory</Link></li>
             <li><Link to="/admin/products">Products</Link></li>
             <li><Link to="/admin/categories">Categories</Link></li>
             <li><Link to="/admin/featured">Featured</Link></li> {/* NEW */}
@@ -63,8 +65,9 @@ const AdminDashboard = () => {
       <div className="admin-content">
         <Routes>
           <Route index element={<div>Welcome to Admin Dashboard</div>} />
-<Route index element={<OverviewPage />} />
-<Route path="overview" element={<OverviewPage />} />
+          <Route index element={<OverviewPage />} />
+          <Route path="overview" element={<OverviewPage />} />
+          <Route path="inventory" element={<InventoryManagement />} />
           <Route path="products" element={<ProductManagement />} />
           <Route path="categories" element={<CategoryManagement />} />
           <Route path="featured" element={<FeaturedManagement />} /> {/* NEW */}

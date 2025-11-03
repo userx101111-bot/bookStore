@@ -12,6 +12,11 @@ const User = require("./models/User");
 const { protect, admin } = require("./middleware/authMiddleware");
 const Voucher = require("./models/Voucher");
 
+// ⚡ ADDED FOR LOW STOCK ALERTS
+const cron = require("node-cron"); 
+const notifyLowStock = require("./utils/notifyLowStock"); 
+// ⚡ END
+
 // 🧹 Clean up legacy indexes that block voucher creation
 (async () => {
   try {
@@ -27,6 +32,7 @@ const Voucher = require("./models/Voucher");
     }
   }
 })();
+
 // ============================================================
 // 🔧 Load Environment Variables & Connect DB
 // ============================================================
@@ -44,9 +50,9 @@ app.use(express.urlencoded({ extended: true }));
 // 🌐 CORS CONFIGURATION
 // ============================================================
 const allowedOrigins = [
-  "https://book-store-ten-flame.vercel.app", // ✅ production frontend
-  "http://localhost:3000", // ✅ local dev
-  "https://bookstore-yl7q.onrender.com", // optional for API testing
+  "https://book-store-ten-flame.vercel.app",
+  "http://localhost:3000",
+  "https://bookstore-yl7q.onrender.com",
 ];
 
 const corsOptions = {
@@ -61,12 +67,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
 };
 
-// ✅ Apply global CORS policy everywhere
 app.use(cors(corsOptions));
-
-// ✅ Handle preflight (OPTIONS) requests using same rules
 app.options("*", cors(corsOptions));
-
 
 // ============================================================
 // 🖼️ Cloudinary Configuration
@@ -83,7 +85,7 @@ cloudinary.config({
 app.use("/uploads", express.static("uploads"));
 
 // ============================================================
-// 🧭 Request Logging (Optional Debug)
+// 🧭 Request Logging
 // ============================================================
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.originalUrl}`);
@@ -109,11 +111,7 @@ app.use("/api/wallet", require("./routes/walletRoutes"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 app.use("/api/recently-viewed", require("./routes/recentlyViewedRoutes"));
 app.use("/api/wishlist", require("./routes/wishlistRoutes"));
-
-// 🧾 ✅ VOUCHER ROUTES — THIS WAS MISSING
 app.use("/api/vouchers", require("./routes/voucherRoutes"));
-
-// 🛡️ Admin routes (protected)
 app.use("/api/admin", protect, admin, require("./routes/adminRoutes"));
 app.use("/api/admin/overview", require("./routes/adminOverviewRoutes"));
 
@@ -131,12 +129,10 @@ const createAdminUser = async () => {
   try {
     const adminEmail = "admin@example.com";
     const existing = await User.findOne({ email: adminEmail });
-
     if (existing) {
       console.log("✅ Admin user already exists");
       return;
     }
-
     const adminUser = new User({
       firstName: "Admin",
       lastName: "User",
@@ -146,7 +142,6 @@ const createAdminUser = async () => {
       role: "admin",
       phone: "0000000000",
     });
-
     await adminUser.save();
     console.log(`🎉 Admin user created: ${adminEmail}`);
   } catch (err) {
@@ -156,13 +151,23 @@ const createAdminUser = async () => {
 createAdminUser();
 
 // ============================================================
+// ⚡ DAILY LOW STOCK EMAIL CRON JOB
+// ============================================================
+// ⏰ Runs every day at 8:00 AM server time
+cron.schedule("0 8 * * *", async () => {
+  console.log("⏰ Running daily low-stock check...");
+  await notifyLowStock();
+});
+// You can adjust to run more frequently, e.g. every 6 hours:
+// cron.schedule("0 */6 * * *", async () => { await notifyLowStock(); });
+
+// ============================================================
 // 🚀 Serve Frontend in Production
 // ============================================================
 if (process.env.NODE_ENV === "production") {
   const buildPath = path.join(__dirname, "../build");
   app.use(express.static(buildPath));
 
-  // ✅ Catch-all fallback
   app.get("*", (req, res) => {
     if (req.originalUrl.startsWith("/api")) {
       return res.status(404).json({ message: "API route not found" });

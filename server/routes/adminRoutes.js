@@ -528,5 +528,71 @@ router.patch("/products/:id/unset-promo", protect, admin, async (req, res) => {
   }
 });
 
+// ============================================================
+// 📦 INVENTORY MANAGEMENT
+// ============================================================
+router.get("/inventory", protect, admin, async (req, res) => {
+  try {
+    const products = await Product.find({}, "name category variants status")
+      .sort({ name: 1 })
+      .lean();
+
+    const inventory = products.flatMap((p) =>
+      p.variants.map((v) => ({
+        productId: p._id,
+        variantId: v._id,
+        name: p.name,
+        category: p.category,
+        format: v.format,
+        countInStock: v.countInStock,
+        status: p.status,
+      }))
+    );
+
+    res.json(inventory);
+  } catch (err) {
+    console.error("❌ Error fetching inventory:", err);
+    res.status(500).json({ message: "Failed to fetch inventory data" });
+  }
+});
+
+router.patch("/inventory/:productId/:variantId/update-stock", protect, admin, async (req, res) => {
+  try {
+    const { countInStock } = req.body;
+    const { productId, variantId } = req.params;
+
+    if (countInStock === undefined || countInStock < 0)
+      return res.status(400).json({ message: "Invalid stock count" });
+
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const variant = product.variants.id(variantId);
+    if (!variant) return res.status(404).json({ message: "Variant not found" });
+
+    variant.countInStock = countInStock;
+
+    // Auto-update product status
+    const totalStock = product.variants.reduce(
+      (sum, v) => sum + (v.countInStock || 0),
+      0
+    );
+    product.status = totalStock > 0 ? "Active" : "Out of Stock";
+
+    await product.save();
+
+    res.json({
+      message: `✅ Stock updated for ${product.name} (${variant.format})`,
+      productId,
+      variantId,
+      countInStock: variant.countInStock,
+      status: product.status,
+    });
+  } catch (err) {
+    console.error("❌ Stock update error:", err);
+    res.status(500).json({ message: "Failed to update stock" });
+  }
+});
+
 
 module.exports = router;
