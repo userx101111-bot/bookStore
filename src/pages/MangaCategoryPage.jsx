@@ -1,31 +1,32 @@
 // ============================================================
-// ✅ MangaCategoryPage.jsx — Dynamic Category Colors + Badges
+// ✅ MangaCategoryPage.jsx — Click-to-Highlight Multi-Filter
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./MangaCategoryPage.css";
-
 
 const normalizeSlug = (str) => str?.toLowerCase().replace(/\s+/g, "-").trim();
 
 const MangaCategoryPage = ({ baseCategory, heading }) => {
   const navigate = useNavigate();
   const { subcategory } = useParams();
+
   const [productsData, setProductsData] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [vouchers, setVouchers] = useState([]); // ✅ new
+  const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOption, setSortOption] = useState("default");
+  const [selectedSubs, setSelectedSubs] = useState([]); // ✅ for multi-highlight
 
   const API_URL =
     process.env.REACT_APP_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
     "https://bookstore-yl7q.onrender.com";
 
-  // Fetch categories (with colors)
+  // 🧩 Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -39,13 +40,15 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
     fetchCategories();
   }, [API_URL]);
 
-  // Fetch vouchers
+  // 🧩 Fetch vouchers
   useEffect(() => {
     const fetchVouchers = async () => {
       try {
         const res = await fetch(`${API_URL}/api/vouchers`);
         const data = await res.json();
-        const active = Array.isArray(data) ? data.filter((v) => v.is_active) : [];
+        const active = Array.isArray(data)
+          ? data.filter((v) => v.is_active)
+          : [];
         setVouchers(active);
       } catch (err) {
         console.error("Error fetching vouchers:", err);
@@ -54,7 +57,7 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
     fetchVouchers();
   }, [API_URL]);
 
-  // Fetch products
+  // 🧩 Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -66,16 +69,27 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
         const baseCatNorm = normalizeSlug(baseCategory);
         const subCatNorm = normalizeSlug(subcategory);
 
+        // ✅ Filter by selected subcategories or URL param
         const filtered = allProducts.filter((p) => {
           const cat = normalizeSlug(p.category);
           const sub = normalizeSlug(p.subcategory);
-          return subCatNorm
-            ? cat === baseCatNorm && sub === subCatNorm
-            : cat === baseCatNorm;
+
+          if (cat !== baseCatNorm) return false;
+
+          if (selectedSubs.length > 0) {
+            return selectedSubs.some(
+              (sel) => normalizeSlug(sel) === normalizeSlug(sub)
+            );
+          }
+
+          if (subCatNorm) return sub === subCatNorm;
+
+          return true;
         });
 
         setProductsData(filtered);
 
+        // extract unique subcategories
         const uniqueSubs = [
           ...new Set(
             allProducts
@@ -93,10 +107,10 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
       }
     };
     fetchProducts();
-  }, [API_URL, baseCategory, subcategory]);
+  }, [API_URL, baseCategory, subcategory, selectedSubs]);
 
+  // 🧩 Sorting logic
   const handleSortChange = (e) => setSortOption(e.target.value);
-
   const getSortedProducts = () => {
     switch (sortOption) {
       case "price-low-to-high":
@@ -108,6 +122,7 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
     }
   };
 
+  // 🧩 Group variants under one product
   const groupProductsByParent = (products) => {
     const grouped = {};
     for (const p of products) {
@@ -123,6 +138,7 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
     return Object.values(grouped);
   };
 
+  // 🧩 Category color helper
   const getContrastColor = (bgColor) => {
     if (!bgColor) return "#111111";
     const hex = bgColor.replace("#", "");
@@ -143,7 +159,7 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
   };
 
   // ============================================================
-  // 🧱 VariantCard — with New + Voucher badges
+  // 🧱 VariantCard — Displays product + variants + voucher badges
   // ============================================================
   const VariantCard = ({ product }) => {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -174,7 +190,6 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
     const handleVariantClick = (v) =>
       navigate(`/product/${product.slug}/${v.format.toLowerCase()}`);
 
-    // ✅ Discount & voucher logic
     const cleanParentId = (product.parentId || product._id)?.split("-")[0];
     const cleanVariantId = currentVariant?._id?.split("-").pop();
     const linkedVoucher =
@@ -218,29 +233,21 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
             className={fading ? "fade" : ""}
             onError={(e) => (e.target.src = "/assets/placeholder-image.png")}
           />
-
-          {/* ✅ BADGES */}
-          {product.isNewArrival && (
-            <span className="badge-new" title="New arrival">
-              NEW
-            </span>
-          )}
+          {product.isNewArrival && <span className="badge-new">NEW</span>}
           {linkedVoucher && (
-            <span className="badge-voucher" title="Special offer applied!">
-              {badgeText}
-            </span>
+            <span className="badge-voucher">{badgeText}</span>
           )}
-
           {hasVariants && (
             <span className="variant-count">{variants.length} Variants</span>
           )}
         </div>
 
         <p className="product-name">
-  {`${product.name}${product.volumeNumber ? ` Vol. ${product.volumeNumber}` : ""}`}
-</p>
+          {`${product.name}${
+            product.volumeNumber ? ` Vol. ${product.volumeNumber}` : ""
+          }`}
+        </p>
 
-        {/* 💰 Price */}
         {linkedVoucher ? (
           <p className="price discounted">
             <span className="original">₱{originalPrice.toFixed(2)}</span>
@@ -249,30 +256,6 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
         ) : (
           <p className="price">₱{originalPrice.toFixed(2)}</p>
         )}
-
- {variants.length > 0 && (
-   <div
-     className={`variant-buttons ${
-       variants.length === 1 ? "single-variant" : ""
-     }`}
-   >
-     {variants.map((v, idx) => (
-       <button
-         key={v._id}
-         className={`variant-btn ${idx === activeIndex ? "active" : ""}`}
-         onMouseEnter={() => setActiveIndex(idx)}
-         onClick={(e) => {
-           e.stopPropagation();
-           handleVariantClick(v);
-         }}
-         disabled={variants.length === 1}
-       >
-         {v.format} — ₱{v.price?.toFixed(2) || "N/A"}
-       </button>
-     ))}
-   </div>
- )}
-
       </div>
     );
   };
@@ -287,46 +270,42 @@ const MangaCategoryPage = ({ baseCategory, heading }) => {
     <div className="app">
       <h2
         className="section-heading"
-        style={{
-          color: text,
-          borderLeft: `6px solid ${bg}`,
-        }}
+        style={{ color: text, borderLeft: `6px solid ${bg}` }}
       >
-        {heading}{" "}
-        {subcategory
-          ? `– ${subcategory
-              .split("-")
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(" ")}`
-          : ""}
+        {heading}
       </h2>
 
-      <div className="subcategory-nav">
-        <Link to={`/${baseCategory}`} className={!subcategory ? "active-subcat" : ""}>
+      {/* ✅ Subcategory multi-highlight filter bar */}
+      <div className="subcategory-filter-bar">
+        <button
+          className={`filter-chip ${selectedSubs.length === 0 ? "active" : ""}`}
+          onClick={() => setSelectedSubs([])}
+        >
           All
-        </Link>
-        {subcategories.map((sc) => (
-          <Link
-            key={sc}
-            to={`/${baseCategory}/${normalizeSlug(sc)}`}
-            className={
-              normalizeSlug(subcategory) === normalizeSlug(sc)
-                ? "active-subcat"
-                : ""
-            }
-          >
-            {sc}
-          </Link>
-        ))}
+        </button>
+        {subcategories.map((sc) => {
+          const active = selectedSubs.includes(sc);
+          return (
+            <button
+              key={sc}
+              className={`filter-chip ${active ? "active" : ""}`}
+              onClick={() =>
+                setSelectedSubs((prev) =>
+                  active
+                    ? prev.filter((s) => s !== sc)
+                    : [...prev, sc]
+                )
+              }
+            >
+              {sc}
+            </button>
+          );
+        })}
       </div>
 
       <div className="sorting-controls">
         <label htmlFor="sort-select">Sort by:</label>
-        <select
-          id="sort-select"
-          value={sortOption}
-          onChange={handleSortChange}
-        >
+        <select id="sort-select" value={sortOption} onChange={handleSortChange}>
           <option value="default">Default</option>
           <option value="price-low-to-high">Price: Low to High</option>
           <option value="price-high-to-low">Price: High to Low</option>

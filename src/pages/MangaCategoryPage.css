@@ -371,3 +371,36 @@ body {
   color: #333;
 }
 
+
+/* ============================================================
+🎨 SUBCATEGORY MULTI-HIGHLIGHT FILTER BAR
+============================================================ */
+.subcategory-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 5rem;
+}
+
+.filter-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.filter-chip:hover {
+  background: #eee;
+}
+
+.filter-chip.active {
+  background: var(--section-color, #2563eb);
+  color: white;
+  border-color: var(--section-color, #2563eb);
+  font-weight: 600;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+}
