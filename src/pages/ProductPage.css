@@ -1427,3 +1427,29 @@ html {
 .wishlist-btn.active svg {
   color: #e63946;
 }
+
+/* ============================================================
+   💡 YOU MAY ALSO LIKE SECTION
+   ============================================================ */
+.product-section.you-may-also-like {
+  position: relative;
+  padding: 2rem 1rem 2.5rem;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+  transition: all 0.4s ease;
+}
+
+.product-section.you-may-also-like:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.product-section.you-may-also-like .section-heading {
+  font-size: 1.6rem;
+  color: #222;
+  border-bottom: 3px solid #222;
+  text-transform: uppercase;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}

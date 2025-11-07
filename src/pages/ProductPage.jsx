@@ -35,6 +35,7 @@ const [reviewsSummary, setReviewsSummary] = useState({ avg: 0, count: 0 });
 const [recentlyViewed, setRecentlyViewed] = useState([]);
 const { handleAddToWishlist, handleRemoveFromWishlist, isInWishlist } = useWishlist();
 const inWishlist = isInWishlist(product?._id, selectedVariant?._id);
+const [relatedProducts, setRelatedProducts] = useState([]);
 
 
 
@@ -104,6 +105,35 @@ useEffect(() => {
 
   fetchProduct();
 }, [slug, variant]);
+
+
+// ============================================================
+// 🎯 Fetch "You May Also Like" Products (same category)
+// ============================================================
+useEffect(() => {
+  const fetchRelated = async () => {
+    if (!product?.category) return;
+
+    try {
+      const res = await axios.get(`${API_URL}/api/products`);
+      const all = res.data || [];
+      // Filter by same category, exclude current product
+      const related = all
+        .filter(
+          (p) =>
+            p.category === product.category &&
+            p._id !== product._id
+        )
+        .slice(0, 10); // show up to 10
+      setRelatedProducts(related);
+    } catch (err) {
+      console.error("❌ Error fetching related products:", err);
+    }
+  };
+
+  fetchRelated();
+}, [product]);
+
 
 // 🍔 Record this product as recently viewed
 useEffect(() => {
@@ -1083,6 +1113,36 @@ const VariantCard = React.memo(({ product }) => {
     </div>
   )}
 </div>
+{/* ============================================================ */}
+{/* 💡 You May Also Like Section */}
+{/* ============================================================ */}
+{relatedProducts.length > 0 && (
+  <div className="product-section you-may-also-like">
+    <div className="section-header">
+      <h2 className="section-heading">You May Also Like</h2>
+      <div className="scroll-controls">
+        <button
+          className="scroll-btn left"
+          onClick={() => scrollHorizontally("left")}
+        >
+          ←
+        </button>
+        <button
+          className="scroll-btn right"
+          onClick={() => scrollHorizontally("right")}
+        >
+          →
+        </button>
+      </div>
+    </div>
+
+    <div className="product-scroll modern" ref={scrollRef}>
+      {groupProductsByParent(relatedProducts).map((p) => (
+        <VariantCard key={p._id} product={p} />
+      ))}
+    </div>
+  </div>
+)}
 
 
 
