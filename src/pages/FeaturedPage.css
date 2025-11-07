@@ -315,13 +315,4 @@ body {
   transition: opacity 0.3s ease;
 }
 
-/* Badge container fix for top placement */
-.badge-container {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 3;
-}
+
