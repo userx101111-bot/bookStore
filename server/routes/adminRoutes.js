@@ -534,7 +534,7 @@ router.patch("/products/:id/unset-promo", protect, admin, async (req, res) => {
 // ============================================================
 router.get("/inventory", protect, admin, async (req, res) => {
   try {
-    const products = await Product.find({}, "name category variants status")
+    const products = await Product.find({}, "name category subcategory variants status")
       .sort({ name: 1 })
       .lean();
 
@@ -557,6 +557,7 @@ router.get("/inventory", protect, admin, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch inventory data" });
   }
 });
+
 
 router.patch("/inventory/:productId/:variantId/update-stock", protect, admin, async (req, res) => {
   try {
