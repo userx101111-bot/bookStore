@@ -544,6 +544,7 @@ router.get("/inventory", protect, admin, async (req, res) => {
         variantId: v._id,
         name: p.name,
         category: p.category,
+        subcategory: p.subcategory || "Uncategorized",
         format: v.format,
         countInStock: v.countInStock,
         status: p.status,
