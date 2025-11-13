@@ -28,6 +28,7 @@ import WishlistPage from "./pages/WishlistPage"; // ✅ Added this import
 import StaticPage from "./pages/StaticPage";
 import MangaCategoryPage from "./pages/MangaCategoryPage";
 import FeaturedPage from "./pages/FeaturedPage";
+import ProductCatalogPrint from "./pages/ProductCatalogPrint";
 
 // === Components ===
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -62,7 +63,7 @@ const AppLayout = () => {
   return (
     <>
       {!hideNavbarFooter && <Navbar />}
-
+      
       <Routes>
         {/* === Public Routes === */}
         <Route path="/" element={<Homepage />} />
@@ -149,7 +150,15 @@ const AppLayout = () => {
 
         {/* ✅ Static Pages */}
         <Route path="/:slug" element={<StaticPage />} />
-
+  {/* ✅ Admin Catalog Print Route */}
+  <Route
+    path="/admin/catalog-print"
+    element={
+      <ProtectedRoute adminOnly={true}>
+        <ProductCatalogPrint />
+      </ProtectedRoute>
+    }
+  />
         {/* === Admin Routes === */}
         <Route
           path="/admin/*"

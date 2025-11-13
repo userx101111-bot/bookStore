@@ -114,6 +114,8 @@ app.use("/api/wishlist", require("./routes/wishlistRoutes"));
 app.use("/api/vouchers", require("./routes/voucherRoutes"));
 app.use("/api/admin", protect, admin, require("./routes/adminRoutes"));
 app.use("/api/admin/overview", require("./routes/adminOverviewRoutes"));
+app.use("/api/print", require("./routes/printRoutes"));
+
 
 // ============================================================
 // 🧠 HEALTH CHECK
