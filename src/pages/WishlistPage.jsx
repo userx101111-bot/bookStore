@@ -1,5 +1,5 @@
 // =======================================
-// ✅ WishlistPage.jsx (Same Add to Cart as ProductPage)
+//  WishlistPage.jsx 
 // =======================================
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";

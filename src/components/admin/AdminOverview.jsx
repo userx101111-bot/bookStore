@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ src/components/admin/AdminDashboard.jsx
+// src/components/admin/AdminDashboard.jsx
 // ============================================================
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";

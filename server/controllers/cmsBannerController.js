@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ server/controllers/cmsBannerController.js — FULL FIXED VERSION
+//  server/controllers/cmsBannerController.js 
 // ============================================================
 
 const CmsBanner = require("../models/CmsBanner");

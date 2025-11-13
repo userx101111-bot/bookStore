@@ -1,8 +1,8 @@
 /* src/pages/WishlistPage.css */
 
-/* === Main Container (adds space for Navbar & Footer) === */
+/* === Main Container === */
 .wishlist-container {
-  padding: 7rem 6% 4rem; /* top = 7rem for navbar gap, bottom = 4rem for footer gap */
+  padding: 7rem 6% 4rem; 
   background: #f8f9fa;
   min-height: 80vh;
 }

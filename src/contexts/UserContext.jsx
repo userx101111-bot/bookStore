@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 const UserContext = createContext();
 
 /**
- * 🧠 UserProvider — handles global user state, login, logout, and address updates.
+ *  UserProvider — handles global user state, login, logout, and address updates.
  */
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState({ isGuest: true });
@@ -42,14 +42,14 @@ export const UserProvider = ({ children }) => {
       createdAt,
       phone,
       address,
-      wallet: wallet || { balance: 0, transactions: [] }, // ✅ safe fallback
+      wallet: wallet || { balance: 0, transactions: [] }, 
       token,
       isGuest: false,
     };
   };
 
   /**
-   * 🔁 Refresh user from backend
+   *  Refresh user from backend
    */
   const refreshUser = async () => {
     try {
@@ -115,7 +115,7 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 🪙 ADDED: Refresh wallet balance from backend
+  //  ADDED: Refresh wallet balance from backend
   const refreshWallet = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -142,10 +142,10 @@ export const UserProvider = ({ children }) => {
       console.error("❌ Failed to refresh wallet:", err);
     }
   };
-  // 🪙 END ADDED
+  //  END ADDED
 
   /**
-   * 🟢 Login handler
+   *  Login handler
    */
   const login = async (userData) => {
     try {
@@ -165,7 +165,7 @@ export const UserProvider = ({ children }) => {
         await refreshUser();
       }
 
-      // 🪙 ADDED: Also refresh wallet after login
+      //  ADDED: Also refresh wallet after login
       await refreshWallet();
     } catch (err) {
       console.error("❌ Error saving user data:", err);

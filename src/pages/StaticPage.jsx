@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ src/pages/StaticPage.jsx — Fixed (No Double Navbar/Footer)
+//  src/pages/StaticPage.jsx 
 // ============================================================
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";

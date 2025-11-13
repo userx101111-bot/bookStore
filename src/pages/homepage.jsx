@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ Homepage.jsx — Modern Scroll-Snap + Dynamic Category Colors + Voucher Discounts
+//  Homepage.jsx 
 // ============================================================
 
 

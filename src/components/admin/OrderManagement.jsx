@@ -1,7 +1,4 @@
 // src/components/admin/OrderManagement.jsx
-// ============================================================
-// ✅ OrderManagement.jsx — Updated for New Order Model
-// ============================================================
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useUser } from "../../contexts/UserContext";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";

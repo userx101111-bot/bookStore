@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ MangaCategoryPage.jsx — FeaturedCard Design + Local Filtering + Fixed Loading
+//  MangaCategoryPage.jsx 
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";

@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ FeaturedPage.jsx — with Subcategory Filter Chips + Local Filtering
+//  FeaturedPage.jsx 
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";

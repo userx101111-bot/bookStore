@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ src/components/Footer.jsx — Clean & De-Duplicated Version
+//  src/components/Footer.jsx — Clean & De-Duplicated Version
 // ============================================================
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";

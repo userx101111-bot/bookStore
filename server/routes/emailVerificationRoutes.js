@@ -1,5 +1,5 @@
 // ============================================================
-// server/routes/emailVerificationRoutes.js (UPDATED)
+// server/routes/emailVerificationRoutes.js 
 // ============================================================
 const express = require("express");
 const EmailVerification = require("../models/EmailVerification");

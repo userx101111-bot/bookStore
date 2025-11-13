@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ src/components/admin/StaticPageManagement.jsx (Auto Slug from Title)
+//  src/components/admin/StaticPageManagement.jsx 
 // ============================================================
 import React, { useEffect, useState } from "react";
 import { useUser } from "../../contexts/UserContext";

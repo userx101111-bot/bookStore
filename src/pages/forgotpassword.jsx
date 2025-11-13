@@ -1,5 +1,5 @@
 // ============================================================
-// ForgotPassword.jsx (FINAL FIXED — with confirm password + inline eye icons)
+// ForgotPassword.jsx 
 // ============================================================
 
 import React, { useState } from "react";

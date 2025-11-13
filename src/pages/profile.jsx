@@ -1,7 +1,5 @@
 // ============================================================
-// Profile.jsx (FINAL — NO RELOAD FLICKER)
-// Supports Google-only, Email-only, and Unified accounts
-// Smooth soft-refresh, instant updates, fade animations
+// Profile.jsx 
 // ============================================================
 
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";

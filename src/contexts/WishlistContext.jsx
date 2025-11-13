@@ -19,7 +19,7 @@ export const WishlistProvider = ({ children }) => {
     }
   };
 
-  // ✅ Add variantId
+  //  Add variantId
   const handleAddToWishlist = async (productId, variantId) => {
     if (isGuest) return alert("Please log in to use the wishlist.");
     try {
@@ -31,7 +31,7 @@ export const WishlistProvider = ({ children }) => {
     }
   };
 
-  // ✅ Include variantId
+  //  Include variantId
   const handleRemoveFromWishlist = async (productId, variantId) => {
     try {
       const token = getToken();
@@ -52,7 +52,7 @@ export const WishlistProvider = ({ children }) => {
     }
   };
 
-  // ✅ Check both product + variant
+  //  Check both product + variant
   const isInWishlist = (productId, variantId) =>
     wishlist.some(
       (i) =>

@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ BannerManagement.jsx — Full Modern Interactive Version
+//  BannerManagement.jsx — Full Modern Interactive Version
 // ============================================================
 
 import React, { useEffect, useState, useRef } from "react";

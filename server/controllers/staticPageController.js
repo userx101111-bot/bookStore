@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ server/controllers/staticPageController.js
+//  server/controllers/staticPageController.js
 // ============================================================
 const StaticPage = require("../models/StaticPage");
 

@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ src/components/admin/ProductManagement.jsx (Full Corrected)
+//  src/components/admin/ProductManagement.jsx 
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from "react";

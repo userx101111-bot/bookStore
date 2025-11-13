@@ -1,5 +1,5 @@
 // src/services/productService.js
-const API_URL = 'https://bookstore-yl7q.onrender.com'; // Adjust if needed
+const API_URL = 'https://bookstore-yl7q.onrender.com'; 
 
 export const fetchProductsByCategory = async (category) => {
   try {

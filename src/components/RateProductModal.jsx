@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ src/components/RateProductModal.jsx
+//  src/components/RateProductModal.jsx
 // ============================================================
 import React, { useState } from "react";
 import axios from "axios";

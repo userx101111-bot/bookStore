@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ ProductPage.jsx — Fixed Variant Routing & Redirect Logic
+//  ProductPage.jsx 
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";

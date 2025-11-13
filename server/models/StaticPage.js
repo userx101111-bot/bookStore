@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ server/models/StaticPage.js
+//  server/models/StaticPage.js
 // ============================================================
 const mongoose = require("mongoose");
 

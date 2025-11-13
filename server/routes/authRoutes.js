@@ -1,5 +1,5 @@
 // ==========================================================
-// server/routes/authRoutes.js (FINAL VERSION)
+// server/routes/authRoutes.js 
 // ==========================================================
 const express = require("express");
 const bcrypt = require("bcryptjs");
